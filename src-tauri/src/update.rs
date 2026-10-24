@@ -19,6 +19,10 @@ use crate::{log_line, peek};
 /// A downloaded update waiting for its peek to be clicked.
 static READY: Mutex<Option<(Update, Vec<u8>)>> = Mutex::new(None);
 
+/// This is a locally built fork with extra features. The official updater
+/// would replace it with an upstream build and remove those features.
+const CUSTOM_BUILD: bool = true;
+
 fn is_dev_build() -> bool {
     let exe = std::env::current_exe().unwrap_or_default();
     exe.to_string_lossy().to_lowercase().contains(r"\target\")
@@ -34,7 +38,7 @@ pub fn woke() {
 }
 
 pub fn start(app: AppHandle) {
-    if is_dev_build() {
+    if CUSTOM_BUILD || is_dev_build() {
         return;
     }
     let (tx, rx) = mpsc::channel::<()>();
@@ -75,6 +79,10 @@ pub fn install_update() {
 /// Tray "Cek update": installs a newer version now, or says why not.
 pub fn check_now(app: AppHandle) {
     let version = env!("CARGO_PKG_VERSION");
+    if CUSTOM_BUILD {
+        peek(&app, "update-info", json!({ "state": "latest", "version": version }));
+        return;
+    }
     if is_dev_build() {
         peek(&app, "update-info", json!({ "state": "dev", "version": version }));
         return;

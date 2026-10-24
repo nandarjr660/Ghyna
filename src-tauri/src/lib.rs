@@ -662,6 +662,7 @@ pub fn run() {
             store::save_data,
             store::shelf_add,
             store::open_path,
+            notifications::notification_apps,
             notifications::open_app,
             notifications::open_dnd_settings,
             update::install_update,

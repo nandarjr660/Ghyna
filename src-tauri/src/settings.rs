@@ -37,6 +37,10 @@ pub struct Settings {
     water_enabled: bool,
     /// Show new Windows notifications in the notch.
     pub mirror_notifications: bool,
+    /// Only mirror notifications from the apps in `notification_apps` (AUMIDs).
+    pub notification_filter: bool,
+    /// AUMIDs of the apps allowed through when `notification_filter` is on.
+    pub notification_apps: Vec<String>,
     /// Secret ICS address of a calendar (Google/Outlook), or empty.
     calendar_url: String,
     /// Show the line being sung in the small notch. Looks up lyrics for every
@@ -83,6 +87,8 @@ impl Default for Settings {
             remind_every: 60,
             water_enabled: true,
             mirror_notifications: true,
+            notification_filter: false,
+            notification_apps: Vec::new(),
             calendar_url: String::new(),
             small_lyrics: true,
             shortcuts: default_shortcuts(),

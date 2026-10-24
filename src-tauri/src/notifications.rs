@@ -13,6 +13,7 @@
 use std::collections::{HashMap, HashSet};
 use std::time::{Duration, Instant};
 
+use serde::Serialize;
 use serde_json::json;
 use tauri::AppHandle;
 use winreg::enums::HKEY_CURRENT_USER;
@@ -62,17 +63,122 @@ pub fn start(app: AppHandle) {
                 std::thread::sleep(Duration::from_millis(120));
                 fresh = new_ones(&listener, &mut seen);
             }
-            if fresh.is_empty() || !settings::get_settings().mirror_notifications {
+            if fresh.is_empty() {
                 continue;
             }
+            let settings = settings::get_settings();
+            if !settings.mirror_notifications {
+                continue;
+            }
+            let allowed = settings
+                .notification_filter
+                .then(|| settings.notification_apps.iter().cloned().collect::<HashSet<_>>());
             // Oldest first; a burst (e.g. after waking up) is capped so it doesn't flood.
             for n in fresh.iter().rev().take(4).rev() {
-                if let Some(data) = describe(n, &mut logos) {
+                if let Some(data) = describe(n, &mut logos, allowed.as_ref()) {
                     peek(&app, "notification", data);
                 }
             }
         }
     });
+}
+
+/// One entry in the per-app notification filter. `aumid` is the stable key;
+/// `name` is what the user sees.
+#[derive(Serialize)]
+pub struct NotificationApp {
+    pub aumid: String,
+    pub name: String,
+}
+
+/// Apps that have sent a notification at least once, for the Settings picker.
+/// Current notifications give the best display names; the registry also lists
+/// apps whose toast is already gone, and its `AppUserModelId` class gives the
+/// friendly name for those.
+#[tauri::command]
+pub fn notification_apps() -> Vec<NotificationApp> {
+    std::thread::spawn(|| {
+        unsafe {
+            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+        }
+        let mut apps = HashMap::new();
+        registry_apps(&mut apps);
+        if let Ok(listener) = UserNotificationListener::Current() {
+            for n in list(&listener) {
+                let Ok(info) = n.AppInfo() else { continue };
+                let Ok(aumid) = info.AppUserModelId() else { continue };
+                let aumid = aumid.to_string();
+                if aumid.is_empty() {
+                    continue;
+                }
+                let name = info
+                    .DisplayInfo()
+                    .ok()
+                    .and_then(|d| d.DisplayName().ok())
+                    .map(|s| s.to_string())
+                    .unwrap_or_default();
+                if name.trim().is_empty() {
+                    apps.entry(aumid.clone()).or_insert(aumid);
+                } else {
+                    apps.insert(aumid, name);
+                }
+            }
+        }
+        for aumid in settings::get_settings().notification_apps {
+            apps.entry(aumid.clone()).or_insert(aumid);
+        }
+        let mut list: Vec<NotificationApp> =
+            apps.into_iter().map(|(aumid, name)| NotificationApp { aumid, name }).collect();
+        list.sort_by(|a, b| {
+            a.name.to_lowercase().cmp(&b.name.to_lowercase()).then_with(|| a.aumid.cmp(&b.aumid))
+        });
+        list
+    })
+    .join()
+    .unwrap_or_default()
+}
+
+/// Collect every AUMID that has a `LastNotificationAddedTime` value under
+/// Windows' per-app notification settings. Desktop ids contain backslashes and
+/// are stored as nested keys, so the full id is rebuilt from the key path.
+fn registry_apps(out: &mut HashMap<String, String>) {
+    fn walk(key: &RegKey, prefix: &str, depth: u8, out: &mut HashMap<String, String>) {
+        if depth == 0 {
+            return;
+        }
+        for name in key.enum_keys().flatten() {
+            let name = name.to_string_lossy();
+            let full = if prefix.is_empty() { name.to_string() } else { format!("{prefix}\\{name}") };
+            let Ok(sub) = key.open_subkey(&*name) else { continue };
+            if sub.get_value::<u64, _>("LastNotificationAddedTime").is_ok() {
+                match registry_name(&full) {
+                    Some(display) => {
+                        out.insert(full.clone(), display);
+                    }
+                    None => {
+                        out.entry(full.clone()).or_insert_with(|| full.clone());
+                    }
+                }
+            }
+            walk(&sub, &full, depth - 1, out);
+        }
+    }
+    if let Ok(root) = RegKey::predef(HKEY_CURRENT_USER).open_subkey(SETTINGS_KEY) {
+        walk(&root, "", 6, out);
+    }
+}
+
+/// The friendly name an app registered for its AUMID, if it is a plain string.
+/// Indirect resource strings (`@{...}`) would need `SHLoadIndirectString`; the
+/// AUMID itself is a better fallback than showing that.
+fn registry_name(aumid: &str) -> Option<String> {
+    RegKey::predef(HKEY_CURRENT_USER)
+        .open_subkey(format!(r"Software\Classes\AppUserModelId\{aumid}"))
+        .ok()?
+        .get_value::<String, _>("DisplayName")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty() && !s.starts_with('@'))
 }
 
 /// The per-app keys that carry `LastNotificationAddedTime`, kept open so each
@@ -271,8 +377,18 @@ fn ids(list: &[UserNotification]) -> HashSet<u32> {
     list.iter().filter_map(|n| n.Id().ok()).collect()
 }
 
-fn describe(n: &UserNotification, logos: &mut HashMap<String, Option<String>>) -> Option<serde_json::Value> {
+fn describe(
+    n: &UserNotification,
+    logos: &mut HashMap<String, Option<String>>,
+    allowed: Option<&HashSet<String>>,
+) -> Option<serde_json::Value> {
     let info = n.AppInfo().ok()?;
+    let aumid = info.AppUserModelId().map(|s| s.to_string()).unwrap_or_default();
+    if let Some(allowed) = allowed {
+        if aumid.is_empty() || !allowed.contains(&aumid) {
+            return None;
+        }
+    }
     let display = info.DisplayInfo().ok()?;
     let app = display.DisplayName().map(|s| s.to_string()).unwrap_or_default();
     let binding = n.Notification().ok()?.Visual().ok()?.GetBinding(&KnownNotificationBindings::ToastGeneric().ok()?).ok()?;
@@ -286,7 +402,7 @@ fn describe(n: &UserNotification, logos: &mut HashMap<String, Option<String>>) -
     let title = texts.first().cloned().unwrap_or_else(|| app.clone());
     let body = texts.get(1..).map(|rest| rest.join(" · ")).unwrap_or_default();
 
-    let key = info.AppUserModelId().map(|s| s.to_string()).unwrap_or_else(|_| app.clone());
+    let key = if aumid.is_empty() { app.clone() } else { aumid.clone() };
     let logo = logos
         .entry(key)
         .or_insert_with(|| {
@@ -294,7 +410,6 @@ fn describe(n: &UserNotification, logos: &mut HashMap<String, Option<String>>) -
             media::read_art(logo.cast::<IRandomAccessStreamReference>().ok()?)
         })
         .clone();
-    let aumid = info.AppUserModelId().map(|s| s.to_string()).unwrap_or_default();
     let id = n.Id().ok();
     Some(json!({ "app": app, "title": title, "body": body, "icon": logo, "aumid": aumid, "id": id }))
 }

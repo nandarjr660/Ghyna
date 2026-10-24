@@ -15,11 +15,14 @@
     remindEvery: number;
     waterEnabled: boolean;
     mirrorNotifications: boolean;
+    notificationFilter: boolean;
+    notificationApps: string[];
     calendarUrl: string;
     smallLyrics: boolean;
     shortcuts: Shortcut[];
   };
   type Shortcut = { name: string; action: string; target: string };
+  type NotificationApp = { aumid: string; name: string };
 
   const ACTIONS: [string, string][] = [
     ["lock", "Kunci layar"],
@@ -46,10 +49,54 @@
   let results = $state<Place[]>([]);
   let searching = $state(false);
   let saved = $state(false);
+  let apps = $state<NotificationApp[]>([]);
+  let appsLoading = $state(false);
+  let appsError = $state("");
 
   onMount(async () => {
     settings = await invoke<Settings>("get_settings");
+    await refreshApps();
   });
+
+  async function refreshApps() {
+    appsLoading = true;
+    appsError = "";
+    try {
+      apps = await invoke<NotificationApp[]>("notification_apps");
+    } catch (e) {
+      appsError = String(e);
+    } finally {
+      appsLoading = false;
+    }
+  }
+
+  async function toggleFilter(on: boolean) {
+    if (!settings) return;
+    const patch: Partial<Settings> = { notificationFilter: on };
+    // Start from "everything allowed" so turning the filter on doesn't hide
+    // every notification until the user picks something.
+    if (on && settings.notificationApps.length === 0 && apps.length > 0) {
+      patch.notificationApps = apps.map((app) => app.aumid);
+    }
+    await save(patch);
+  }
+
+  function toggleApp(aumid: string, on: boolean) {
+    if (!settings) return;
+    const selected = new Set(settings.notificationApps);
+    if (on) selected.add(aumid);
+    else selected.delete(aumid);
+    save({ notificationApps: [...selected] });
+  }
+
+  function selectAllApps() {
+    if (!settings) return;
+    save({ notificationApps: apps.map((app) => app.aumid) });
+  }
+
+  function clearApps() {
+    save({ notificationApps: [] });
+  }
 
   async function search(e: SubmitEvent) {
     e.preventDefault();
@@ -113,6 +160,53 @@
         />
         <span>Tampilkan notifikasi Windows di notch (WhatsApp, Teams, email...)</span>
       </label>
+      {#if settings.mirrorNotifications}
+        <label class="field check">
+          <input
+            type="checkbox"
+            checked={settings.notificationFilter}
+            onchange={(e) => toggleFilter(e.currentTarget.checked)}
+          />
+          <span>Hanya tampilkan notifikasi dari aplikasi yang dipilih</span>
+        </label>
+        {#if settings.notificationFilter}
+          <div class="app-picker">
+            {#if appsLoading}
+              <p class="current">Memuat daftar aplikasi…</p>
+            {:else if appsError}
+              <p class="current">Gagal memuat daftar aplikasi: {appsError}</p>
+            {:else if apps.length === 0}
+              <p class="current">
+                Belum ada aplikasi yang tercatat. Munculkan satu notifikasi dari aplikasi yang ingin
+                dipilih, lalu klik <strong>Muat ulang</strong>.
+              </p>
+            {:else}
+              <div class="app-actions">
+                <button class="link" onclick={selectAllApps}>Pilih semua</button>
+                <button class="link" onclick={clearApps}>Kosongkan</button>
+                <button class="link" onclick={refreshApps}>Muat ulang</button>
+                <span class="app-count">{settings.notificationApps.length}/{apps.length} dipilih</span>
+              </div>
+              <div class="app-list">
+                {#each apps as app (app.aumid)}
+                  <label class="app">
+                    <input
+                      type="checkbox"
+                      checked={settings.notificationApps.includes(app.aumid)}
+                      onchange={(e) => toggleApp(app.aumid, e.currentTarget.checked)}
+                    />
+                    <span class="app-name">{app.name}</span>
+                    {#if app.name !== app.aumid}<span class="app-id">{app.aumid}</span>{/if}
+                  </label>
+                {/each}
+              </div>
+              {#if settings.notificationApps.length === 0}
+                <p class="current warn">Tidak ada aplikasi yang dipilih — notifikasi tidak akan ditampilkan.</p>
+              {/if}
+            {/if}
+          </div>
+        {/if}
+      {/if}
       <p class="current">
         Supaya notifikasi hanya muncul di notch (tidak double), nyalakan <strong>Do not disturb</strong> di
         Windows. Notifikasi tetap masuk ke Notification Center, dan Notchy tetap menampilkannya.
@@ -421,5 +515,58 @@
     align-items: center;
     gap: 12px;
     margin-top: 8px;
+  }
+  .app-picker {
+    margin: 8px 0 0 24px;
+  }
+  .app-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+  }
+  .app-count {
+    margin-left: auto;
+    font-size: 12px;
+    color: #8c94a8;
+  }
+  .app-list {
+    max-height: 210px;
+    overflow-y: auto;
+    margin-top: 6px;
+    padding: 4px;
+    border: 1px solid rgba(236, 239, 247, 0.12);
+    border-radius: 8px;
+  }
+  .app {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 6px;
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .app:hover {
+    background: #141826;
+  }
+  .app input {
+    width: auto;
+    flex: none;
+  }
+  .app-name {
+    flex: none;
+    color: #eceff7;
+  }
+  .app-id {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    color: #697086;
+  }
+  .warn {
+    color: #fbbf24;
   }
 </style>
