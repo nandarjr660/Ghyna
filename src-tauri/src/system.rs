@@ -20,10 +20,13 @@ use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::System::Power::{
     GetSystemPowerStatus, RegisterPowerSettingNotification, POWERBROADCAST_SETTING, SYSTEM_POWER_STATUS,
 };
+use windows::Win32::System::SystemInformation::GetTickCount64;
 use windows::Win32::System::SystemServices::{
     GUID_ACDC_POWER_SOURCE, GUID_BATTERY_PERCENTAGE_REMAINING, GUID_VIDEO_CURRENT_MONITOR_BRIGHTNESS,
 };
-use windows::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, GetKeyboardLayout, VK_CAPITAL};
+use windows::Win32::UI::Input::KeyboardAndMouse::{
+    GetKeyState, GetKeyboardLayout, GetLastInputInfo, LASTINPUTINFO, VK_CAPITAL,
+};
 use windows::Win32::UI::Shell::{SHGetKnownFolderPath, FOLDERID_Screenshots, KF_FLAG_DEFAULT};
 use windows::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, CreateWindowExW, DefWindowProcW, GetForegroundWindow, GetWindowThreadProcessId,
@@ -107,6 +110,24 @@ static LAST_BRIGHTNESS: Mutex<Option<u32>> = Mutex::new(None);
 #[tauri::command]
 pub fn power_state() -> Power {
     read_power()
+}
+
+/// Seconds since the last keyboard or mouse input anywhere on the desktop.
+/// Lets the notch avoid falling asleep while someone is typing or using another app.
+#[tauri::command]
+pub fn idle_seconds() -> f64 {
+    unsafe {
+        let mut info = LASTINPUTINFO {
+            cbSize: std::mem::size_of::<LASTINPUTINFO>() as u32,
+            dwTime: 0,
+        };
+        if GetLastInputInfo(&mut info).as_bool() {
+            let now = GetTickCount64() as u32;
+            now.wrapping_sub(info.dwTime) as f64 / 1000.0
+        } else {
+            0.0
+        }
+    }
 }
 
 unsafe extern "system" fn power_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: LPARAM) -> LRESULT {

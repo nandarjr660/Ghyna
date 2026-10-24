@@ -32,7 +32,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     SetWindowLongPtrW, SetWindowPos, SetWindowsHookExW, ShowWindow, GW_HWNDPREV, HWND_TOPMOST,
     SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, WS_EX_TOPMOST,
     EVENT_OBJECT_LOCATIONCHANGE, EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_MINIMIZEEND,
-    EVENT_SYSTEM_MINIMIZESTART, GWL_EXSTYLE, MSG, MSLLHOOKSTRUCT, OBJID_WINDOW, SW_HIDE,
+    EVENT_SYSTEM_MINIMIZESTART, GWL_EXSTYLE, MSG, MSLLHOOKSTRUCT, OBJID_WINDOW,
     SW_SHOWNOACTIVATE, WH_MOUSE_LL, WINEVENT_OUTOFCONTEXT, WINEVENT_SKIPOWNPROCESS, WM_LBUTTONDOWN, WM_LBUTTONUP,
     WM_MOUSEMOVE,
     WS_EX_TRANSPARENT,
@@ -492,8 +492,8 @@ unsafe extern "system" fn win_event_proc(
 
 /// Re-checks on window events (activated, moved, maximized, minimized), with a
 /// 1-second fallback that also follows resolution/DPI changes:
-/// - full-screen app: hide the window entirely;
-/// - active window with something clickable under the notch: shrink the notch to a line.
+/// - full-screen app: keep the notch visible but shrink it to a line;
+/// - active window with something clickable under the notch: shrink it to a line too.
 /// The 1-second pass also catches changes inside a window, like a new browser tab.
 fn start_watcher(window: WebviewWindow) {
     let (tx, rx) = mpsc::channel::<()>();
@@ -530,16 +530,13 @@ fn start_watcher(window: WebviewWindow) {
             while rx.try_recv().is_ok() {}
 
             let h = hwnd(&window);
-            let hide = fullscreen_app_running();
             let visible = unsafe { IsWindowVisible(h).as_bool() };
-            // Both directions go through ShowWindow: Tauri's hide() is a no-op here
-            // because Tauri never saw the window being shown.
-            if hide && visible {
-                unsafe { let _ = ShowWindow(h, SW_HIDE); }
-            } else if !hide && !visible {
+            // Never hide for a full-screen app: keep the notch on screen, then let the
+            // frontend shrink it to a line when the foreground window reaches its spot.
+            if !visible {
                 unsafe { let _ = ShowWindow(h, SW_SHOWNOACTIVATE); }
             }
-            if !hide && below_ordinary_window(h) {
+            if below_ordinary_window(h) {
                 // The notch can end up under ordinary windows while keeping its topmost
                 // flag (21 Oct 2026, with Outlook in front): it's there, just covered.
                 unsafe {
@@ -551,12 +548,13 @@ fn start_watcher(window: WebviewWindow) {
                 }
             }
 
-            let tucked = !hide && foreground_covers_notch() && under_notch(!timed_out);
+            let fullscreen = fullscreen_app_running();
+            let tucked = foreground_covers_notch() && (fullscreen || under_notch(!timed_out));
             if TUCKED.swap(tucked, Ordering::Relaxed) != tucked {
                 let _ = window.emit("notch-tucked", tucked);
             }
 
-            if timed_out || hide == visible {
+            if timed_out || !visible {
                 place_window(&window);
                 update_hit_rect();
             }
@@ -652,6 +650,7 @@ pub fn run() {
             audio::list_outputs,
             audio::next_output,
             system::power_state,
+            system::idle_seconds,
             system::in_use_state,
             system::open_screenshot,
             settings::get_settings,

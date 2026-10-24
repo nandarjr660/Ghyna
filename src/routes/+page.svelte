@@ -544,6 +544,11 @@
     const scheduleSleep = () => {
       clearTimeout(sleepTimer);
       sleepTimer = setTimeout(() => {
+        // Music or video keeps the eyes awake; sleep is only for a truly quiet machine.
+        if (media?.playing) {
+          scheduleSleep();
+          return;
+        }
         idleStage = "sleep";
         gaze = 0;
       }, IDLE_SLEEP_MS);
@@ -591,13 +596,36 @@
       gazeTimer = setTimeout(glance, 1_700 + Math.random() * 1_800);
     };
     glance();
+    // Keyboard input and activity in other apps do not reach the mouse hook, so ask
+    // Windows for the last input time. Recent input keeps the eyes awake.
+    let idlePoll: ReturnType<typeof setInterval>;
+    let lastIdle = 0;
+    const watchInput = async () => {
+      try {
+        const idle = await invoke<number>("idle_seconds");
+        // A drop means new keyboard or mouse input happened since the last poll.
+        if (idle < 1 || idle + 0.35 < lastIdle) wake();
+        lastIdle = idle;
+      } catch {
+        // Older builds do not expose this; the timer-based idle still works.
+      }
+    };
+    idlePoll = setInterval(watchInput, 1_000);
     const unlistenTuck = listen<boolean>("notch-tucked", (e) => (tucked = e.payload));
     invoke<boolean>("is_tucked").then((t) => (tucked = t));
 
     const setMedia = (m: Omit<NowPlaying, "receivedAt"> | null) => {
+      const wasPlaying = media?.playing ?? false;
       media = m && { ...m, receivedAt: Date.now() };
       lineNow = Date.now();
       if (!m) lyricsOn = false;
+      if (media?.playing) {
+        // A new song or video is activity: open the eyes and keep them from sleeping.
+        if (idleStage === "sleep") wake();
+        else if (idleStage === "awake") scheduleSleep();
+      } else if (wasPlaying && idleStage === "awake") {
+        scheduleSleep();
+      }
     };
     const unlistenMedia = listen<Omit<NowPlaying, "receivedAt"> | null>("media", (e) => setMedia(e.payload));
     invoke<Omit<NowPlaying, "receivedAt"> | null>("media_now").then(setMedia);
@@ -697,6 +725,7 @@
       clearTimeout(idleTimer);
       clearTimeout(waveTimer);
       clearTimeout(gazeTimer);
+      clearInterval(idlePoll);
     };
   });
 
@@ -708,6 +737,7 @@
   class="notch"
   role="group"
   aria-label="Notchy"
+  data-idle={idleStage}
   class:open={paged}
   class:tucked={view === "tucked"}
   class:charging
