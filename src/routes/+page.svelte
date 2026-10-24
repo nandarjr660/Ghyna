@@ -3,7 +3,8 @@
   import { listen } from "@tauri-apps/api/event";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount, untrack } from "svelte";
-  import { fade } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
+  import { fade, fly } from "svelte/transition";
   import ClipboardPage, { type ClipEntry } from "$lib/ClipboardPage.svelte";
   import Island from "$lib/Island.svelte";
   import Mirror from "$lib/Mirror.svelte";
@@ -39,16 +40,16 @@
     peek: { w: 310, h: 60, r: 19, e: 13 },
     shot: { w: 360, h: 96, r: 24, e: 16 },
     notify: { w: 380, h: 72, r: 22, e: 14 },
-    clock: { w: 420, h: 140, r: 32, e: 22 },
-    player: { w: 420, h: 140, r: 32, e: 22 },
-    lyrics: { w: 520, h: 140, r: 32, e: 22 },
-    pomodoro: { w: 420, h: 140, r: 32, e: 22 },
-    water: { w: 420, h: 140, r: 32, e: 22 },
-    todo: { w: 420, h: 140, r: 32, e: 22 },
-    shelf: { w: 420, h: 140, r: 32, e: 22 },
-    clipboard: { w: 420, h: 140, r: 32, e: 22 },
-    shortcuts: { w: 420, h: 140, r: 32, e: 22 },
-    mirror: { w: 420, h: 140, r: 32, e: 22 },
+    clock: { w: 400, h: 132, r: 30, e: 21 },
+    player: { w: 400, h: 132, r: 30, e: 21 },
+    lyrics: { w: 500, h: 132, r: 30, e: 21 },
+    pomodoro: { w: 400, h: 132, r: 30, e: 21 },
+    water: { w: 400, h: 132, r: 30, e: 21 },
+    todo: { w: 400, h: 132, r: 30, e: 21 },
+    shelf: { w: 400, h: 132, r: 30, e: 21 },
+    clipboard: { w: 400, h: 132, r: 30, e: 21 },
+    shortcuts: { w: 400, h: 132, r: 30, e: 21 },
+    mirror: { w: 400, h: 132, r: 30, e: 21 },
   };
 
   // Pages of the open notch, switched with the dots or the mouse wheel.
@@ -78,6 +79,8 @@
   let micMuted = $state(false);
   let weather = $state<Weather | null>(null);
   let page = $state(0);
+  // -1 = moving left, 1 = moving right; drives the page slide direction.
+  let pageDir = $state(1);
   // Typing a task: the notch holds keyboard focus and stays open.
   let typing = $state(false);
   let hovered = false;
@@ -276,12 +279,44 @@
     return () => (cancelled = true);
   });
 
+  // Browser players often publish only their own icon through GSMTC (or no
+  // picture at all). Look the real cover up once per track, and keep it for
+  // the player and the small island.
+  let cover = $state<string | null>(null);
+  let coverKey = "";
+  $effect(() => {
+    const m = media;
+    const t = track;
+    if (!m || !t) {
+      cover = null;
+      coverKey = "";
+      return;
+    }
+    const browser = /chrome|msedge|edge|firefox|brave|opera|vivaldi|arc/i.test(m.source);
+    if (m.art && !browser) {
+      cover = null;
+      coverKey = "";
+      return;
+    }
+    const key = `${t.artist}|${t.title}|${m.album}`;
+    if (key === coverKey) return;
+    coverKey = key;
+    cover = null;
+    invoke<string | null>("cover_lookup", { title: t.title, artist: t.artist, album: m.album })
+      .then((url) => {
+        if (coverKey === key && url) cover = url;
+      })
+      .catch(() => {});
+  });
+  const art = $derived(cover ?? media?.art ?? null);
+  const shownMedia = $derived(media ? { ...media, art } : null);
+
   // The cover's main color, which tints the notch while music shows.
   let tint = $state<string | null>(null);
   $effect(() => {
-    const art = media?.art;
+    const url = art;
     tint = null;
-    if (!art) return;
+    if (!url) return;
     const img = new Image();
     img.onload = () => {
       const c = document.createElement("canvas");
@@ -298,7 +333,7 @@
       }
       tint = n > 8 ? `${Math.round(r / n)} ${Math.round(gr / n)} ${Math.round(b / n)}` : null;
     };
-    img.src = art;
+    img.src = url;
   });
 
   // The line being sung, for the small notch. Instead of ticking, wake up
@@ -323,7 +358,7 @@
   // another activity leads: during an instrumental gap the line is empty, the
   // timer (say) takes the lead, and the next line must still bring music back.
   $effect(() => {
-    if (view !== "island" || !smallLyrics || !media?.playing || !lyrics?.synced) return;
+    if ((view !== "island" && view !== "clock") || !smallLyrics || !media?.playing || !lyrics?.synced) return;
     // A new song, a seek, a pause or coming back from another view re-runs this with
     // lineNow left behind, which would put the song near its start and leave the line
     // empty until the next wake-up. Catch up to the real time first (this re-runs it).
@@ -379,6 +414,16 @@
     if (!on && !hovered) closeTimer = setTimeout(() => (open = false), 250);
   }
 
+  function turnPage(step: number) {
+    pageDir = step > 0 ? 1 : -1;
+    page = (page + step + pages.length) % pages.length;
+  }
+  function jumpPage(index: number) {
+    if (index === page) return;
+    pageDir = index > page ? 1 : -1;
+    page = index;
+  }
+
   let lastWheel = 0;
   let lastVolume = 0;
   function wheel(e: WheelEvent) {
@@ -403,7 +448,7 @@
     if (!open || typing || (e.target as HTMLElement).closest(".scroll, .lyrics")) return;
     if (Date.now() - lastWheel < 350 || Math.abs(e.deltaY) < 4) return;
     lastWheel = Date.now();
-    page = (page + (e.deltaY > 0 ? 1 : -1) + pages.length) % pages.length;
+    turnPage(e.deltaY > 0 ? 1 : -1);
   }
 
   // Long press (still, on a non-button spot) pins the notch open, or lets it go.
@@ -627,6 +672,7 @@
 >
   {#if pinned && paged && !mirror}<i class="pin" title="Terkunci terbuka · tekan lama untuk melepas"></i>{/if}
   <div class="ambient"></div>
+  <div class="shine"></div>
 
   <div class="layer rest" class:on={view === "rest"}>
     {#if weather}<span class="weather">{weather.icon}<b>{weather.temp}°</b></span>{/if}
@@ -637,6 +683,11 @@
     {:else}
       <span class="rest-time" in:fade={{ duration: 400 }}>{time}</span>
     {/if}
+    {#if !dozing}
+      <span class="idle-pet" class:blink style:--lx={look[0]} style:--ly={look[1]} aria-hidden="true">
+        <i></i><i></i>
+      </span>
+    {/if}
   </div>
 
   <!-- Things running (music, timer, a call, a download), side by side. -->
@@ -645,7 +696,7 @@
       <Island
         main={island.main}
         side={island.side}
-        {media}
+        media={shownMedia ?? media}
         line={smallLine}
         {time}
         {pomo}
@@ -672,6 +723,9 @@
   <div class="layer clock" class:on={view === "clock"}>
     <div class="time">{time}</div>
     <div class="date">{date}{#if weather} · {weather.icon} {weather.temp}°{/if}</div>
+    {#if smallLyrics && media?.playing && lyrics?.synced && smallLine}
+      <div class="clock-lyric" in:fade={{ duration: 300 }}>{smallLine}</div>
+    {/if}
     {#if nextEvent}
       <div class="event" title={nextEvent.location}>
         <span class="event-time">{clockOf(nextEvent.start)}</span>{nextEvent.title}
@@ -751,7 +805,7 @@
   {#if media && (view === "player" || view === "lyrics")}
     <div class="layer on" in:fade={{ duration: 300, delay: 180 }} out:fade={{ duration: 120 }}>
       <Player
-        {media}
+        media={shownMedia ?? media}
         now={nowMs}
         clock="{date} · {time}"
         withLyrics={lyricsOn}
@@ -764,7 +818,11 @@
 
   {#if paged && !mirror && view !== "peek" && pages[page] !== "now"}
     {#key page}
-      <div class="layer on" in:fade={{ duration: 260, delay: 160 }} out:fade={{ duration: 100 }}>
+      <div
+        class="layer on page-layer"
+        in:fly={{ x: pageDir * 30, duration: 300, delay: 80, opacity: 0, easing: cubicOut }}
+        out:fly={{ x: pageDir * -22, duration: 180, opacity: 0 }}
+      >
         {#if pages[page] === "pomodoro"}
           <TimerPage {pomo} now={nowMs} />
         {:else if pages[page] === "water"}
@@ -787,7 +845,7 @@
       <button
         class="arrow"
         class:next={step > 0}
-        onclick={() => (page = (page + step + pages.length) % pages.length)}
+        onclick={() => turnPage(step)}
         aria-label={step > 0 ? "Halaman berikutnya" : "Halaman sebelumnya"}
         in:fade={{ duration: 200, delay: 200 }}
       >
@@ -796,7 +854,7 @@
     {/each}
     <div class="pager" role="tablist" in:fade={{ duration: 200, delay: 200 }}>
       {#each pages as name, i}
-        <button role="tab" aria-selected={i === page} aria-label={name} class:on={i === page} onclick={() => (page = i)}></button>
+        <button role="tab" aria-selected={i === page} aria-label={name} class:on={i === page} onclick={() => jumpPage(i)}></button>
       {/each}
     </div>
   {/if}
@@ -827,13 +885,35 @@
     background: #000;
     border-radius: 0 0 var(--r) var(--r);
     box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
       0 0 0 0.5px var(--edge),
       0 14px 34px -16px rgba(0, 0, 0, 0.95);
   }
   .notch.open {
     box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.16),
       0 0 0 0.5px var(--edge),
-      0 18px 40px -16px rgba(0, 0, 0, 0.95);
+      0 18px 44px -16px rgba(0, 0, 0, 0.98);
+  }
+
+  /* A soft glass highlight along the top edge; it keeps the black from
+     looking like a flat cut-out. */
+  .shine {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.11),
+      rgba(255, 255, 255, 0.025) 24%,
+      transparent 46%
+    );
+    opacity: 0.75;
+    transition: opacity 0.4s ease;
+  }
+  .notch.open .shine {
+    opacity: 1;
   }
 
   /* "Ears": concave fillets that blend the notch into the screen's top edge. */
@@ -878,9 +958,22 @@
     border-radius: inherit;
     pointer-events: none;
     background: linear-gradient(to top, rgba(255, 255, 255, 0.09), transparent);
+    transform-origin: bottom center;
+    animation: aura 7s ease-in-out infinite;
     transition:
       opacity 0.45s ease,
       height 0.45s ease;
+  }
+  @keyframes aura {
+    0%,
+    100% {
+      opacity: 0.7;
+      transform: scaleY(0.92);
+    }
+    50% {
+      opacity: 1;
+      transform: scaleY(1.04);
+    }
   }
   .open .ambient {
     height: 40%;
@@ -950,6 +1043,53 @@
     font-size: 11px;
     font-weight: 600;
   }
+  /* A tiny breathing companion on the right of the rest notch, so the idle
+     state has a pulse instead of only a clock. */
+  .idle-pet {
+    position: absolute;
+    right: 11px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2.6px;
+    background: radial-gradient(circle at 34% 28%, #2a3140, #090b10 72%);
+    box-shadow:
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.2),
+      0 0 10px rgba(120, 170, 255, 0.16);
+    transform: translate(calc(var(--lx, 0) * 2px), calc(var(--ly, 0) * 1px));
+    animation: breathe 5s ease-in-out infinite;
+    transition: transform 0.25s var(--spring);
+  }
+  .idle-pet i {
+    width: 2.4px;
+    height: 4.2px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
+    transition: transform 0.1s ease;
+  }
+  .idle-pet.blink i {
+    transform: scaleY(0.12);
+  }
+  @keyframes breathe {
+    0%,
+    100% {
+      scale: 0.92;
+      opacity: 0.82;
+    }
+    50% {
+      scale: 1.06;
+      opacity: 1;
+    }
+  }
+
+  /* The page content slides in from the direction you are travelling. */
+  .page-layer {
+    will-change: transform, opacity;
+  }
 
   .charge {
     flex-direction: row;
@@ -985,20 +1125,27 @@
     position: absolute;
     top: 50%;
     left: 8px;
-    width: 22px;
-    height: 22px;
-    margin-top: -14px;
+    width: 32px;
+    height: 32px;
+    margin-top: -16px;
     padding: 0;
-    border: 0;
+    border: 0.5px solid rgba(255, 255, 255, 0.14);
     border-radius: 50%;
     display: grid;
     place-items: center;
-    background: rgba(255, 255, 255, 0.08);
+    background:
+      radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.2), transparent 58%),
+      rgba(255, 255, 255, 0.07);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 4px 12px -4px rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
     cursor: pointer;
-    opacity: 0.6;
+    opacity: 0.82;
     transition:
       opacity 0.2s,
-      background 0.2s;
+      background 0.2s,
+      transform 0.22s var(--spring);
   }
   .arrow.next {
     left: auto;
@@ -1006,14 +1153,20 @@
   }
   .arrow:hover {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.18);
+    transform: scale(1.08);
+    background:
+      radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.3), transparent 58%),
+      rgba(255, 255, 255, 0.15);
+  }
+  .arrow:active {
+    transform: scale(0.94);
   }
   .arrow svg {
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     fill: none;
     stroke: #fff;
-    stroke-width: 2.4;
+    stroke-width: 2.2;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
@@ -1025,22 +1178,33 @@
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 5px;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.055);
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(8px);
   }
   .pager button {
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
     padding: 0;
     border: 0;
     border-radius: 3px;
     background: rgba(255, 255, 255, 0.3);
     cursor: pointer;
     transition:
-      width 0.3s var(--spring),
-      background 0.3s;
+      width 0.32s var(--spring),
+      background 0.3s,
+      transform 0.2s;
+  }
+  .pager button:hover {
+    transform: scale(1.35);
+    background: rgba(255, 255, 255, 0.6);
   }
   .pager button.on {
-    width: 15px;
+    width: 18px;
     background: #fff;
   }
 
@@ -1196,7 +1360,7 @@
 
   .time {
     font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;
-    font-size: 44px;
+    font-size: 42px;
     font-weight: 700;
     letter-spacing: -0.03em;
     font-variant-numeric: tabular-nums;
@@ -1205,5 +1369,18 @@
     margin-top: 2px;
     font-size: 13px;
     color: rgba(255, 255, 255, 0.6);
+  }
+  .clock-lyric {
+    max-width: 320px;
+    margin-top: 5px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    font-size: 11.5px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 </style>

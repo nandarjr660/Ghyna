@@ -1,5 +1,7 @@
 // Synced lyrics from LRCLIB (lrclib.net): free, no login.
 
+import { invoke } from "@tauri-apps/api/core";
+
 export type Line = { time: number; text: string };
 export type Lyrics = { synced: Line[] | null; plain: string | null };
 
@@ -60,8 +62,17 @@ export function currentLine(lines: Line[], position: number): number {
 }
 
 async function getJson(url: string) {
-  const res = await fetch(url);
-  return res.ok ? res.json() : null;
+  try {
+    const res = await fetch(url);
+    if (res.ok) return await res.json();
+  } catch {}
+  // Fall back to Rust's HTTP client when the WebView blocks or CORS-rejects
+  // the request. The command only accepts LRCLIB URLs.
+  try {
+    return JSON.parse(await invoke<string>("lyrics_fetch", { url }));
+  } catch {
+    return null;
+  }
 }
 
 type Record = { duration: number; syncedLyrics: string | null; plainLyrics: string | null };

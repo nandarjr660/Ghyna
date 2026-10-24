@@ -54,6 +54,7 @@
       <div class="meta">
         {#if !withLyrics}
           <div class="header">
+            <button class="lyrics-pill" onclick={onLyrics} title="Tampilkan lirik">Lirik</button>
             <span>{clock}</span>
             <Bars live={media.playing} />
           </div>
@@ -117,7 +118,7 @@
     position: absolute;
     inset: 0;
     display: flex;
-    padding: 10px 38px 18px;
+    padding: 8px 40px 14px;
     box-sizing: border-box;
   }
   .main {
@@ -128,7 +129,7 @@
     justify-content: space-between;
   }
   .split .main {
-    flex: 0 0 230px;
+    flex: 0 0 220px;
     justify-content: center;
     gap: 7px;
   }
@@ -140,9 +141,10 @@
   }
   .art {
     flex: none;
-    width: 54px;
-    height: 54px;
+    width: 50px;
+    height: 50px;
     border-radius: 11px;
+    overflow: hidden;
     background: #1b1f2e center / cover;
     display: grid;
     place-items: center;
@@ -150,8 +152,8 @@
     box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.9);
   }
   .split .art {
-    width: 46px;
-    height: 46px;
+    width: 44px;
+    height: 44px;
     border-radius: 10px;
   }
   .meta {
@@ -171,6 +173,29 @@
   .header :global(.bars) {
     position: absolute;
     right: 0;
+  }
+  .lyrics-pill {
+    position: absolute;
+    left: 0;
+    padding: 3px 7px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.78);
+    font: inherit;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      color 0.2s,
+      transform 0.18s;
+  }
+  .lyrics-pill:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    transform: translateY(-1px);
   }
   .title,
   .artist {
@@ -243,7 +268,7 @@
     left: 12px;
   }
   .split .controls {
-    gap: 18px;
+    gap: 14px;
     padding-left: 30px;
   }
   .split .controls .lyrics-toggle {
@@ -300,8 +325,8 @@
     flex: 1;
     position: relative;
     overflow: hidden;
-    margin-left: 18px;
-    padding-left: 18px;
+    margin-left: 14px;
+    padding-left: 14px;
     border-left: 0.5px solid rgba(255, 255, 255, 0.12);
     mask: linear-gradient(transparent, #000 22%, #000 78%, transparent);
   }

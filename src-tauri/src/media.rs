@@ -6,13 +6,15 @@ use std::sync::{Mutex, OnceLock};
 use base64::Engine;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter};
-use windows::Foundation::TypedEventHandler;
+use windows::core::HSTRING;
+use windows::Foundation::{TypedEventHandler, Uri};
 use windows::Media::Control::{
     GlobalSystemMediaTransportControlsSession as Session,
     GlobalSystemMediaTransportControlsSessionManager as Manager,
     GlobalSystemMediaTransportControlsSessionPlaybackStatus as Status,
 };
 use windows::Storage::Streams::{DataReader, IRandomAccessStreamReference};
+use windows::Web::Http::HttpClient;
 use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
 
 static MANAGER: OnceLock<Manager> = OnceLock::new();
@@ -161,6 +163,140 @@ pub(crate) fn read_art(thumbnail: IRandomAccessStreamReference) -> Option<String
         .filter(|s| !s.is_empty())
         .unwrap_or_else(|| "image/png".into());
     Some(format!("data:{mime};base64,{}", base64::engine::general_purpose::STANDARD.encode(bytes)))
+}
+
+/// Some players (browsers especially) publish only their own logo through GSMTC,
+/// or nothing at all. Ask the iTunes catalog for the real cover then.
+#[tauri::command]
+pub async fn cover_lookup(title: String, artist: String, album: String) -> Option<String> {
+    let title = title.trim();
+    if title.is_empty() {
+        return None;
+    }
+    lookup_cover(title, artist.trim(), album.trim())
+}
+
+fn lookup_cover(title: &str, artist: &str, album: &str) -> Option<String> {
+    let term = if artist.is_empty() {
+        title.to_string()
+    } else {
+        format!("{title} {artist}")
+    };
+    let url = format!(
+        "https://itunes.apple.com/search?term={}&entity=song&limit=8",
+        url_encode(&term)
+    );
+    let client = HttpClient::new().ok()?;
+    let uri = Uri::CreateUri(&HSTRING::from(url)).ok()?;
+    let body = client.GetStringAsync(&uri).ok()?.get().ok()?.to_string();
+    let json: serde_json::Value = serde_json::from_str(&body).ok()?;
+
+    let clean = |s: &str| {
+        s.to_lowercase()
+            .chars()
+            .map(|c| if c.is_alphanumeric() { c } else { ' ' })
+            .collect::<String>()
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
+    let want_title = clean(title);
+    let want_artist = clean(artist);
+    let want_album = clean(album);
+
+    let mut best: Option<(i32, &serde_json::Value)> = None;
+    for item in json["results"].as_array()? {
+        let track = clean(item["trackName"].as_str().unwrap_or(""));
+        let by = clean(item["artistName"].as_str().unwrap_or(""));
+        let from = clean(item["collectionName"].as_str().unwrap_or(""));
+        if track.is_empty() || (!track.contains(&want_title) && !want_title.contains(&track)) {
+            continue;
+        }
+
+        let mut score = if track == want_title { 180 } else { 100 };
+        if !want_artist.is_empty() {
+            let artist_ok = by == want_artist
+                || by.contains(&want_artist)
+                || want_artist.contains(&by)
+                || want_artist
+                    .split_whitespace()
+                    .any(|word| word.len() > 2 && by.contains(word));
+            if !artist_ok {
+                continue;
+            }
+            score += if by == want_artist { 60 } else { 25 };
+        }
+        if !want_album.is_empty() && from == want_album {
+            score += 15;
+        }
+        if best.as_ref().is_none_or(|(best_score, _)| score > *best_score) {
+            best = Some((score, item));
+        }
+    }
+
+    // A loose title match without a matching artist is usually the wrong song.
+    let (score, item) = best?;
+    if score < 150 {
+        return None;
+    }
+    let mut artwork = item["artworkUrl100"].as_str()?.to_string();
+    artwork = artwork
+        .replace("100x100bb", "600x600bb")
+        .replace("100x100", "600x600");
+    let uri = Uri::CreateUri(&HSTRING::from(artwork)).ok()?;
+    let response = client.GetAsync(&uri).ok()?.get().ok()?;
+    if !response.IsSuccessStatusCode().unwrap_or(false) {
+        return None;
+    }
+    let buffer = response.Content().ok()?.ReadAsBufferAsync().ok()?.get().ok()?;
+    let len = buffer.Length().ok()? as usize;
+    if len == 0 || len > 5_000_000 {
+        return None;
+    }
+    let reader = DataReader::FromBuffer(&buffer).ok()?;
+    let mut bytes = vec![0u8; len];
+    reader.ReadBytes(&mut bytes).ok()?;
+    let mime = if bytes.starts_with(&[0xff, 0xd8, 0xff]) {
+        "image/jpeg"
+    } else if bytes.starts_with(b"\x89PNG") {
+        "image/png"
+    } else if bytes.len() >= 12 && &bytes[8..12] == b"WEBP" {
+        "image/webp"
+    } else {
+        "image/jpeg"
+    };
+    Some(format!(
+        "data:{mime};base64,{}",
+        base64::engine::general_purpose::STANDARD.encode(bytes)
+    ))
+}
+
+/// WebView fetches can be blocked by a URL policy; this keeps lyrics working
+/// anyway. Restricted to LRCLIB so the command cannot be used as an open proxy.
+#[tauri::command]
+pub async fn lyrics_fetch(url: String) -> Result<String, String> {
+    if !url.starts_with("https://lrclib.net/api/") {
+        return Err("Hanya LRCLIB yang diizinkan".into());
+    }
+    let uri = Uri::CreateUri(&HSTRING::from(url)).map_err(|e| e.message().to_string())?;
+    let client = HttpClient::new().map_err(|e| e.message().to_string())?;
+    client
+        .GetStringAsync(&uri)
+        .and_then(|op| op.get())
+        .map(|s| s.to_string())
+        .map_err(|e| e.message().to_string())
+}
+
+fn url_encode(value: &str) -> String {
+    let mut out = String::with_capacity(value.len() * 3);
+    for byte in value.bytes() {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b'~') {
+            out.push(byte as char);
+        } else {
+            out.push_str(&format!("%{byte:02X}"));
+        }
+    }
+    out
 }
 
 // Commands are async so they run on a worker thread, not the UI thread, while

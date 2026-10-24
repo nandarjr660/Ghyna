@@ -645,6 +645,8 @@ pub fn run() {
             media::media_next,
             media::media_prev,
             media::media_seek,
+            media::cover_lookup,
+            media::lyrics_fetch,
             audio::mic_state,
             audio::toggle_mic,
             audio::list_outputs,

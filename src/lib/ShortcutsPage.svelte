@@ -50,7 +50,7 @@
     inset: 0;
     display: flex;
     flex-direction: column;
-    padding: 12px 38px 20px;
+    padding: 12px 40px 20px;
   }
   .header {
     display: flex;
