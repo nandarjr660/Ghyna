@@ -75,13 +75,13 @@
     font-variant-numeric: tabular-nums;
   }
   .mode {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.42);
+    color: rgba(255, 255, 255, 0.48);
   }
   .progress {
     height: 2px;
-    margin-top: 10px;
+    margin-top: 12px;
     overflow: hidden;
     border-radius: 1px;
     background: rgba(255, 255, 255, 0.12);
@@ -96,27 +96,27 @@
   .status {
     display: flex;
     align-items: center;
-    gap: 5px;
-    margin-top: 8px;
-    font-size: 9.5px;
-    color: rgba(255, 255, 255, 0.36);
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 11.5px;
+    color: rgba(255, 255, 255, 0.4);
   }
   .status b {
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.72);
+    color: rgba(255, 255, 255, 0.78);
   }
   .side {
     flex: none;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 12px;
+    gap: 14px;
   }
   .phases {
     display: flex;
-    gap: 12px;
-    font-size: 9.5px;
-    color: rgba(255, 255, 255, 0.35);
+    gap: 14px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.38);
   }
   .phases span {
     font-variant-numeric: tabular-nums;

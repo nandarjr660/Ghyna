@@ -22,7 +22,7 @@
     g.lineWidth = 1;
     g.stroke();
     g.fillStyle = "#f2f2f2";
-    g.font = "600 10px Segoe UI";
+    g.font = "600 11px Segoe UI";
     g.textAlign = "center";
     g.fillText(item.dir ? "DIR" : ext(item.name) || "FILE", 32, 37);
     return c.toDataURL("image/png");
@@ -119,20 +119,20 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 18px;
+    height: 22px;
   }
   .title {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
   }
   .count {
-    font-size: 9.5px;
+    font-size: 11.5px;
     color: rgba(255, 255, 255, 0.38);
     font-variant-numeric: tabular-nums;
   }
   .hint {
     flex: 1;
-    font-size: 8.5px;
+    font-size: 10.5px;
     color: rgba(255, 255, 255, 0.28);
     text-align: right;
     white-space: nowrap;
@@ -177,15 +177,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 9px;
+    gap: 12px;
     margin-top: 7px;
     border: 1px dashed rgba(255, 255, 255, 0.16);
-    border-radius: 8px;
-    color: rgba(255, 255, 255, 0.4);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.5);
   }
   .empty-zone > svg {
-    width: 18px;
-    height: 18px;
+    width: 22px;
+    height: 22px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.5;
@@ -193,13 +193,14 @@
     stroke-linejoin: round;
   }
   .empty-copy {
-    font-size: 10.5px;
+    font-size: 13px;
+    font-weight: 500;
     color: rgba(255, 255, 255, 0.66);
   }
   .empty-copy small {
     display: block;
-    margin-top: 1px;
-    font-size: 8.5px;
+    margin-top: 2px;
+    font-size: 11px;
     color: rgba(255, 255, 255, 0.3);
   }
 
@@ -207,7 +208,7 @@
     flex: 1;
     min-height: 0;
     display: flex;
-    gap: 6px;
+    gap: 8px;
     margin-top: 7px;
   }
   .zone {
@@ -215,9 +216,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 7px;
+    gap: 10px;
     border: 1px dashed rgba(255, 255, 255, 0.14);
-    border-radius: 8px;
+    border-radius: 10px;
     color: rgba(255, 255, 255, 0.45);
     transition:
       border-color 0.18s,
@@ -230,22 +231,22 @@
     color: #fff;
   }
   .zone > svg {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     fill: none;
     stroke: currentColor;
-    stroke-width: 1.5;
+    stroke-width: 1.6;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
   .zone strong {
     display: block;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 500;
   }
   .zone small {
     display: block;
-    font-size: 8px;
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.32);
   }
 
@@ -253,7 +254,7 @@
     flex: 1;
     min-height: 0;
     display: flex;
-    gap: 2px;
+    gap: 4px;
     margin-top: 7px;
     padding-bottom: 2px;
     overflow-x: auto;
@@ -262,22 +263,22 @@
   .item {
     position: relative;
     flex: none;
-    width: 62px;
+    width: 66px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    padding: 4px 4px 3px;
+    gap: 3px;
+    padding: 5px 5px 4px;
     border: 1px solid transparent;
-    border-radius: 7px;
+    border-radius: 8px;
     cursor: grab;
     transition:
       background 0.15s,
       border-color 0.15s;
   }
   .item:hover {
-    border-color: rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.035);
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
   }
   .item:active {
     cursor: grabbing;
@@ -285,10 +286,10 @@
   .thumb {
     display: grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     overflow: hidden;
-    border-radius: 5px;
+    border-radius: 6px;
     background: #121212;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   }
@@ -298,32 +299,32 @@
     object-fit: cover;
   }
   .folder {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     fill: none;
     stroke: rgba(255, 255, 255, 0.6);
-    stroke-width: 1.5;
+    stroke-width: 1.6;
     stroke-linejoin: round;
   }
   .ext {
-    font-size: 8px;
+    font-size: 9px;
     font-weight: 600;
     letter-spacing: 0.03em;
-    color: rgba(255, 255, 255, 0.62);
+    color: rgba(255, 255, 255, 0.68);
   }
   .name {
     width: 100%;
-    margin-top: 1px;
+    margin-top: 2px;
     text-align: center;
-    font-size: 8.5px;
-    color: rgba(255, 255, 255, 0.82);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.9);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .size {
-    font-size: 8px;
-    color: rgba(255, 255, 255, 0.3);
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.38);
     font-variant-numeric: tabular-nums;
   }
   .remove {
@@ -332,10 +333,10 @@
     right: 2px;
     display: grid;
     place-items: center;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
     padding: 0;
-    border-radius: 4px;
+    border-radius: 5px;
     background: rgba(0, 0, 0, 0.6);
     color: rgba(255, 255, 255, 0.6);
     opacity: 0;
@@ -344,8 +345,8 @@
       color 0.15s;
   }
   .remove svg {
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
     fill: none;
     stroke: currentColor;
     stroke-width: 2;

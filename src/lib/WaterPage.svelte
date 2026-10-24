@@ -70,29 +70,30 @@
     flex: none;
     display: flex;
     align-items: center;
-    gap: 8px;
-    height: 18px;
+    gap: 10px;
+    height: 24px;
   }
   .title {
-    font-size: 12px;
+    font-size: 16px;
     font-weight: 600;
   }
   .count {
-    font-size: 9.5px;
-    color: rgba(255, 255, 255, 0.4);
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.42);
     font-variant-numeric: tabular-nums;
   }
   .reminder {
     margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 0;
+    gap: 8px;
+    padding: 0 6px;
     border: 0;
     background: none;
-    color: rgba(255, 255, 255, 0.38);
+    color: rgba(255, 255, 255, 0.42);
     font: inherit;
-    font-size: 9px;
+    font-size: 11px;
+    font-weight: 500;
     cursor: pointer;
     transition: color 0.18s;
   }
@@ -134,8 +135,8 @@
     min-height: 0;
     display: flex;
     align-items: center;
-    gap: 18px;
-    margin-top: 8px;
+    gap: 24px;
+    margin-top: 12px;
   }
   .main {
     flex: 1;
@@ -144,29 +145,29 @@
   .amount-row {
     display: flex;
     align-items: baseline;
-    gap: 4px;
+    gap: 6px;
   }
   .amount {
     font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 600;
     line-height: 1;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
     font-variant-numeric: tabular-nums;
   }
   .unit {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.45);
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.48);
   }
   .goal {
-    margin-left: 5px;
-    font-size: 9.5px;
-    color: rgba(255, 255, 255, 0.35);
+    margin-left: 6px;
+    font-size: 11.5px;
+    color: rgba(255, 255, 255, 0.38);
     white-space: nowrap;
   }
   .progress {
-    height: 2px;
-    margin-top: 9px;
+    height: 2.5px;
+    margin-top: 12px;
     overflow: hidden;
     border-radius: 1px;
     background: rgba(255, 255, 255, 0.12);
@@ -180,20 +181,20 @@
   .bottom {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-top: 8px;
+    gap: 12px;
+    margin-top: 10px;
   }
   .status {
     flex: 1;
     min-width: 0;
-    font-size: 9.5px;
-    color: rgba(255, 255, 255, 0.35);
+    font-size: 11.5px;
+    color: rgba(255, 255, 255, 0.38);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .status.quiet {
-    color: rgba(255, 255, 255, 0.58);
+    color: rgba(255, 255, 255, 0.62);
   }
   button {
     font: inherit;
@@ -203,14 +204,14 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    height: 26px;
-    padding: 0 10px;
+    gap: 6px;
+    height: 28px;
+    padding: 0 14px;
     border: 0;
-    border-radius: 7px;
+    border-radius: 8px;
     background: #fff;
     color: #000;
-    font-size: 9.5px;
+    font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
     transition:
@@ -218,11 +219,11 @@
       transform 0.15s;
   }
   .drink svg {
-    width: 10px;
-    height: 10px;
+    width: 11px;
+    height: 11px;
     fill: none;
     stroke: currentColor;
-    stroke-width: 1.9;
+    stroke-width: 2;
   }
   .drink:hover {
     background: rgba(255, 255, 255, 0.86);
@@ -237,8 +238,8 @@
 
   .chart {
     flex: none;
-    width: 72px;
-    height: 54px;
+    width: 80px;
+    height: 60px;
     display: flex;
     flex-direction: column;
   }
@@ -246,7 +247,7 @@
     flex: 1;
     display: flex;
     align-items: flex-end;
-    gap: 1.5px;
+    gap: 2px;
   }
   .bars i {
     flex: 1;
@@ -260,9 +261,9 @@
   .labels {
     display: flex;
     justify-content: space-between;
-    margin-top: 4px;
-    font-size: 8px;
-    color: rgba(255, 255, 255, 0.3);
+    margin-top: 5px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.32);
     font-variant-numeric: tabular-nums;
   }
 

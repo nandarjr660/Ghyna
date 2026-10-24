@@ -112,17 +112,17 @@
     flex: none;
     display: flex;
     align-items: center;
-    gap: 8px;
-    height: 18px;
+    gap: 10px;
+    height: 22px;
   }
   .title {
-    font-size: 12px;
+    font-size: 15px;
     font-weight: 600;
   }
   .count {
     flex: 1;
-    font-size: 9.5px;
-    color: rgba(255, 255, 255, 0.38);
+    font-size: 12.5px;
+    color: rgba(255, 255, 255, 0.42);
     font-variant-numeric: tabular-nums;
   }
   button {
@@ -135,39 +135,40 @@
   .add {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
-    height: 20px;
-    padding: 0 7px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 6px;
-    color: rgba(255, 255, 255, 0.58);
-    font-size: 9px;
+    gap: 4px;
+    height: 24px;
+    padding: 0 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.52);
+    font-size: 11px;
+    font-weight: 500;
     transition:
       border-color 0.18s,
       color 0.18s,
       background 0.18s;
   }
   .add svg {
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
     fill: none;
     stroke: currentColor;
     stroke-width: 2;
     stroke-linecap: round;
   }
   .add:hover {
-    border-color: rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.38);
+    background: rgba(255, 255, 255, 0.07);
     color: #fff;
   }
 
   .progress {
     flex: none;
-    height: 2px;
-    margin-top: 6px;
+    height: 2.5px;
+    margin-top: 12px;
     overflow: hidden;
     border-radius: 1px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
   }
   .progress i {
     display: block;
@@ -180,29 +181,29 @@
   .form {
     flex: none;
     display: flex;
-    gap: 4px;
-    height: 25px;
-    margin-top: 7px;
+    gap: 6px;
+    height: 28px;
+    margin-top: 9px;
   }
   .form input {
     min-width: 0;
-    height: 25px;
-    padding: 0 7px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.035);
+    height: 28px;
+    padding: 0 9px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
     color: #fff;
     font: inherit;
-    font-size: 10px;
+    font-size: 11px;
     color-scheme: dark;
   }
   .form .text {
     flex: 1;
   }
   .form .time {
-    width: 70px;
-    padding: 0 3px;
-    font-size: 9px;
+    width: 78px;
+    padding: 0 4px;
+    font-size: 10px;
   }
   .form input:focus {
     outline: 1px solid rgba(255, 255, 255, 0.55);
@@ -211,10 +212,10 @@
   .save {
     display: grid;
     place-items: center;
-    width: 25px;
-    height: 25px;
+    width: 26px;
+    height: 26px;
     padding: 0;
-    border-radius: 6px;
+    border-radius: 7px;
     background: #fff;
     color: #000;
     transition: background 0.18s;
@@ -244,10 +245,10 @@
   li {
     display: flex;
     align-items: center;
-    gap: 7px;
-    min-height: 21px;
-    font-size: 10.5px;
-    border-top: 1px solid rgba(255, 255, 255, 0.055);
+    gap: 9px;
+    min-height: 26px;
+    font-size: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
   }
   li:first-child {
     border-top: 0;
@@ -256,21 +257,21 @@
     flex: none;
     display: grid;
     place-items: center;
-    width: 13px;
-    height: 13px;
+    width: 16px;
+    height: 16px;
     padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
     border-radius: 50%;
     transition:
       background 0.18s,
       border-color 0.18s;
   }
   .check:hover {
-    border-color: rgba(255, 255, 255, 0.7);
+    border-color: rgba(255, 255, 255, 0.78);
   }
   .check svg {
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
     fill: none;
     stroke: #000;
     stroke-width: 2.6;
@@ -289,40 +290,40 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: rgba(255, 255, 255, 0.82);
+    color: rgba(255, 255, 255, 0.88);
   }
   .label:hover {
     color: #fff;
   }
   .done .label {
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(255, 255, 255, 0.4);
     text-decoration: line-through;
   }
   .time-chip {
     flex: none;
     display: flex;
     align-items: center;
-    gap: 3px;
-    font-size: 8.5px;
-    color: rgba(255, 255, 255, 0.38);
+    gap: 4px;
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.42);
     font-variant-numeric: tabular-nums;
   }
   .time-chip svg {
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
     fill: none;
     stroke: currentColor;
-    stroke-width: 1.7;
+    stroke-width: 1.8;
   }
   .remove {
     flex: none;
     display: grid;
     place-items: center;
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     padding: 0;
-    border-radius: 4px;
-    color: rgba(255, 255, 255, 0.32);
+    border-radius: 5px;
+    color: rgba(255, 255, 255, 0.36);
     opacity: 0;
     transition:
       opacity 0.15s,
@@ -330,8 +331,8 @@
       background 0.15s;
   }
   .remove svg {
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
     fill: none;
     stroke: currentColor;
     stroke-width: 2;
@@ -342,7 +343,7 @@
     opacity: 1;
   }
   .remove:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.09);
     color: #fff;
   }
 
@@ -350,15 +351,15 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    min-height: 58px;
-    gap: 2px;
+    min-height: 66px;
+    gap: 4px;
     border-top: 0;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 12px;
   }
   .empty small {
-    font-size: 9px;
-    color: rgba(255, 255, 255, 0.3);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.34);
   }
 
   button:focus-visible {
