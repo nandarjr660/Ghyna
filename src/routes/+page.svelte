@@ -66,10 +66,15 @@
   // The active window sits under the notch (e.g. a maximized browser): shrink to a thin line.
   let tucked = $state(false);
   let blink = $state(false);
-  // Nobody has moved the mouse for a while: the clock rests and the eyes come out.
-  let dozing = $state(false);
+  // A quiet cursor steps the notch through: clock -> awake eyes -> sleeping eyes.
+  let idleStage = $state<"clock" | "awake" | "sleep">("clock");
+  let waving = $state(false);
   // Where the eyes look (-1..1 per axis) and how close the cursor is (0..1), from Rust.
   let look = $state<[number, number, number]>([0, 0, 0]);
+  // A small autonomous glance so the eyes feel alive when the cursor is far away.
+  let gaze = $state(0);
+  const eyeX = $derived(look[2] > 0.35 ? look[0] : gaze);
+  const eyeY = $derived(look[2] > 0.35 ? look[1] : 0);
   let now = $state(new Date());
   let media = $state<NowPlaying | null>(null);
   let lyricsOn = $state(false);
@@ -480,8 +485,10 @@
     const unlisten = listen<boolean>("notch-hover", (e) => {
       hovered = e.payload;
       clearTimeout(closeTimer);
-      if (e.payload) open = true;
-      else if (!typing && !pinned) closeTimer = setTimeout(() => (open = false), 250);
+      if (e.payload) {
+        open = true;
+        wake();
+      } else if (!typing && !pinned) closeTimer = setTimeout(() => (open = false), 250);
       // Hold a clickable peek while the cursor is on it; let it go shortly after.
       if (clickable(peek)) {
         clearTimeout(peekTimer);
@@ -528,18 +535,62 @@
     water.load();
     todo.load();
     shelf.load();
-    // Cursor moves keep the clock awake; after 2 quiet minutes the eyes come out.
+    // A quiet cursor steps the notch through: clock, awake eyes, then sleeping eyes.
+    const IDLE_CLOCK_MS = 6_000;
+    const IDLE_SLEEP_MS = 18_000;
+    let idleTimer: ReturnType<typeof setTimeout>;
     let sleepTimer: ReturnType<typeof setTimeout>;
-    const wake = () => {
-      dozing = false;
+    let waveTimer: ReturnType<typeof setTimeout>;
+    const scheduleSleep = () => {
       clearTimeout(sleepTimer);
-      sleepTimer = setTimeout(() => (dozing = true), 120_000);
+      sleepTimer = setTimeout(() => {
+        idleStage = "sleep";
+        gaze = 0;
+      }, IDLE_SLEEP_MS);
     };
-    wake();
+    const scheduleClock = () => {
+      clearTimeout(idleTimer);
+      clearTimeout(sleepTimer);
+      idleStage = "clock";
+      gaze = 0;
+      idleTimer = setTimeout(() => {
+        idleStage = "awake";
+        scheduleSleep();
+      }, IDLE_CLOCK_MS);
+    };
+    const waveHello = () => {
+      waving = true;
+      clearTimeout(waveTimer);
+      waveTimer = setTimeout(() => {
+        waving = false;
+        scheduleClock();
+      }, 2200);
+    };
+    function wake() {
+      if (idleStage === "sleep") {
+        clearTimeout(idleTimer);
+        clearTimeout(sleepTimer);
+        idleStage = "awake";
+        waveHello();
+      } else if (idleStage === "awake") {
+        scheduleSleep();
+      } else {
+        scheduleClock();
+      }
+    }
+    scheduleClock();
     const unlistenLook = listen<[number, number, number]>("eyes-look", (e) => {
       look = e.payload;
       wake();
     });
+    let gazeTimer: ReturnType<typeof setTimeout>;
+    const glance = () => {
+      if (idleStage === "awake") {
+        gaze = [-1, -0.55, 0, 0.55, 1][Math.floor(Math.random() * 5)];
+      }
+      gazeTimer = setTimeout(glance, 1_700 + Math.random() * 1_800);
+    };
+    glance();
     const unlistenTuck = listen<boolean>("notch-tucked", (e) => (tucked = e.payload));
     invoke<boolean>("is_tucked").then((t) => (tucked = t));
 
@@ -643,6 +694,9 @@
       clearTimeout(tick);
       clearTimeout(blinkTimer);
       clearTimeout(sleepTimer);
+      clearTimeout(idleTimer);
+      clearTimeout(waveTimer);
+      clearTimeout(gazeTimer);
     };
   });
 
@@ -676,14 +730,27 @@
 
   <div class="layer rest" class:on={view === "rest"}>
     {#if weather}<span class="weather">{weather.icon}<b>{weather.temp}°</b></span>{/if}
-    {#if dozing}
-      <div class="eyes" class:blink style:--lx={look[0]} style:--ly={look[1]} style:--near={look[2]} in:fade={{ duration: 400 }}>
+    {#if idleStage !== "clock"}
+      <div
+        class="eyes"
+        class:sleep={idleStage === "sleep"}
+        class:blink={blink && idleStage === "awake"}
+        style:--lx={eyeX}
+        style:--ly={eyeY}
+        style:--near={look[2]}
+        in:fade={{ duration: 400 }}
+      >
         <i></i><i></i>
       </div>
+      {#if waving}
+        <span class="wave" in:fade={{ duration: 200 }} out:fade={{ duration: 160 }} aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M8 12.6V6.5a1.4 1.4 0 0 1 2.8 0v4.4m0-5.3v-1a1.4 1.4 0 0 1 2.8 0v6m0-4.8a1.4 1.4 0 0 1 2.8 0v4.8m0-3.2a1.4 1.4 0 0 1 2.8 0v5.7c0 3.6-2.3 6-5.9 6-2.4 0-4-1.2-5.2-3.2l-1.7-2.9a1.4 1.4 0 0 1 2.4-1.4L8 13.3" />
+          </svg>
+        </span>
+      {/if}
     {:else}
       <span class="rest-time" in:fade={{ duration: 400 }}>{time}</span>
-    {/if}
-    {#if !dozing}
       <span class="idle-pet" class:blink style:--lx={look[0]} style:--ly={look[1]} aria-hidden="true">
         <i></i><i></i>
       </span>
@@ -717,10 +784,31 @@
       <circle cx="10" cy="10" r="8" class="fill" pathLength="100" stroke-dasharray="{power.percent} 100" />
       <path d="M10.6 5.5 7.5 10.6h2.4l-.5 3.9 3.1-5.1h-2.4z" />
     </svg>
-    <span class="charge-time">{time}</span>
-    <span class="idle-pet" class:blink style:--lx={look[0]} style:--ly={look[1]} aria-hidden="true">
-      <i></i><i></i>
-    </span>
+    {#if idleStage !== "clock"}
+      <div
+        class="eyes charge-eyes"
+        class:sleep={idleStage === "sleep"}
+        class:blink={blink && idleStage === "awake"}
+        style:--lx={eyeX}
+        style:--ly={eyeY}
+        style:--near={look[2]}
+        in:fade={{ duration: 300 }}
+      >
+        <i></i><i></i>
+      </div>
+      {#if waving}
+        <span class="wave charge-wave" in:fade={{ duration: 200 }} out:fade={{ duration: 160 }} aria-hidden="true">
+          <svg viewBox="0 0 24 24">
+            <path d="M8 12.6V6.5a1.4 1.4 0 0 1 2.8 0v4.4m0-5.3v-1a1.4 1.4 0 0 1 2.8 0v6m0-4.8a1.4 1.4 0 0 1 2.8 0v4.8m0-3.2a1.4 1.4 0 0 1 2.8 0v5.7c0 3.6-2.3 6-5.9 6-2.4 0-4-1.2-5.2-3.2l-1.7-2.9a1.4 1.4 0 0 1 2.4-1.4L8 13.3" />
+          </svg>
+        </span>
+      {/if}
+    {:else}
+      <span class="charge-time">{time}</span>
+      <span class="idle-pet" class:blink style:--lx={look[0]} style:--ly={look[1]} aria-hidden="true">
+        <i></i><i></i>
+      </span>
+    {/if}
   </div>
 
   <div class="layer clock" class:on={view === "clock"}>
@@ -733,6 +821,13 @@
       <div class="event" title={nextEvent.location}>
         <span class="event-time">{clockOf(nextEvent.start)}</span>{nextEvent.title}
       </div>
+    {/if}
+    {#if waving}
+      <span class="wave clock-wave" in:fade={{ duration: 200 }} out:fade={{ duration: 160 }} aria-hidden="true">
+        <svg viewBox="0 0 24 24">
+          <path d="M8 12.6V6.5a1.4 1.4 0 0 1 2.8 0v4.4m0-5.3v-1a1.4 1.4 0 0 1 2.8 0v6m0-4.8a1.4 1.4 0 0 1 2.8 0v4.8m0-3.2a1.4 1.4 0 0 1 2.8 0v5.7c0 3.6-2.3 6-5.9 6-2.4 0-4-1.2-5.2-3.2l-1.7-2.9a1.4 1.4 0 0 1 2.4-1.4L8 13.3" />
+        </svg>
+      </span>
     {/if}
   </div>
 
@@ -1350,6 +1445,86 @@
   }
   .eyes.blink i {
     transform: scaleY(0.1);
+  }
+  .eyes.sleep {
+    transform: none;
+    animation: sleep-breathe 4.5s ease-in-out infinite;
+  }
+  .eyes.sleep i {
+    height: 2.8px;
+    border-radius: 2px;
+    opacity: 0.58;
+    transform: translateY(4px);
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.22);
+    transition:
+      height 0.35s var(--spring),
+      opacity 0.35s ease,
+      transform 0.35s var(--spring);
+  }
+
+  .wave {
+    position: absolute;
+    right: 8px;
+    bottom: 4px;
+    z-index: 4;
+    transform-origin: 64% 86%;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.25));
+    animation: wave 0.7s ease-in-out 3;
+  }
+  .wave svg {
+    display: block;
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 1.55;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .charge-wave {
+    right: 9px;
+    bottom: 5px;
+  }
+  .clock-wave {
+    right: 20px;
+    bottom: 18px;
+    opacity: 0.9;
+  }
+  @keyframes wave {
+    0%,
+    100% {
+      transform: rotate(-10deg) translateY(2px);
+    }
+    22% {
+      transform: rotate(17deg) translateY(0);
+    }
+    46% {
+      transform: rotate(-14deg) translateY(1px);
+    }
+    70% {
+      transform: rotate(12deg) translateY(0);
+    }
+  }
+  @keyframes sleep-breathe {
+    0%,
+    100% {
+      opacity: 0.72;
+      transform: translateY(0.5px) scale(0.98);
+    }
+    50% {
+      opacity: 1;
+      transform: translateY(0) scale(1.02);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .wave,
+    .eyes.sleep {
+      animation: none;
+    }
+    .eyes,
+    .eyes i {
+      transition: none;
+    }
   }
 
   .clock {
