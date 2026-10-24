@@ -85,6 +85,7 @@
   .title {
     font-size: 12px;
     font-weight: 600;
+    color: #06b6d4;
   }
   .count {
     font-size: 9.5px;
@@ -251,7 +252,7 @@
     color: rgba(255, 255, 255, 0.7);
   }
   .action.ok {
-    color: #fff;
+    color: #06b6d4;
     opacity: 1;
   }
 

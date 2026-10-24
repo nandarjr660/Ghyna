@@ -97,11 +97,12 @@
           {/if}
         </svg>
       </button>
-    {:else if main.kind === "download"}
+    __else if main.kind === "download"}
       <span class="blue">{@render arrow()}</span>
-      <span class="label name">{main.download.name}</span>
-      <span class="dim num">{bytes(main.download.bytes)}</span>
+      <span class="blue label name">{main.download.name}</span>
+      <span class="blue dim num">{bytes(main.download.bytes)}</span>
       <span class="run" class:on={active}></span>
+      <span class="download-progress"><i style:width={`${main.download.speed > 1_000_000 ? "60%" : main.download.speed > 100_000 ? "40%" : "20%"}%`}></span>
     {/if}
   </div>
 
@@ -303,6 +304,23 @@
   }
   .big.rest {
     color: #fff;
+  }
+
+  /* Download progress visualization */
+  .download-progress {
+    flex: 1;
+    min-width: 0;
+    height: 3px;
+    margin-top: 4px;
+    background: rgba(56, 189, 248, 0.12);
+    border-radius: 1px;
+    overflow: hidden;
+  }
+  .download-progress i {
+    display: block;
+    height: 100%;
+    background: #38bdf8;
+    border-radius: 1px;
   }
 
   /* A download has no known end, so a light runs along the bottom instead of a bar. */

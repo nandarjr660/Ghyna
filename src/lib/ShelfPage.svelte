@@ -124,6 +124,7 @@
   .title {
     font-size: 14px;
     font-weight: 600;
+    color: #a855f7;
   }
   .count {
     font-size: 11.5px;

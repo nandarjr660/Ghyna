@@ -118,6 +118,7 @@
   .title {
     font-size: 15px;
     font-weight: 600;
+    color: #fb923c;
   }
   .count {
     flex: 1;
@@ -162,6 +163,9 @@
     color: #fff;
   }
 
+  .progress i {
+    background: #fb923c;
+  }
   .progress {
     flex: none;
     height: 2.5px;
@@ -169,13 +173,6 @@
     overflow: hidden;
     border-radius: 1px;
     background: rgba(255, 255, 255, 0.12);
-  }
-  .progress i {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: #fff;
-    transition: width 0.3s ease;
   }
 
   .form {
@@ -216,7 +213,7 @@
     height: 26px;
     padding: 0;
     border-radius: 7px;
-    background: #fff;
+    background: #fb923c;
     color: #000;
     transition: background 0.18s;
   }

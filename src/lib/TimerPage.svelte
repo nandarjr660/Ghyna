@@ -77,14 +77,18 @@
   .mode {
     font-size: 12px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.48);
+    color: rgba(255, 255, 255, 0.55);
+  }
+  /* Timer focus mode - green accent */
+  .mode.green {
+    color: #34d399;
   }
   .progress {
-    height: 2px;
+    height: 2.5px;
     margin-top: 12px;
     overflow: hidden;
     border-radius: 1px;
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.14);
   }
   .progress i {
     display: block;
@@ -92,6 +96,7 @@
     border-radius: inherit;
     background: #fff;
     transition: width 0.35s linear;
+    background: linear-gradient(90deg, #34d399, #22c55e);
   }
   .status {
     display: flex;

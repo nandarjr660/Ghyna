@@ -76,6 +76,7 @@
   .title {
     font-size: 16px;
     font-weight: 600;
+    color: #38bdf8;
   }
   .count {
     font-size: 12.5px;
@@ -177,6 +178,15 @@
     height: 100%;
     border-radius: inherit;
     background: #fff;
+  }
+  .progress i {
+    background: #38bdf8;
+  }
+  .bars i.now {
+    background: #38bdf8;
+  }
+  .amount {
+    color: #38bdf8;
   }
   .bottom {
     display: flex;

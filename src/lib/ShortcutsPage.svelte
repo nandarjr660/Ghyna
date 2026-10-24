@@ -72,6 +72,7 @@
   .title {
     font-size: 15px;
     font-weight: 600;
+    color: #ec4899;
   }
   .count {
     font-size: 12px;
