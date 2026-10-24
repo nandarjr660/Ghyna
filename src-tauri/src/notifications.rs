@@ -147,9 +147,8 @@ fn registry_apps(out: &mut HashMap<String, String>) {
             return;
         }
         for name in key.enum_keys().flatten() {
-            let name = name.to_string_lossy();
-            let full = if prefix.is_empty() { name.to_string() } else { format!("{prefix}\\{name}") };
-            let Ok(sub) = key.open_subkey(&*name) else { continue };
+            let full = if prefix.is_empty() { name.clone() } else { format!("{prefix}\\{name}") };
+            let Ok(sub) = key.open_subkey(&name) else { continue };
             if sub.get_value::<u64, _>("LastNotificationAddedTime").is_ok() {
                 match registry_name(&full) {
                     Some(display) => {
