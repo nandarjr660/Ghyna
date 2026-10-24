@@ -32,7 +32,8 @@
 
   // Sizes from notchy.md §4 (logical px).
   const SIZES = {
-    tucked: { w: 90, h: 6, r: 4, e: 4 },
+    // Tucked keeps the normal closed notch width; only its height collapses.
+    tucked: { w: 150, h: 6, r: 4, e: 4 },
     rest: { w: 150, h: 30, r: 14, e: 10 },
     // The island's width depends on what it shows (lib/island.ts).
     island: { w: 200, h: 30, r: 14, e: 10 },
@@ -380,10 +381,14 @@
 
   // In the island the camera/mic dots sit at the end, so they get room of their own.
   const islandDots = $derived((inUse.camera.length > 0 ? 10 : 0) + (inUse.mic.length > 0 && !call ? 10 : 0));
+  const islandSize = $derived(
+    island.main ? { ...SIZES.island, w: islandWidth(island.main, island.side) + islandDots } : SIZES.island,
+  );
+  // The closed notch's normal footprint, including a running island. Tucking only
+  // removes height, so the line stays exactly as wide as the notch it replaces.
+  const normalClosedSize = $derived(running.length ? islandSize : charging ? SIZES.charging : SIZES.rest);
   const size = $derived(
-    view === "island" && island.main
-      ? { ...SIZES.island, w: islandWidth(island.main, island.side) + islandDots }
-      : SIZES[view],
+    view === "tucked" ? { ...SIZES.tucked, w: normalClosedSize.w } : view === "island" ? islandSize : SIZES[view],
   );
   const closedView = $derived(view === "rest" || view === "island" || view === "charging");
 

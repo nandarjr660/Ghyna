@@ -7,9 +7,6 @@ use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewWindow};
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, RECT, WPARAM};
-use windows::Win32::Graphics::Gdi::{
-    GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST,
-};
 use windows::Win32::Foundation::POINT;
 use windows::Win32::System::Com::{
     CoCreateInstance, CoInitializeEx, CLSCTX_INPROC_SERVER, COINIT_MULTITHREADED,
@@ -23,9 +20,6 @@ use windows::Win32::UI::Accessibility::{
     UIA_TabItemControlTypeId,
 };
 use windows::Win32::UI::HiDpi::GetDpiForWindow;
-use windows::Win32::UI::Shell::{
-    SHQueryUserNotificationState, QUNS_BUSY, QUNS_PRESENTATION_MODE, QUNS_RUNNING_D3D_FULL_SCREEN,
-};
 use windows::Win32::UI::WindowsAndMessaging::{
     CallNextHookEx, GetClassNameW, GetForegroundWindow, GetMessageW, GetWindowLongPtrW,
     GetWindow, GetWindowRect, GetWindowThreadProcessId, IsIconic, IsWindowVisible, SetForegroundWindow,
@@ -323,40 +317,6 @@ fn place_window(window: &WebviewWindow) {
     }
 }
 
-fn fullscreen_app_running() -> bool {
-    let shell_says_busy = matches!(
-        unsafe { SHQueryUserNotificationState() },
-        Ok(s) if s == QUNS_BUSY || s == QUNS_RUNNING_D3D_FULL_SCREEN || s == QUNS_PRESENTATION_MODE
-    );
-    shell_says_busy || foreground_covers_monitor()
-}
-
-/// The shell misses some full-screen windows (e.g. browser F11), so also check
-/// whether the active window covers its whole monitor. The desktop doesn't count.
-fn foreground_covers_monitor() -> bool {
-    unsafe {
-        let fg = GetForegroundWindow();
-        if fg.is_invalid() {
-            return false;
-        }
-        let mut class = [0u16; 32];
-        let len = GetClassNameW(fg, &mut class) as usize;
-        let class = String::from_utf16_lossy(&class[..len]);
-        if class == "Progman" || class == "WorkerW" {
-            return false;
-        }
-        let mut rect = RECT::default();
-        let mut info = MONITORINFO { cbSize: size_of::<MONITORINFO>() as u32, ..Default::default() };
-        if GetWindowRect(fg, &mut rect).is_err()
-            || !GetMonitorInfoW(MonitorFromWindow(fg, MONITOR_DEFAULTTONEAREST), &mut info).as_bool()
-        {
-            return false;
-        }
-        let m = info.rcMonitor;
-        rect.left <= m.left && rect.top <= m.top && rect.right >= m.right && rect.bottom >= m.bottom
-    }
-}
-
 /// Whether the active window reaches into the closed notch's spot, e.g. a
 /// maximized browser whose tabs sit under it.
 fn foreground_covers_notch() -> bool {
@@ -492,8 +452,8 @@ unsafe extern "system" fn win_event_proc(
 
 /// Re-checks on window events (activated, moved, maximized, minimized), with a
 /// 1-second fallback that also follows resolution/DPI changes:
-/// - full-screen app: keep the notch visible but shrink it to a line;
-/// - active window with something clickable under the notch: shrink it to a line too.
+/// - active window with something clickable under the notch: shrink it to a line;
+/// - fullscreen with an empty spot under the notch: keep the normal notch.
 /// The 1-second pass also catches changes inside a window, like a new browser tab.
 fn start_watcher(window: WebviewWindow) {
     let (tx, rx) = mpsc::channel::<()>();
@@ -508,7 +468,9 @@ fn start_watcher(window: WebviewWindow) {
         // same window sits in the same place: up to 3 s, or 150 ms while events stream in.
         let mut last_check: Option<(isize, (i32, i32, i32, i32), bool, Instant)> = None;
         let mut under_notch = |fresh: bool| -> bool {
-            let Some(uia) = uia.as_ref() else { return true };
+            // If UI Automation is unavailable, keep the normal notch rather than
+            // shrinking on a guess. Fullscreen alone is not a reason to tuck.
+            let Some(uia) = uia.as_ref() else { return false };
             let fg = unsafe { GetForegroundWindow() };
             let mut r = RECT::default();
             let _ = unsafe { GetWindowRect(fg, &mut r) };
@@ -548,8 +510,9 @@ fn start_watcher(window: WebviewWindow) {
                 }
             }
 
-            let fullscreen = fullscreen_app_running();
-            let tucked = foreground_covers_notch() && (fullscreen || under_notch(!timed_out));
+            // Fullscreen by itself must not tuck: only shrink when a real
+            // control/content actually sits in the notch's spot.
+            let tucked = foreground_covers_notch() && under_notch(!timed_out);
             if TUCKED.swap(tucked, Ordering::Relaxed) != tucked {
                 let _ = window.emit("notch-tucked", tucked);
             }
