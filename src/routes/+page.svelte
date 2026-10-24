@@ -3,7 +3,6 @@
   import { listen } from "@tauri-apps/api/event";
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
   import { onMount, untrack } from "svelte";
-  import { cubicOut } from "svelte/easing";
   import { fade, fly } from "svelte/transition";
   import ClipboardPage, { type ClipEntry } from "$lib/ClipboardPage.svelte";
   import Island from "$lib/Island.svelte";
@@ -56,9 +55,22 @@
   // Pages of the open notch, switched with the dots or the mouse wheel.
   const ALL_PAGES = ["now", "pomodoro", "water", "todo", "shelf", "clipboard", "shortcuts"] as const;
   type PageName = (typeof ALL_PAGES)[number];
-  // The water page goes away when the water feature is turned off in Settings.
+  // The water reminder can be paused; the Air page stays available for logging.
   let waterEnabled = $state(true);
-  const pages = $derived(ALL_PAGES.filter((p) => waterEnabled || p !== "water"));
+  const pages = ALL_PAGES;
+
+  async function toggleWater() {
+    const next = !waterEnabled;
+    waterEnabled = next;
+    try {
+      const s = await invoke<Record<string, unknown>>("get_settings");
+      s.waterEnabled = next;
+      await invoke("save_settings", { settings: s });
+    } catch (e) {
+      waterEnabled = !next;
+      logJs(`water toggle: ${e}`);
+    }
+  }
 
   type Power = { charging: boolean; percent: number; battery: boolean };
   type InUse = { camera: string[]; mic: string[] };
@@ -317,31 +329,6 @@
   const art = $derived(cover ?? media?.art ?? null);
   const shownMedia = $derived(media ? { ...media, art } : null);
 
-  // The cover's main color, which tints the notch while music shows.
-  let tint = $state<string | null>(null);
-  $effect(() => {
-    const url = art;
-    tint = null;
-    if (!url) return;
-    const img = new Image();
-    img.onload = () => {
-      const c = document.createElement("canvas");
-      c.width = c.height = 16;
-      const g = c.getContext("2d")!;
-      g.drawImage(img, 0, 0, 16, 16);
-      // Average of the more colorful pixels, so a grey border doesn't wash it out.
-      let [r, gr, b, n] = [0, 0, 0, 0];
-      const px = g.getImageData(0, 0, 16, 16).data;
-      for (let i = 0; i < px.length; i += 4) {
-        const [pr, pg, pb] = [px[i], px[i + 1], px[i + 2]];
-        if (Math.max(pr, pg, pb) - Math.min(pr, pg, pb) < 40) continue;
-        [r, gr, b, n] = [r + pr, gr + pg, b + pb, n + 1];
-      }
-      tint = n > 8 ? `${Math.round(r / n)} ${Math.round(gr / n)} ${Math.round(b / n)}` : null;
-    };
-    img.src = url;
-  });
-
   // The line being sung, for the small notch. Instead of ticking, wake up
   // exactly when the next line starts.
   let lineNow = $state(Date.now());
@@ -358,8 +345,6 @@
       turn,
     ),
   );
-  const musicLeads = $derived(view === "island" && island.main?.kind === "music");
-  const tinted = $derived(!!tint && (view === "player" || view === "lyrics" || musicLeads));
   // Keeps the sung line current whenever music is in the island, also while
   // another activity leads: during an instrumental gap the line is empty, the
   // timer (say) takes the lead, and the next line must still bring music back.
@@ -666,10 +651,7 @@
     const applySettings = (s: AllSettings) => {
       smallLyrics = s.smallLyrics;
       shortcuts = s.shortcuts ?? [];
-      // Keep the same page in view when the water page appears or goes.
-      const current = pages[page];
       waterEnabled = s.waterEnabled !== false;
-      page = Math.max(0, pages.indexOf(current));
       pomo.configure(s);
       water.configure(s);
       loadWeather(s);
@@ -745,14 +727,10 @@
   data-idle={idleStage}
   class:open={paged}
   class:tucked={view === "tucked"}
-  class:charging
-  class:tinted
-  style:--tint={tint}
   style:--w="{size.w}px"
   style:--h="{size.h}px"
   style:--r="{size.r}px"
   style:--e="{size.e}px"
-  style:--battery="{power.percent}%"
   onwheel={wheel}
   onpointerdown={pressDown}
   onpointermove={pressMove}
@@ -760,8 +738,6 @@
   onpointerleave={pressUp}
 >
   {#if pinned && paged && !mirror}<i class="pin" title="Terkunci terbuka · tekan lama untuk melepas"></i>{/if}
-  <div class="ambient"></div>
-  <div class="shine"></div>
 
   <div class="layer rest" class:on={view === "rest"}>
     {#if weather}<span class="weather">{weather.icon}<b>{weather.temp}°</b></span>{/if}
@@ -786,9 +762,6 @@
       {/if}
     {:else}
       <span class="rest-time" in:fade={{ duration: 400 }}>{time}</span>
-      <span class="idle-pet" class:blink style:--lx={look[0]} style:--ly={look[1]} aria-hidden="true">
-        <i></i><i></i>
-      </span>
     {/if}
   </div>
 
@@ -840,9 +813,6 @@
       {/if}
     {:else}
       <span class="charge-time">{time}</span>
-      <span class="idle-pet" class:blink style:--lx={look[0]} style:--ly={look[1]} aria-hidden="true">
-        <i></i><i></i>
-      </span>
     {/if}
   </div>
 
@@ -953,13 +923,13 @@
     {#key page}
       <div
         class="layer on page-layer"
-        in:fly={{ x: pageDir * 30, duration: 300, delay: 80, opacity: 0, easing: cubicOut }}
-        out:fly={{ x: pageDir * -22, duration: 180, opacity: 0 }}
+        in:fly={{ x: pageDir * 10, duration: 220, delay: 40, opacity: 0 }}
+        out:fly={{ x: pageDir * -6, duration: 130, opacity: 0 }}
       >
         {#if pages[page] === "pomodoro"}
           <TimerPage {pomo} now={nowMs} />
         {:else if pages[page] === "water"}
-          <WaterPage {water} />
+          <WaterPage {water} enabled={waterEnabled} onToggle={toggleWater} />
         {:else if pages[page] === "todo"}
           <TodoPage {todo} onTyping={setTyping} />
         {:else if pages[page] === "clipboard"}
@@ -1018,35 +988,15 @@
     background: #000;
     border-radius: 0 0 var(--r) var(--r);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07),
       0 0 0 0.5px var(--edge),
-      0 14px 34px -16px rgba(0, 0, 0, 0.95);
+      0 12px 30px -18px rgba(0, 0, 0, 0.95);
   }
   .notch.open {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.16),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
       0 0 0 0.5px var(--edge),
-      0 18px 44px -16px rgba(0, 0, 0, 0.98);
-  }
-
-  /* A soft glass highlight along the top edge; it keeps the black from
-     looking like a flat cut-out. */
-  .shine {
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.11),
-      rgba(255, 255, 255, 0.025) 24%,
-      transparent 46%
-    );
-    opacity: 0.75;
-    transition: opacity 0.4s ease;
-  }
-  .notch.open .shine {
-    opacity: 1;
+      0 16px 36px -18px rgba(0, 0, 0, 0.98);
   }
 
   /* "Ears": concave fillets that blend the notch into the screen's top edge. */
@@ -1083,62 +1033,12 @@
     );
   }
 
-  /* A faint light rising from the bottom edge, for depth. */
-  .ambient {
-    position: absolute;
-    inset: auto 0 0;
-    height: 70%;
-    border-radius: inherit;
-    pointer-events: none;
-    background: linear-gradient(to top, rgba(255, 255, 255, 0.09), transparent);
-    transform-origin: bottom center;
-    animation: aura 7s ease-in-out infinite;
-    transition:
-      opacity 0.45s ease,
-      height 0.45s ease;
-  }
-  @keyframes aura {
-    0%,
-    100% {
-      opacity: 0.7;
-      transform: scaleY(0.92);
-    }
-    50% {
-      opacity: 1;
-      transform: scaleY(1.04);
-    }
-  }
-  .open .ambient {
-    height: 40%;
-  }
-  /* Music: the cover's color rises from the bottom. */
-  .tinted .ambient {
-    height: 100%;
-    background: linear-gradient(to top, rgb(var(--tint) / 0.6), rgb(var(--tint) / 0.12) 55%, transparent);
-  }
-  .tinted:not(.open) .ambient {
-    background: linear-gradient(to top, rgb(var(--tint) / 0.4), transparent);
-  }
-
   .notch {
     transition:
       width 0.62s var(--spring),
       height 0.62s var(--spring),
       border-radius 0.45s ease,
       box-shadow 0.45s ease;
-  }
-
-  /* Tucked (a window under the notch): a thin line.
-     While charging it turns green and fills up to the battery level. */
-  .tucked .ambient {
-    height: 100%;
-    background: rgba(255, 255, 255, 0.22);
-  }
-  .notch.tucked.charging {
-    box-shadow: 0 2px 10px -2px rgba(52, 211, 153, 0.75);
-  }
-  .tucked.charging .ambient {
-    background: linear-gradient(90deg, #34d399 var(--battery), rgba(52, 211, 153, 0.28) var(--battery));
   }
 
   /* One layer per view; only the current one is visible. */
@@ -1176,49 +1076,6 @@
     font-size: 11px;
     font-weight: 600;
   }
-  /* A tiny breathing companion on the right of the rest notch, so the idle
-     state has a pulse instead of only a clock. */
-  .idle-pet {
-    position: absolute;
-    right: 11px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 2.6px;
-    background: radial-gradient(circle at 34% 28%, #2a3140, #090b10 72%);
-    box-shadow:
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.2),
-      0 0 10px rgba(120, 170, 255, 0.16);
-    transform: translate(calc(var(--lx, 0) * 2px), calc(var(--ly, 0) * 1px));
-    animation: breathe 5s ease-in-out infinite;
-    transition: transform 0.25s var(--spring);
-  }
-  .idle-pet i {
-    width: 2.4px;
-    height: 4.2px;
-    border-radius: 50%;
-    background: #fff;
-    box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
-    transition: transform 0.1s ease;
-  }
-  .idle-pet.blink i {
-    transform: scaleY(0.12);
-  }
-  @keyframes breathe {
-    0%,
-    100% {
-      scale: 0.92;
-      opacity: 0.82;
-    }
-    50% {
-      scale: 1.06;
-      opacity: 1;
-    }
-  }
-
   /* The page content slides in from the direction you are travelling. */
   .page-layer {
     will-change: transform, opacity;
@@ -1235,15 +1092,17 @@
   }
   .ring circle {
     fill: none;
-    stroke: rgba(52, 211, 153, 0.25);
+    stroke: rgba(255, 255, 255, 0.2);
     stroke-width: 2.4;
   }
   .ring .fill {
-    stroke: #34d399;
+    stroke: #fff;
     stroke-linecap: round;
   }
   .ring path {
-    fill: #34d399;
+    fill: #000;
+    stroke: #fff;
+    stroke-width: 0.6;
     transform: rotate(90deg);
     transform-origin: center;
   }
@@ -1257,49 +1116,40 @@
   .arrow {
     position: absolute;
     top: 50%;
-    left: 8px;
-    width: 32px;
-    height: 32px;
-    margin-top: -16px;
+    left: 10px;
+    width: 28px;
+    height: 28px;
+    margin-top: -14px;
     padding: 0;
-    border: 0.5px solid rgba(255, 255, 255, 0.14);
-    border-radius: 50%;
+    border: 0;
+    border-radius: 8px;
     display: grid;
     place-items: center;
-    background:
-      radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.2), transparent 58%),
-      rgba(255, 255, 255, 0.07);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.12),
-      0 4px 12px -4px rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
+    background: transparent;
     cursor: pointer;
-    opacity: 0.82;
+    opacity: 0.52;
     transition:
-      opacity 0.2s,
-      background 0.2s,
-      transform 0.22s var(--spring);
+      opacity 0.18s,
+      background 0.18s,
+      transform 0.18s;
   }
   .arrow.next {
     left: auto;
-    right: 8px;
+    right: 10px;
   }
   .arrow:hover {
     opacity: 1;
-    transform: scale(1.08);
-    background:
-      radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.3), transparent 58%),
-      rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.07);
   }
   .arrow:active {
     transform: scale(0.94);
   }
   .arrow svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     fill: none;
     stroke: #fff;
-    stroke-width: 2.2;
+    stroke-width: 1.9;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
@@ -1308,37 +1158,41 @@
   .pager {
     position: absolute;
     z-index: 6;
-    bottom: 7px;
+    bottom: 4px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 4px 8px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.055);
-    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(8px);
+    gap: 1px;
   }
   .pager button {
-    width: 6px;
-    height: 6px;
+    position: relative;
+    width: 12px;
+    height: 12px;
     padding: 0;
     border: 0;
-    border-radius: 3px;
-    background: rgba(255, 255, 255, 0.3);
+    background: transparent;
     cursor: pointer;
+  }
+  .pager button::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
     transition:
-      width 0.32s var(--spring),
-      background 0.3s,
-      transform 0.2s;
+      width 0.24s ease,
+      background 0.2s;
   }
-  .pager button:hover {
-    transform: scale(1.35);
-    background: rgba(255, 255, 255, 0.6);
+  .pager button:hover::after {
+    background: rgba(255, 255, 255, 0.65);
   }
-  .pager button.on {
-    width: 18px;
+  .pager button.on::after {
+    width: 12px;
     background: #fff;
   }
 
@@ -1425,8 +1279,8 @@
     max-width: 300px;
     margin-top: 6px;
     padding: 3px 10px;
-    border-radius: 999px;
-    background: rgba(251, 146, 60, 0.14);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.06);
     font-size: 12px;
     white-space: nowrap;
     overflow: hidden;
@@ -1434,7 +1288,7 @@
   }
   .event-time {
     margin-right: 6px;
-    color: #fdba74;
+    color: #fff;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
@@ -1452,11 +1306,10 @@
     position: absolute;
     top: 9px;
     right: 14px;
-    width: 6px;
-    height: 6px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
-    background: #38bdf8;
-    box-shadow: 0 0 6px #38bdf8;
+    background: rgba(255, 255, 255, 0.7);
     z-index: 2;
   }
 

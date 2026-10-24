@@ -299,7 +299,7 @@
           checked={settings.waterEnabled}
           onchange={(e) => save({ waterEnabled: e.currentTarget.checked })}
         />
-        <span>Pakai fitur minum air (pengingat dan halaman Air di notch)</span>
+        <span>Pengingat minum air (halaman Air tetap tersedia di notch)</span>
       </label>
       {#if settings.waterEnabled}
         {#each water as [key, label, unit]}{@render field(key, label, unit)}{/each}

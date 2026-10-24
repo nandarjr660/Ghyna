@@ -286,22 +286,18 @@
     left: 0;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     height: 24px;
-    padding: 0 9px;
+    padding: 0;
     border: 0;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.07);
-    color: rgba(255, 255, 255, 0.62);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.42);
     font: inherit;
     font-size: 9.5px;
-    font-weight: 600;
+    font-weight: 500;
     letter-spacing: 0.02em;
     cursor: pointer;
-    transition:
-      background 0.2s,
-      color 0.2s,
-      transform 0.18s;
+    transition: color 0.18s;
   }
   .lyrics-chip svg {
     width: 13px;
@@ -312,14 +308,9 @@
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .lyrics-chip:hover {
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
-    transform: translateY(-1px);
-  }
+  .lyrics-chip:hover,
   .lyrics-chip.on {
     color: #fff;
-    background: rgba(255, 255, 255, 0.16);
   }
 
   .lyrics {

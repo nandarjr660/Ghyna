@@ -17,24 +17,19 @@
 
 <div class="page">
   <div class="header">
-    <span class="mark" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><path d="M8 5H6v15h12V5h-2" /><rect x="9" y="3" width="6" height="4" rx="1.5" /></svg>
-    </span>
     <span class="title">Clipboard</span>
     <span class="count">{items.length ? `${items.length} terakhir` : "kosong"}</span>
     <span class="hint">klik untuk salin</span>
     {#if items.length}
       <button class="clear" onclick={() => invoke("clipboard_clear")} aria-label="Bersihkan clipboard">
-        <svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
     {/if}
   </div>
 
   {#if items.length === 0}
     <div class="empty">
-      <span class="empty-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M8 5H6v15h12V5h-2" /><rect x="9" y="3" width="6" height="4" rx="1.5" /><path d="M9 12h6M9 15h4" /></svg>
-      </span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5H6v15h12V5h-2" /><rect x="9" y="3" width="6" height="4" rx="1.5" /><path d="M9 12h6M9 15h4" /></svg>
       <span>Belum ada salinan<small>Teks dan gambar yang kamu copy muncul di sini.</small></span>
     </div>
   {:else}
@@ -58,10 +53,10 @@
           </span>
           <span class="action" class:ok={copied === item.id}>
             {#if copied === item.id}
-              <svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></svg>
-              Disalin
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+              Tersalin
             {:else}
-              <svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="11" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></svg>
             {/if}
           </span>
         </button>
@@ -74,62 +69,32 @@
   .page {
     position: absolute;
     inset: 0;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    padding: 8px 42px 18px;
+    padding: 10px 42px 19px;
     overflow: hidden;
-    --accent: #a78bfa;
-    --accent-soft: rgba(167, 139, 250, 0.13);
-    --accent-line: rgba(167, 139, 250, 0.38);
   }
-  .page::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: radial-gradient(150px 90px at 16% 12%, rgba(167, 139, 250, 0.14), transparent 70%);
-  }
-
   .header {
-    position: relative;
-    z-index: 1;
+    flex: none;
     display: flex;
     align-items: center;
-    gap: 6px;
-    height: 20px;
-  }
-  .mark {
-    display: grid;
-    place-items: center;
-    width: 18px;
+    gap: 8px;
     height: 18px;
-    border: 0.5px solid var(--accent-line);
-    border-radius: 6px;
-    background: var(--accent-soft);
-    color: var(--accent);
-  }
-  .mark svg {
-    width: 11px;
-    height: 11px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
   }
   .title {
-    font-size: 12.5px;
-    font-weight: 650;
+    font-size: 12px;
+    font-weight: 600;
   }
   .count {
-    font-size: 8.5px;
-    color: rgba(255, 255, 255, 0.4);
+    font-size: 9.5px;
+    color: rgba(255, 255, 255, 0.38);
     font-variant-numeric: tabular-nums;
   }
   .hint {
     flex: 1;
     font-size: 8.5px;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.28);
     text-align: right;
     white-space: nowrap;
     overflow: hidden;
@@ -149,57 +114,41 @@
     height: 16px;
     padding: 0;
     border-radius: 4px;
-    color: rgba(255, 255, 255, 0.35);
+    color: rgba(255, 255, 255, 0.3);
     transition:
       background 0.15s,
       color 0.15s;
   }
   .clear svg {
-    width: 9px;
-    height: 9px;
+    width: 8px;
+    height: 8px;
     fill: none;
     stroke: currentColor;
     stroke-width: 2;
     stroke-linecap: round;
   }
   .clear:hover {
-    background: rgba(248, 113, 113, 0.14);
-    color: #f87171;
+    background: rgba(255, 255, 255, 0.07);
+    color: #fff;
   }
 
   .empty {
-    position: relative;
-    z-index: 1;
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 9px;
-    margin-top: 5px;
-    border: 0.5px dashed rgba(167, 139, 250, 0.25);
-    border-radius: 13px;
-    background:
-      radial-gradient(180px 70px at 50% 120%, rgba(167, 139, 250, 0.1), transparent 70%),
-      rgba(255, 255, 255, 0.018);
-    color: rgba(255, 255, 255, 0.72);
+    margin-top: 7px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.66);
   }
-  .empty-icon {
-    display: grid;
-    place-items: center;
-    width: 30px;
-    height: 30px;
-    border: 0.5px solid var(--accent-line);
-    border-radius: 9px;
-    background: var(--accent-soft);
-    color: var(--accent);
-  }
-  .empty-icon svg {
-    width: 16px;
-    height: 16px;
+  .empty > svg {
+    width: 18px;
+    height: 18px;
     fill: none;
-    stroke: currentColor;
-    stroke-width: 1.7;
+    stroke: rgba(255, 255, 255, 0.38);
+    stroke-width: 1.5;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
@@ -207,19 +156,16 @@
     display: block;
     margin-top: 1px;
     font-size: 8.5px;
-    color: rgba(255, 255, 255, 0.38);
+    color: rgba(255, 255, 255, 0.3);
   }
 
   .list {
-    position: relative;
-    z-index: 1;
     flex: 1;
     min-height: 0;
-    margin-top: 5px;
+    margin-top: 6px;
     padding-bottom: 2px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
     overflow-y: auto;
     scrollbar-width: none;
   }
@@ -227,43 +173,31 @@
     flex: none;
     display: flex;
     align-items: center;
-    gap: 7px;
-    min-height: 23px;
-    padding: 3px 7px 3px 4px;
-    border: 0.5px solid transparent;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.04);
+    gap: 8px;
+    width: 100%;
+    min-height: 24px;
+    padding: 0 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
     text-align: left;
-    transition:
-      background 0.18s,
-      border-color 0.18s,
-      transform 0.18s;
+    transition: background 0.15s;
   }
   .item:hover {
-    border-color: rgba(167, 139, 250, 0.2);
-    background: rgba(167, 139, 250, 0.08);
-    transform: translateX(1px);
-  }
-  .item.done {
-    border-color: rgba(52, 211, 153, 0.35);
-    background: rgba(52, 211, 153, 0.1);
+    background: rgba(255, 255, 255, 0.03);
   }
   .kind {
     flex: none;
     display: grid;
     place-items: center;
-    width: 20px;
-    height: 20px;
-    border-radius: 6px;
-    background: var(--accent-soft);
-    color: var(--accent);
+    width: 14px;
+    height: 14px;
+    color: rgba(255, 255, 255, 0.4);
   }
   .kind svg {
-    width: 11px;
-    height: 11px;
+    width: 12px;
+    height: 12px;
     fill: none;
     stroke: currentColor;
-    stroke-width: 1.7;
+    stroke-width: 1.6;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
@@ -277,16 +211,16 @@
   }
   .body img {
     flex: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
     object-fit: cover;
   }
   .text {
     flex: 1;
     min-width: 0;
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.78);
+    color: rgba(255, 255, 255, 0.74);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -297,12 +231,11 @@
     align-items: center;
     gap: 3px;
     font-size: 8.5px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.32);
-    opacity: 0.65;
+    color: rgba(255, 255, 255, 0.28);
+    opacity: 0.6;
     transition:
-      color 0.18s,
-      opacity 0.18s;
+      color 0.15s,
+      opacity 0.15s;
   }
   .action svg {
     width: 10px;
@@ -315,18 +248,19 @@
   }
   .item:hover .action {
     opacity: 1;
-    color: var(--accent);
+    color: rgba(255, 255, 255, 0.7);
   }
   .action.ok {
-    color: #34d399;
+    color: #fff;
     opacity: 1;
   }
 
   button:focus-visible {
-    outline: 1.5px solid var(--accent);
+    outline: 1.5px solid rgba(255, 255, 255, 0.8);
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {
+    .clear,
     .item,
     .action {
       transition: none;
