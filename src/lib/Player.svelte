@@ -54,7 +54,6 @@
       <div class="meta">
         {#if !withLyrics}
           <div class="header">
-            <button class="lyrics-pill" onclick={onLyrics} title="Tampilkan lirik">Lirik</button>
             <span>{clock}</span>
             <Bars live={media.playing} />
           </div>
@@ -73,8 +72,9 @@
     </div>
 
     <div class="controls">
-      <button class="icon lyrics-toggle" class:on={withLyrics} onclick={onLyrics} title="Lirik" aria-label="Lirik">
+      <button class="lyrics-chip" class:on={withLyrics} onclick={onLyrics} title={withLyrics ? "Sembunyikan lirik" : "Tampilkan lirik"} aria-label="Lirik">
         <svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z" /><path d="M8 9h8M8 12h5" /></svg>
+        <span>Lirik</span>
       </button>
       <button class="icon" onclick={prev} aria-label="Sebelumnya">
         <svg viewBox="0 0 24 24" class="solid"><path d="M6 6h2v12H6zM9.5 12 18 18V6z" /></svg>
@@ -118,7 +118,7 @@
     position: absolute;
     inset: 0;
     display: flex;
-    padding: 8px 40px 14px;
+    padding: 6px 48px 24px;
     box-sizing: border-box;
   }
   .main {
@@ -129,21 +129,21 @@
     justify-content: space-between;
   }
   .split .main {
-    flex: 0 0 220px;
+    flex: 0 0 180px;
     justify-content: center;
-    gap: 7px;
+    gap: 6px;
   }
 
   .top {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
   }
   .art {
     flex: none;
-    width: 50px;
-    height: 50px;
-    border-radius: 11px;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
     overflow: hidden;
     background: #1b1f2e center / cover;
     display: grid;
@@ -152,9 +152,9 @@
     box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.9);
   }
   .split .art {
-    width: 44px;
-    height: 44px;
-    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 9px;
   }
   .meta {
     flex: 1;
@@ -165,37 +165,14 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 5px;
-    font-size: 11.5px;
-    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 3px;
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.68);
     font-variant-numeric: tabular-nums;
   }
   .header :global(.bars) {
     position: absolute;
     right: 0;
-  }
-  .lyrics-pill {
-    position: absolute;
-    left: 0;
-    padding: 3px 7px;
-    border: 0;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.78);
-    font: inherit;
-    font-size: 9.5px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    cursor: pointer;
-    transition:
-      background 0.2s,
-      color 0.2s,
-      transform 0.18s;
-  }
-  .lyrics-pill:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-    transform: translateY(-1px);
   }
   .title,
   .artist {
@@ -204,25 +181,26 @@
     text-overflow: ellipsis;
   }
   .title {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
+    line-height: 1.2;
   }
   .artist {
     margin-top: 2px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.55);
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.5);
   }
 
   .progress {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.85);
+    gap: 8px;
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.8);
     font-variant-numeric: tabular-nums;
   }
   .progress > span {
-    width: 38px;
+    width: 34px;
   }
   .progress > span:last-child {
     text-align: right;
@@ -255,24 +233,16 @@
     background: #fff;
   }
 
-  /* Transport centered; the lyrics button sits on the left, under the cover. */
+  /* Transport centered; the lyrics chip sits on the left, under the cover. */
   .controls {
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 26px;
-  }
-  .controls .lyrics-toggle {
-    position: absolute;
-    left: 12px;
+    gap: 22px;
   }
   .split .controls {
-    gap: 14px;
-    padding-left: 30px;
-  }
-  .split .controls .lyrics-toggle {
-    left: 8px;
+    gap: 12px;
   }
 
   .icon {
@@ -295,8 +265,8 @@
     transform: scale(0.92);
   }
   .icon svg {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.8;
@@ -308,25 +278,56 @@
     stroke: none;
   }
   .play svg {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
   }
-  .lyrics-toggle {
-    width: 30px;
-    height: 30px;
-    color: rgba(255, 255, 255, 0.6);
+  .lyrics-chip {
+    position: absolute;
+    left: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 24px;
+    padding: 0 9px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.62);
+    font: inherit;
+    font-size: 9.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      color 0.2s,
+      transform 0.18s;
   }
-  .lyrics-toggle.on {
-    color: #fff;
+  .lyrics-chip svg {
+    width: 13px;
+    height: 13px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .lyrics-chip:hover {
     background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    transform: translateY(-1px);
+  }
+  .lyrics-chip.on {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.16);
   }
 
   .lyrics {
     flex: 1;
     position: relative;
     overflow: hidden;
-    margin-left: 14px;
-    padding-left: 14px;
+    margin-left: 12px;
+    padding-left: 12px;
     border-left: 0.5px solid rgba(255, 255, 255, 0.12);
     mask: linear-gradient(transparent, #000 22%, #000 78%, transparent);
   }
@@ -344,9 +345,9 @@
     background: none;
     text-align: left;
     font: inherit;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
-    line-height: 1.25;
+    line-height: 1.22;
     color: rgba(255, 255, 255, 0.3);
     cursor: pointer;
     transform: scale(0.94);

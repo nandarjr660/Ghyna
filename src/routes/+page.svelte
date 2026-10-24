@@ -42,7 +42,7 @@
     notify: { w: 380, h: 72, r: 22, e: 14 },
     clock: { w: 400, h: 132, r: 30, e: 21 },
     player: { w: 400, h: 132, r: 30, e: 21 },
-    lyrics: { w: 500, h: 132, r: 30, e: 21 },
+    lyrics: { w: 500, h: 140, r: 30, e: 21 },
     pomodoro: { w: 400, h: 132, r: 30, e: 21 },
     water: { w: 400, h: 132, r: 30, e: 21 },
     todo: { w: 400, h: 132, r: 30, e: 21 },
@@ -718,6 +718,9 @@
       <path d="M10.6 5.5 7.5 10.6h2.4l-.5 3.9 3.1-5.1h-2.4z" />
     </svg>
     <span class="charge-time">{time}</span>
+    <span class="idle-pet" class:blink style:--lx={look[0]} style:--ly={look[1]} aria-hidden="true">
+      <i></i><i></i>
+    </span>
   </div>
 
   <div class="layer clock" class:on={view === "clock"}>
@@ -1174,6 +1177,7 @@
   /* Page dots at the bottom of the open notch, the current one stretched. */
   .pager {
     position: absolute;
+    z-index: 6;
     bottom: 7px;
     left: 50%;
     transform: translateX(-50%);
