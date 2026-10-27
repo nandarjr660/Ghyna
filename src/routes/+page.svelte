@@ -107,6 +107,17 @@ const eyeState = $derived(
   power.percent <= 20 ? "low20" :
   "normal"
 );
+// The edge glow borrows the eyes' dominant colour, so the notch and its
+// expression feel like one object instead of a green frame around blue eyes.
+const eyeGlow = $derived(
+  eyeState === "charging"
+    ? "rgba(56, 189, 248, 0.6)"
+    : eyeState === "low15"
+    ? "rgba(255, 77, 77, 0.6)"
+    : eyeState === "low20"
+    ? "rgba(255, 159, 0, 0.58)"
+    : "rgba(66, 199, 99, 0.6)"
+);
   let inUse = $state<InUse>({ camera: [], mic: [] });
   let micMuted = $state(false);
   let weather = $state<Weather | null>(null);
@@ -829,12 +840,15 @@ const eyeState = $derived(
   style:--h="{size.h}px"
   style:--r="{size.r}px"
   style:--e="{size.e}px"
+  style:--eye-glow={eyeGlow}
   onwheel={wheel}
   onpointerdown={pressDown}
   onpointermove={pressMove}
   onpointerup={pressUp}
   onpointerleave={pressUp}
 >
+  <span class="edge-glow left" aria-hidden="true"></span>
+  <span class="edge-glow right" aria-hidden="true"></span>
   {#if pinned && paged && !mirror}<i class="pin" title="Terkunci terbuka · tekan lama untuk melepas"></i>{/if}
 
   <div class="layer rest" class:on={view === "rest"}>
@@ -1133,6 +1147,30 @@ const eyeState = $derived(
       inset 0 1px 0 rgba(255, 255, 255, 0.1),
       0 0 0 0.5px var(--edge),
       0 16px 36px -18px rgba(0, 0, 0, 0.98);
+  }
+
+  /* Two soft light leaks at the lower corners, tinted by the eyes. */
+  .edge-glow {
+    position: absolute;
+    bottom: calc(clamp(62px, calc(var(--h) * 1), 108px) * -0.5);
+    width: clamp(34px, calc(var(--w) * 0.16), 62px);
+    height: clamp(62px, calc(var(--h) * 1), 108px);
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, var(--eye-glow) 0%, transparent 70%);
+    filter: blur(7px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.95;
+    transition: opacity 0.3s ease;
+  }
+  .edge-glow.left {
+    left: calc(var(--w) * -0.08);
+  }
+  .edge-glow.right {
+    right: calc(var(--w) * -0.08);
+  }
+  .notch.tucked .edge-glow {
+    opacity: 0;
   }
 
   /* "Ears": concave fillets that blend the notch into the screen's top edge. */
