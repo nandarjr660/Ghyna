@@ -1149,15 +1149,21 @@ const eyeGlow = $derived(
       0 16px 36px -18px rgba(0, 0, 0, 0.98);
   }
 
-  /* Light washes that sit inside the notch, tinted by the eyes. The colour
-     fades toward the middle so the black surface still carries the content. */
+  /* A thin light leak along the inside edge, tinted by the eyes. The rim
+     fades in below the top edge; the small bloom stays close to the corners. */
   .eye-wash {
     position: absolute;
     inset: 0;
     border-radius: inherit;
+    overflow: hidden;
     background:
-      radial-gradient(ellipse 85% 120% at 0% 100%, var(--eye-glow), transparent 70%) left bottom / 36% 100% no-repeat,
-      radial-gradient(ellipse 85% 120% at 100% 100%, var(--eye-glow), transparent 70%) right bottom / 36% 100% no-repeat;
+      linear-gradient(90deg, var(--eye-glow), transparent) left top / 2px 100% no-repeat,
+      linear-gradient(270deg, var(--eye-glow), transparent) right top / 2px 100% no-repeat,
+      linear-gradient(0deg, var(--eye-glow), transparent) center bottom / 100% 2px no-repeat,
+      radial-gradient(ellipse 70% 100% at 0% 100%, var(--eye-glow), transparent 70%) left bottom / 24% 100% no-repeat,
+      radial-gradient(ellipse 70% 100% at 100% 100%, var(--eye-glow), transparent 70%) right bottom / 24% 100% no-repeat;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 35%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 35%);
     pointer-events: none;
     z-index: 0;
     opacity: 0;
