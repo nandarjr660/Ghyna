@@ -145,7 +145,7 @@
     height: 44px;
     border-radius: 10px;
     overflow: hidden;
-    background: #1b1f2e center / cover;
+    background: var(--surface-raised) center / cover;
     display: grid;
     place-items: center;
     color: rgba(255, 255, 255, 0.4);
@@ -326,7 +326,7 @@
     list-style: none;
     margin: 0;
     padding: 0;
-    transition: transform 0.7s cubic-bezier(0.34, 1.32, 0.5, 1);
+    transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
   }
   li button {
     display: block;

@@ -1,0 +1,23 @@
+:root {
+  color-scheme: dark;
+
+  /* Ghyna's green. A soft jade for text and indicators, a deeper leaf for
+     fills. Charging stays blue on purpose: it is a state, not the brand. */
+  --accent: #8fe6b4;
+  --accent-strong: #55d98d;
+  --accent-ink: #04130a;
+  --accent-soft: rgba(143, 230, 180, 0.13);
+  --accent-line: rgba(143, 230, 180, 0.32);
+
+  --info: #8fd8c4;
+  --warning: #f0b66e;
+  --danger: #f08080;
+
+  --text: #effaf3;
+  --muted: rgba(226, 244, 234, 0.46);
+  --muted-strong: rgba(226, 244, 234, 0.68);
+
+  --surface: #050b07;
+  --surface-raised: #0c1710;
+  --line: rgba(190, 240, 210, 0.14);
+}

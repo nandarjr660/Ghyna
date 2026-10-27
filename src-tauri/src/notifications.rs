@@ -11,8 +11,10 @@
 //! written lazily, so it's no use as a trigger either.)
 
 use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+use base64::Engine;
 use serde::Serialize;
 use serde_json::json;
 use tauri::AppHandle;
@@ -273,8 +275,7 @@ pub fn open_app(aumid: String, id: Option<u32>) {
 /// notification database; with those arguments we call the app's toast
 /// activator exactly as the notification center does.
 fn activate(aumid: &str, id: u32) -> Result<(), String> {
-    let db = std::path::PathBuf::from(std::env::var("LOCALAPPDATA").unwrap_or_default())
-        .join(r"Microsoft\Windows\Notifications\wpndatabase.db");
+    let db = notification_db();
     let conn = rusqlite::Connection::open_with_flags(&db, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY).map_err(|e| e.to_string())?;
     // Web pages often replace a toast with a fresh one (new id) moments later,
     // so if ours is gone, the app's newest toast stands in. The database also
@@ -316,6 +317,171 @@ fn activate(aumid: &str, id: u32) -> Result<(), String> {
             .Activate(&windows::core::HSTRING::from(aumid), &windows::core::HSTRING::from(launch), &[])
             .map_err(|e| e.to_string())
     }
+}
+
+/// The local Windows notification database. It keeps the complete toast XML,
+/// including images that the listener API does not expose.
+fn notification_db() -> PathBuf {
+    PathBuf::from(std::env::var("LOCALAPPDATA").unwrap_or_default())
+        .join(r"Microsoft\Windows\Notifications\wpndatabase.db")
+}
+
+/// A `file:` URI SQLite understands on Windows, with only the characters that
+/// actually occur in profile paths escaped.
+fn sqlite_uri(path: &Path, immutable: bool) -> String {
+    let mut text = path.to_string_lossy().replace('\\', "/");
+    for (from, to) in [("%", "%25"), (" ", "%20"), ("#", "%23"), ("?", "%3F")] {
+        text = text.replace(from, to);
+    }
+    let suffix = if immutable { "?immutable=1" } else { "" };
+    if text.starts_with('/') {
+        format!("file://{text}{suffix}")
+    } else {
+        format!("file:///{text}{suffix}")
+    }
+}
+
+/// The toast XML for one notification id. The database is read-only; if the
+/// lock is busy, the immutable URI still reads a consistent snapshot.
+fn toast_payload(id: u32) -> Option<String> {
+    let db = notification_db();
+    let flags = rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY;
+    let conn = rusqlite::Connection::open_with_flags(&db, flags)
+        .or_else(|_| {
+            rusqlite::Connection::open_with_flags(
+                sqlite_uri(&db, true),
+                flags | rusqlite::OpenFlags::SQLITE_OPEN_URI,
+            )
+        })
+        .ok()?;
+    let payload: Vec<u8> = conn
+        .query_row(
+            "select Payload from Notification where Id = ?1 and Type = 'toast' order by ArrivalTime desc limit 1",
+            rusqlite::params![id],
+            |r| r.get(0),
+        )
+        .ok()?;
+    Some(String::from_utf8_lossy(&payload).into_owned())
+}
+
+/// The best `<image>` in a toast: the app's own override (a WhatsApp avatar,
+/// for example) wins over a hero image, which wins over anything else.
+fn picture_from_xml(xml: &str) -> Option<String> {
+    let mut best: Option<(u8, String)> = None;
+    let mut rest = xml;
+    while let Some(start) = rest.find("<image") {
+        let tail = &rest[start..];
+        let Some(end) = tail.find('>') else { break };
+        // Attributes may be split over lines; attr() wants the exact `name="`.
+        let tag = tail[..end].replace('\n', " ").replace('\r', " ").replace('\t', " ");
+        if let Some(src) = attr(&tag, "src") {
+            let score = match attr(&tag, "placement").as_deref() {
+                Some("appLogoOverride") => 3,
+                Some("hero") => 2,
+                _ => 1,
+            };
+            if best.as_ref().map(|(best, _)| score > *best).unwrap_or(true) {
+                best = Some((score, src));
+            }
+        }
+        rest = &tail[end + 1..];
+    }
+    best.map(|(_, src)| src)
+}
+
+/// The path behind a toast image source. Toast XML uses plain Windows paths,
+/// `file:///C:/...` URLs, and occasionally percent-encoded paths.
+fn picture_path(src: &str) -> Option<PathBuf> {
+    let src = src.trim();
+    if src.is_empty() {
+        return None;
+    }
+    if let Some(local) = src.strip_prefix("file://").or_else(|| src.strip_prefix("file:")) {
+        let decoded = percent_decode(local.trim_start_matches('/'));
+        return Some(PathBuf::from(decoded.replace('/', "\\")));
+    }
+    let path = PathBuf::from(src);
+    path.is_absolute().then_some(path)
+}
+
+/// A toast image as a data URL the WebView can show. Remote images are passed
+/// through; local files are read only when their bytes really are an image.
+fn read_picture(src: &str) -> Option<String> {
+    let src = src.trim();
+    if src.is_empty() {
+        return None;
+    }
+    if src.starts_with("data:image/") {
+        return (src.len() <= 6_000_000).then(|| src.to_string());
+    }
+    if src.starts_with("https://") || src.starts_with("http://") {
+        return Some(src.to_string());
+    }
+    let path = picture_path(src)?;
+    let meta = std::fs::metadata(&path).ok()?;
+    if !meta.is_file() || meta.len() > 4 * 1024 * 1024 {
+        return None;
+    }
+    let bytes = std::fs::read(&path).ok()?;
+    let mime = image_mime(&bytes)?;
+    Some(format!("data:{mime};base64,{}", base64::engine::general_purpose::STANDARD.encode(bytes)))
+}
+
+/// The image's MIME type from its magic bytes. Toast resources often have a
+/// `.tmp` name, so the extension is not trustworthy.
+fn image_mime(bytes: &[u8]) -> Option<&'static str> {
+    if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+        Some("image/png")
+    } else if bytes.starts_with(&[0xff, 0xd8, 0xff]) {
+        Some("image/jpeg")
+    } else if bytes.starts_with(b"GIF87a") || bytes.starts_with(b"GIF89a") {
+        Some("image/gif")
+    } else if bytes.len() >= 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP" {
+        Some("image/webp")
+    } else if bytes.starts_with(b"BM") {
+        Some("image/bmp")
+    } else if bytes.starts_with(&[0x00, 0x00, 0x01, 0x00]) {
+        Some("image/x-icon")
+    } else {
+        None
+    }
+}
+
+fn percent_decode(text: &str) -> String {
+    let bytes = text.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%' && i + 2 < bytes.len() {
+            let high = (bytes[i + 1] as char).to_digit(16);
+            let low = (bytes[i + 2] as char).to_digit(16);
+            if let (Some(high), Some(low)) = (high, low) {
+                out.push((high * 16 + low) as u8);
+                i += 3;
+                continue;
+            }
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
+/// The avatar/profile picture for a toast, if it has one. Chrome writes the
+/// image a moment after the toast appears, so one short retry is worthwhile.
+fn toast_picture(id: u32) -> Option<String> {
+    for attempt in 0..2 {
+        if let Some(xml) = toast_payload(id) {
+            let Some(src) = picture_from_xml(&xml) else { return None };
+            if let Some(photo) = read_picture(&src) {
+                return Some(photo);
+            }
+        }
+        if attempt == 0 {
+            std::thread::sleep(Duration::from_millis(100));
+        }
+    }
+    None
 }
 
 /// The COM class an app registered to receive toast clicks: in its package
@@ -410,5 +576,44 @@ fn describe(
         })
         .clone();
     let id = n.Id().ok();
-    Some(json!({ "app": app, "title": title, "body": body, "icon": logo, "aumid": aumid, "id": id }))
+    // Native apps expose the app logo through the listener; Chrome's web
+    // notifications also put the sender's avatar in the toast XML.
+    let photo = id.and_then(toast_picture);
+    Some(json!({ "app": app, "title": title, "body": body, "icon": logo, "photo": photo, "aumid": aumid, "id": id }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn picture_prefers_the_app_override() {
+        let xml = r#"<toast><visual><binding>
+            <image placement="hero" src="C:\hero.png"/>
+            <image
+                placement="appLogoOverride" src="C:\avatar.png" hint-crop="none"/>
+        </binding></visual></toast>"#;
+        assert_eq!(picture_from_xml(xml).as_deref(), Some(r"C:\avatar.png"));
+    }
+
+    #[test]
+    fn picture_ignores_an_image_without_src() {
+        let xml = r#"<toast><image placement="appLogoOverride"/><image src="C:\other.png"/></toast>"#;
+        assert_eq!(picture_from_xml(xml).as_deref(), Some(r"C:\other.png"));
+    }
+
+    #[test]
+    fn decodes_a_file_url_into_a_windows_path() {
+        let path = picture_path("file:///C:/Users/Hype%20AMD/AppData/Local/avatar.tmp");
+        assert_eq!(path, Some(PathBuf::from(r"C:\Users\Hype AMD\AppData\Local\avatar.tmp")));
+    }
+
+    #[test]
+    fn detects_images_by_magic_bytes() {
+        assert_eq!(image_mime(b"\x89PNG\r\n\x1a\nrest"), Some("image/png"));
+        assert_eq!(image_mime(&[0xff, 0xd8, 0xff, 0x00]), Some("image/jpeg"));
+        assert_eq!(image_mime(b"GIF89a"), Some("image/gif"));
+        assert_eq!(image_mime(b"RIFF1234WEBP"), Some("image/webp"));
+        assert_eq!(image_mime(b"not an image"), None);
+    }
 }

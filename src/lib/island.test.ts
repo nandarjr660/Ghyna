@@ -3,7 +3,7 @@ import { arrange, bytes, duration, islandWidth, type Activity } from "./island";
 
 const call: Activity = { kind: "call", call: { app: "Teams", start: 0 } };
 const timer: Activity = { kind: "timer" };
-const download: Activity = { kind: "download", download: { name: "a.pdf", bytes: 1, speed: 1 } };
+const download: Activity = { kind: "download", download: { name: "a.pdf", bytes: 1, speed: 1, total: 0 } };
 const music: Activity = { kind: "music", lyric: false };
 const sung: Activity = { kind: "music", lyric: true };
 

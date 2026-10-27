@@ -1,8 +1,8 @@
-# Cuts a release that installed copies pick up on their own:
-#   .\scripts\release.ps1 0.1.2 "Apa yang baru"
-# Bumps the version, builds the signed installer, commits, tags and publishes a
-# GitHub release with the installer, its signature and latest.json.
-# Needs the signing key at %USERPROFILE%\.tauri\notchy.key (never commit it).
+# Cuts a signed Ghyna release that installed copies pick up automatically.
+#   .\scripts\release.ps1 1.1.2 "Apa yang baru"
+# Bumps the version, builds the signed installer, writes latest.json, then
+# commits, tags, pushes, and publishes the GitHub release.
+# The updater signing key lives at %USERPROFILE%\.tauri\ghyna.key (never commit it).
 param(
     [Parameter(Mandatory)][string]$Version,
     [string]$Notes = ""
@@ -12,60 +12,77 @@ $root = Split-Path $PSScriptRoot
 Set-Location $root
 
 if (git status --porcelain) { throw "Commit or stash your changes first." }
+$branch = (git branch --show-current).Trim()
+if ($branch -ne "main") { throw "Run this from the main branch." }
+$origin = (git remote get-url origin).Trim()
+if ($origin -notmatch "nandarjr660/Ghyna") { throw "origin must point to nandarjr660/Ghyna (found: $origin)" }
+$keyPath = "$env:USERPROFILE\.tauri\ghyna.key"
+if (-not (Test-Path $keyPath)) { throw "Missing updater signing key: $keyPath" }
 
-# 1. Version, in all three places.
-$files = @{
-    "package.json"              = '("version":\s*")[^"]+(")'
-    "src-tauri/tauri.conf.json" = '("version":\s*")[^"]+(")'
-    "src-tauri/Cargo.toml"      = '(?m)^(version = ")[^"]+(")'
-}
-foreach ($f in $files.Keys) {
-    $text = [IO.File]::ReadAllText("$root/$f")
-    [IO.File]::WriteAllText("$root/$f", ([regex]$files[$f]).Replace($text, "`${1}$Version`${2}", 1))
+# 1. Version, in every manifest and lockfile.
+$replacements = @(
+    @{ File = "package.json";              Pattern = '("version":\s*")[^"]+(")'; Count = 1 },
+    @{ File = "package-lock.json";         Pattern = '("name": "ghyna",\s*"version": ")[^"]+(")'; Count = 2 },
+    @{ File = "src-tauri/tauri.conf.json"; Pattern = '("version":\s*")[^"]+(")'; Count = 1 },
+    @{ File = "src-tauri/Cargo.toml";      Pattern = '(?m)^(version = ")[^"]+(")'; Count = 1 },
+    @{ File = "src-tauri/Cargo.lock";      Pattern = '(?m)^(name = "ghyna"\r?\nversion = ")[^"]+(")'; Count = 1 }
+)
+foreach ($r in $replacements) {
+    $path = Join-Path $root $r.File
+    $text = [IO.File]::ReadAllText($path)
+    $regex = [regex]::new($r.Pattern)
+    $new = $regex.Replace($text, "`${1}$Version`${2}", $r.Count)
+    if ($new -eq $text) { throw "Version not found in $($r.File)" }
+    [IO.File]::WriteAllText($path, $new)
 }
 
-# 2. Build. The watchdog would restart Notchy mid-build and lock the exe, so pause it.
-$env:TAURI_SIGNING_PRIVATE_KEY = Get-Content "$env:USERPROFILE\.tauri\notchy.key" -Raw
+# 2. Build and sign. The watchdog could restart a copy mid-build, so pause it.
+$env:TAURI_SIGNING_PRIVATE_KEY = Get-Content $keyPath -Raw
 $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = ""
-$watchdog = Get-ScheduledTask "Notchy Watchdog" -ErrorAction SilentlyContinue
-if ($watchdog) { Disable-ScheduledTask "Notchy Watchdog" | Out-Null }
-Stop-Process -Name notchy -ErrorAction SilentlyContinue
+$watchdog = Get-ScheduledTask "Ghyna Watchdog" -ErrorAction SilentlyContinue
+if ($watchdog) { Disable-ScheduledTask "Ghyna Watchdog" | Out-Null }
+Get-Process ghyna -ErrorAction SilentlyContinue |
+    Where-Object { $_.Path -like "$root\src-tauri\target\release\*" } |
+    Stop-Process -Force
 try {
     npm run tauri build -- --no-bundle
     if ($LASTEXITCODE) { throw "Build failed." }
-    # The antivirus scans the fresh exe and holds it meanwhile (os error 1224 when
-    # packing it), so give it a moment and retry the packing alone.
+    # Antivirus can hold the fresh exe for a moment while NSIS packs it.
     foreach ($try in 1..5) {
-        Start-Sleep -Seconds 20
+        Start-Sleep -Seconds 5
         npx tauri bundle --bundles nsis
         if (-not $LASTEXITCODE) { break }
         if ($try -eq 5) { throw "Packing the installer failed." }
     }
 } finally {
-    Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = "`"$root\src-tauri\target\release\notchy.exe`"" } | Out-Null
-    if ($watchdog) { Enable-ScheduledTask "Notchy Watchdog" | Out-Null }
+    if ($watchdog) { Enable-ScheduledTask "Ghyna Watchdog" | Out-Null }
 }
 
 # 3. latest.json: what installed copies check.
-$name = "Notchy_${Version}_x64-setup.exe"
+if (-not $Notes) { $Notes = "Ghyna $Version" }
+$name = "Ghyna_${Version}_x64-setup.exe"
 $setup = "$root\src-tauri\target\release\bundle\nsis\$name"
+$sig = "$setup.sig"
 $latest = "$root\src-tauri\target\release\bundle\nsis\latest.json"
+if (-not (Test-Path $setup)) { throw "Installer not found: $setup" }
+if (-not (Test-Path $sig)) { throw "Signature not found: $sig" }
 $json = @{
     version   = $Version
     notes     = $Notes
     pub_date  = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
     platforms = @{
         "windows-x86_64" = @{
-            signature = (Get-Content "$setup.sig" -Raw).Trim()
-            url       = "https://github.com/RamantyaDS/Notchy/releases/download/v$Version/$name"
+            signature = (Get-Content $sig -Raw).Trim()
+            url       = "https://github.com/nandarjr660/Ghyna/releases/download/v$Version/$name"
         }
     }
 } | ConvertTo-Json -Depth 4
 [IO.File]::WriteAllText($latest, $json)  # no BOM
+
 # 4. Publish.
-git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
+git add package.json package-lock.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock
 git commit -m "Release $Version"
 git tag "v$Version"
 git push origin HEAD "v$Version"
-gh release create "v$Version" $setup "$setup.sig" $latest --title "Notchy $Version" --notes $Notes
-Write-Host "Released v$Version. Installed copies (v0.2.1+) pick it up within an hour, after waking from sleep, or on their next start."
+gh release create "v$Version" $setup $sig $latest --repo nandarjr660/Ghyna --title "Ghyna $Version" --notes $Notes
+Write-Host "Released Ghyna v$Version. Installed copies update at start, hourly, or after waking from sleep."

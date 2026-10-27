@@ -1,11 +1,11 @@
-//! Keeps the notch page itself alive. Notchy can be running while its page has
+//! Keeps the notch page itself alive. Ghyna can be running while its page has
 //! stopped drawing (seen 20 Oct 2026: process fine, window visible, nothing on
 //! screen), which neither the watchdog nor the panic log notices.
 //!
 //! The page sends a heartbeat every 5 s from an animation frame, which only runs
 //! while the page is alive *and* rendering. If the window is showing and no beat
-//! came for a while, the page is reloaded; if a reload doesn't help, Notchy
-//! restarts itself. Page errors go to notchy.log too.
+//! came for a while, the page is reloaded; if a reload doesn't help, Ghyna
+//! restarts itself. Page errors go to ghyna.log too.
 
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 use std::sync::Mutex;
@@ -76,7 +76,7 @@ pub fn start(app: AppHandle) {
             if quiet > 30_000 << reloads {
                 if reloads >= 1 {
                     // Reloading didn't bring it back (a hung renderer can stay hung): start over.
-                    log_line("page still silent after a reload, restarting Notchy");
+                    log_line("page still silent after a reload, restarting Ghyna");
                     app.restart();
                 }
                 RELOADS.store(reloads + 1, Ordering::Relaxed);

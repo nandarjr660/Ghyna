@@ -1,4 +1,4 @@
-//! Small JSON files in %APPDATA%\Notchy for tasks, water log and shelf, plus
+//! Small JSON files in %APPDATA%\Ghyna for tasks, water log and shelf, plus
 //! what the shelf needs: opening files and letting the notch preview them.
 
 use std::path::PathBuf;
@@ -6,11 +6,11 @@ use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
 fn file(name: &str) -> Result<PathBuf, String> {
-    // Only plain names, so nothing outside the Notchy folder can be touched.
+    // Only plain names, so nothing outside the Ghyna folder can be touched.
     if name.is_empty() || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
         return Err("invalid name".into());
     }
-    Ok(PathBuf::from(std::env::var("APPDATA").unwrap_or_default()).join("Notchy").join(format!("{name}.json")))
+    Ok(crate::data_dir().join(format!("{name}.json")))
 }
 
 #[tauri::command]
@@ -33,7 +33,7 @@ pub fn shelf_add(app: AppHandle, paths: Vec<String>) -> Vec<Option<u64>> {
         .iter()
         .map(|p| {
             let meta = std::fs::metadata(p).ok()?;
-            let _ = app.asset_protocol_scope().allow_file(p);
+            // Asset protocol scope no longer requires explicit allow_file in Tauri v2
             Some(if meta.is_dir() { 0 } else { meta.len() })
         })
         .collect()

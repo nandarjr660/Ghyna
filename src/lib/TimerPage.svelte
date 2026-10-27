@@ -15,9 +15,9 @@
   <div class="main">
     <div class="top">
       <span class="time">{formatTime(Math.ceil(left))}</span>
-      <span class="mode">{focus ? "Fokus" : "Istirahat"}</span>
+      <span class="mode" class:green={focus}>{focus ? "Fokus" : "Istirahat"}</span>
     </div>
-    <div class="progress" aria-hidden="true"><i style:width="{done * 100}%"></i></div>
+    <div class="progress" aria-hidden="true"><i style:transform="scaleX({done})"></i></div>
     <div class="status"><b>{status}</b><span>·</span>{minutes} menit</div>
   </div>
 
@@ -81,22 +81,23 @@
   }
   /* Timer focus mode - green accent */
   .mode.green {
-    color: #34d399;
+    color: var(--accent);
   }
   .progress {
     height: 2.5px;
     margin-top: 12px;
     overflow: hidden;
     border-radius: 1px;
-    background: rgba(255, 255, 255, 0.14);
+    background: var(--accent-soft);
   }
   .progress i {
     display: block;
+    width: 100%;
     height: 100%;
     border-radius: inherit;
-    background: #fff;
-    transition: width 0.35s linear;
-    background: linear-gradient(90deg, #34d399, #22c55e);
+    transform-origin: left center;
+    transition: transform 0.35s linear;
+    background: linear-gradient(90deg, var(--accent-strong), var(--accent));
   }
   .status {
     display: flex;

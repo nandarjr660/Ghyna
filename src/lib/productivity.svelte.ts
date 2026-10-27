@@ -1,5 +1,5 @@
 // Pomodoro, water log and to-do: state, persistence and reminders.
-// Data lives in %APPDATA%\Notchy\<name>.json via load_data/save_data.
+// Data lives in %APPDATA%\Ghyna\<name>.json via load_data/save_data.
 
 import { invoke } from "@tauri-apps/api/core";
 import { chime } from "./chime";

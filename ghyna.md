@@ -1,23 +1,23 @@
-# Notchy
+# Ghyna
 
-Notch ala Dynamic Island untuk laptop Windows. Notch kecil di tengah atas layar yang menampilkan hal yang sedang terjadi (musik, timer, notifikasi, status sistem), membesar saat di-hover, lalu menyingkir lagi.
+Ghyna (dulu **Notchy**) adalah notch ala Dynamic Island untuk laptop Windows. Notch kecil di tengah atas layar yang menampilkan hal yang sedang terjadi (musik, timer, notifikasi, status sistem), membesar saat di-hover, lalu menyingkir lagi.
 
 ---
 
 ## 1. Goal
 
-**Notchy harus nyaman dipakai setiap hari di laptop sendiri: cantik, tidak mengganggu, dan tidak memberatkan PC.**
+**Ghyna harus nyaman dipakai setiap hari di laptop sendiri: cantik, tidak mengganggu, dan tidak memberatkan PC.**
 
-Notchy dianggap berhasil kalau:
+Ghyna dianggap berhasil kalau:
 - Menyala otomatis saat Windows start, dan bisa dibiarkan seharian tanpa perlu di-restart.
 - Tidak pernah menghalangi klik ke aplikasi di bawahnya, kecuali di area notch itu sendiri.
 - Hilang sendiri saat ada aplikasi full-screen (game, video, presentasi).
-- Saat diam (tidak ada animasi), CPU-nya ~0% di Task Manager. *Kenyataan terukur: ~1% satu core saat diam (sebagian besar WebView2), ~4% saat musik diputar dengan animasi piringan/equalizer. v0.2.0 (22 Okt 2026, semua proses Notchy + WebView2): diam 1,7%; musik dengan equalizer asli 4,8% vs v0.1.5 4,4% diukur bergantian dalam kondisi sama.*
+- Saat diam (tidak ada animasi), CPU-nya ~0% di Task Manager. *Kenyataan terukur: ~1% satu core saat diam (sebagian besar WebView2), ~4% saat musik diputar dengan animasi piringan/equalizer. v0.2.0 (22 Okt 2026, semua proses Ghyna + WebView2): diam 1,7%; musik dengan equalizer asli 4,8% vs v0.1.5 4,4% diukur bergantian dalam kondisi sama.*
 - Semua fitur di bagian 5 berjalan.
 
-**Pengguna:** saya sendiri dan beberapa teman. Repo dan installer kini publik di GitHub (lihat bagian 9), tapi tidak dipromosikan.
+**Pengguna:** saya sendiri dan beberapa teman. Kode masih di repo publik `RamantyaDS/Notchy`; repo `RamantyaDS/Ghyna` belum dibuat. Installer Ghyna dibagikan manual.
 
-**Status:** v0.2.2 (23 Oktober 2026). Kode di GitHub `RamantyaDS/Notchy` (publik sejak 20 Okt 2026; riwayat diringkas jadi satu commit, kata "Nusa" dibersihkan). Installer: halaman Releases repo itu.
+**Status:** v1.1.0 (27 Oktober 2026). Rebrand dari Notchy ke Ghyna: nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, dan log `ghyna.log`. Updater dimatikan di build kustom ini. Installer: `Ghyna_1.1.0_x64-setup.exe`.
 
 ---
 
@@ -25,12 +25,12 @@ Notchy dianggap berhasil kalau:
 
 | Keputusan | Pilihan | Alasan |
 |---|---|---|
-| Nama | **Notchy** | — |
+| Nama | **Ghyna** (dulu Notchy) | Rebrand 27 Okt 2026; identifier `com.ghyna.app`, data di `%APPDATA%\Ghyna` |
 | Framework | **Tauri v2** (Rust + HTML/CSS/TS) | Tampilan dan animasi gampang dibuat cantik dengan CSS. Hasilnya tetap aplikasi desktop (.exe) yang ringan. |
 | Platform | Windows 10 dan 11 saja | Banyak API yang dipakai hanya ada di Windows |
 | Sumber musik | API media Windows (`GlobalSystemMediaTransportControlsSessionManager`) | Bisa membaca player apa pun: Spotify, YouTube di browser, Apple Music, dll. |
 | Sumber lirik | **LRCLIB** (lrclib.net) | Gratis, tanpa login, ada lirik tersinkron. Lirik **tidak** diambil dari Spotify karena tidak ada API resminya dan endpoint internalnya melanggar ToS. |
-| Frontend | **Svelte** | Ringan, dan ada `spring`/`transition` bawaan untuk animasi notch. Satu komponen per mode. |
+| Frontend | **Svelte 5** | Ringan, dan ada `spring`/`transition` bawaan untuk animasi notch. Satu komponen per mode. |
 | Cuaca | Open-Meteo | Gratis, tanpa API key |
 | Lokasi cuaca | Lokasi Windows (GPS/Wi-Fi) kalau diizinkan; kalau tidak, kota yang diisi manual di Settings (dicari lewat geocoding Open-Meteo) | Tidak memakai lokasi berbasis IP: meleset dan alamat IP terkirim ke pihak ketiga |
 | Jendela | **Ukuran tetap dan transparan**; yang berubah ukuran hanya elemen notch di dalamnya (CSS) | Resize jendela Windows setiap animasi akan patah-patah dan berkedip |
@@ -40,33 +40,34 @@ Notchy dianggap berhasil kalau:
 | Musik | `media.rs`: event WinRT (`CurrentSessionChanged`, `MediaPropertiesChanged`, `PlaybackInfoChanged`, `TimelinePropertiesChanged`) di thread MTA sendiri; posisi lagu diekstrapolasi di frontend dari `position` + `updatedAt`, ticker 250 ms hanya saat notch terbuka dan lagu berjalan | Tanpa polling; saat tertutup tidak ada yang bergerak |
 | Lirik | Diambil dari frontend (`fetch` ke LRCLIB, CORS diizinkan) untuk **setiap lagu** selama opsi "baris lirik di notch kecil" aktif (default aktif; kalau dimatikan, hanya saat panel lirik dibuka). Yang ditemukan di-cache di `localStorage`, yang tidak ditemukan tidak di-cache. Judul dibersihkan dulu: buang "(Official…)", "lyric official" tanpa kurung, "- Topic"; untuk "A - B", sisi yang sama dengan artis dari player dianggap artis (menangani "Judul - Artis" maupun "Artis - Judul"). | Privasi: judul + artis + durasi terkirim ke LRCLIB; bisa dimatikan di Settings |
 | Baris lirik di notch kecil | Notch ringkas 380×30 menampilkan baris yang sedang dinyanyikan; frontend tidak berdetak, tapi memasang timer tepat ke awal baris berikutnya. Saat tidak ada lirik atau bagian instrumental ("♪"), yang tampil jam. | Hemat CPU |
-| Notch menyingkir | Hanya saat jendela aktif menutupi area notch **dan** ada elemen yang bisa diklik tepat di bawahnya (tab, tombol, kolom teks, link, item menu...), dicek lewat UI Automation di 5 titik selebar notch. Tab strip atau title bar yang kosong tidak dihitung, jadi notch tetap berukuran normal. Hasil cek dipakai ulang hingga 3 detik selama jendela tidak berubah, dan dicek ulang setelah klik mouse. Saat menyingkir, notch mengecil jadi **garis putih tipis 90×6** (tidak hilang). Saat mengecas, garis itu hijau dan terisi sesuai persen baterai. Area hover = garis itu, jadi tab di bawahnya tetap bisa diklik. Dideteksi lewat `SetWinEventHook` (foreground, minimize, location change) plus cek ulang tiap 1 detik. | Permintaan pengguna |
+| Notch menyingkir | Hanya saat jendela aktif menutupi area notch **dan** ada elemen yang bisa diklik tepat di bawahnya (tab, tombol, kolom teks, link, item menu...), dicek lewat UI Automation di 5 titik selebar notch. Tab strip atau title bar yang kosong tidak dihitung, jadi notch tetap berukuran normal. Hasil cek dipakai ulang hingga 3 detik selama jendela tidak berubah, dan dicek ulang setelah klik mouse. Saat menyingkir, notch mengecil jadi **garis putih tipis 150×6** (lebarnya mengikuti notch tertutup, tidak hilang). Saat mengecas, garis itu hijau dan terisi sesuai persen baterai. Area hover = garis itu, jadi tab di bawahnya tetap bisa diklik. Dideteksi lewat `SetWinEventHook` (foreground, minimize, location change) plus cek ulang tiap 1 detik. | Permintaan pengguna |
 | Status sistem | Semua lewat event: callback volume (`IAudioEndpointVolumeCallback`), perangkat audio (`IMMNotificationClient`), `RegisterPowerSettingNotification` (charger, baterai, kecerahan), keyboard hook (hanya melihat tombol Caps Lock dan perubahan layout; isi ketikan tidak dibaca), `NetworkStatusChanged`, `RegNotifyChangeKeyValue` pada ConsentStore (kamera/mic), dan pemantau folder Screenshots. Ditampilkan sebagai "peek" 310×60 selama ~2 detik. | Tanpa polling. Overlay volume bawaan Windows masih ikut muncul; menyembunyikannya belum dikerjakan. |
-| Settings | Jendela terpisah dari menu tray: mirror notifikasi (on/off + tombol ke pengaturan Do Not Disturb), baris lirik di notch kecil, link kalender ICS, durasi Pomodoro, pengaturan minum air, kota cuaca. | Disimpan di `%APPDATA%\Notchy\settings.json` |
+| Settings | Jendela terpisah dari menu tray: mirror notifikasi (on/off + tombol ke pengaturan Do Not Disturb), baris lirik di notch kecil, link kalender ICS, durasi Pomodoro, pengaturan minum air, kota cuaca. | Disimpan di `%APPDATA%\Ghyna\settings.json` |
+| Migrasi data lama | Saat pertama dijalankan, Ghyna menyalin `settings.json`, `todo.json`, `water.json`, dan `shelf.json` dari `%APPDATA%\Notchy` ke `%APPDATA%\Ghyna`; file log dilewati dan file Ghyna yang sudah ada tidak ditimpa | Pengguna tidak perlu mengatur ulang setelah rebrand |
 | Mengetik di notch | `begin_typing`/`end_typing`: notch sementara dibuat focusable dan diambil alih fokusnya lewat `AttachThreadInput` + `SetForegroundWindow`; setelah selesai, fokus dikembalikan ke aplikasi sebelumnya | Windows hanya mengizinkan aplikasi yang menerima input terakhir mengambil fokus, sedangkan klik di notch diterima proses WebView2 |
-| Data produktivitas | `todo.json`, `water.json` (7 hari terakhir), `shelf.json` di `%APPDATA%\Notchy`; pengingat memakai timer di frontend | Tanpa server |
-| Mirror notifikasi | `UserNotificationListener` (baca saja). Pemicu: Windows menulis `LastNotificationAddedTime` per aplikasi di `HKCU\...\Notifications\Settings` ~75–125 ms setelah notifikasi masuk; nilai itu dibaca tiap 200 ms (handle key disimpan, struktur dipindai ulang tiap 10 s; AUMID aplikasi desktop berupa key bertingkat), dan daftar notifikasi baru diambil kalau nilainya berubah. Delay di notch ~0,3–0,5 s. Notifikasi beruntun diantre; peek notifikasi/screenshot tertahan saat di-hover dan bisa diklik. Klik = klik notifikasi asli: XML toast diambil dari database notifikasi Windows (`%LOCALAPPDATA%\Microsoft\Windows\Notifications\wpndatabase.db`, baca saja, lewat `rusqlite`) berdasarkan Id yang sama dengan listener (kalau toast-nya sudah diganti, pakai toast terbaru dari aplikasi yang sama). Argumen `launch` diteruskan ke `INotificationActivationCallback::Activate` milik aplikasinya, dengan CLSID dari `ToastActivatorCLSID` di AppxManifest (folder paket, atau `WindowsApps\<paket>` untuk Edge) atau dari `CustomActivator` di registry. Pengirim yang dipakai adalah `PrimaryId` di database (mis. `Edge!https://web.whatsapp.com/`, bukan `Edge!App` dari listener). Toast `activationType="protocol"` dibuka sebagai link. Setelah berhasil, toast dihapus dari pusat notifikasi. Kalau gagal, alasannya ditulis di log dan Notchy membuka aplikasinya lewat `shell:AppsFolder` (cara lama). Teruji: WA Web langsung membuka chat-nya. Supaya tidak double: Do Not Disturb Windows (tombol di Settings). | Event `NotificationChanged` ditolak untuk aplikasi non-MSIX; `RegNotifyChangeKeyValue` tidak terpicu untuk key ini; menulis `ShowBanner` ke registry tidak berlaku langsung; banner Windows 11 bukan jendela tersendiri, jadi tidak bisa disembunyikan |
+| Data produktivitas | `todo.json`, `water.json` (7 hari terakhir), `shelf.json` di `%APPDATA%\Ghyna`; pengingat memakai timer di frontend | Tanpa server |
+| Mirror notifikasi | `UserNotificationListener` (baca saja). Pemicu: Windows menulis `LastNotificationAddedTime` per aplikasi di `HKCU\...\Notifications\Settings` ~75–125 ms setelah notifikasi masuk; nilai itu dibaca tiap 200 ms (handle key disimpan, struktur dipindai ulang tiap 10 s; AUMID aplikasi desktop berupa key bertingkat), dan daftar notifikasi baru diambil kalau nilainya berubah. Delay di notch ~0,3–0,5 s. Notifikasi beruntun diantre; peek notifikasi/screenshot tertahan saat di-hover dan bisa diklik. Klik = klik notifikasi asli: XML toast diambil dari database notifikasi Windows (`%LOCALAPPDATA%\Microsoft\Windows\Notifications\wpndatabase.db`, baca saja, lewat `rusqlite`) berdasarkan Id yang sama dengan listener (kalau toast-nya sudah diganti, pakai toast terbaru dari aplikasi yang sama). Argumen `launch` diteruskan ke `INotificationActivationCallback::Activate` milik aplikasinya, dengan CLSID dari `ToastActivatorCLSID` di AppxManifest (folder paket, atau `WindowsApps\<paket>` untuk Edge) atau dari `CustomActivator` di registry. Pengirim yang dipakai adalah `PrimaryId` di database (mis. `Edge!https://web.whatsapp.com/`, bukan `Edge!App` dari listener). Toast `activationType="protocol"` dibuka sebagai link. Setelah berhasil, toast dihapus dari pusat notifikasi. Kalau gagal, alasannya ditulis di log dan Ghyna membuka aplikasinya lewat `shell:AppsFolder` (cara lama). Teruji: WA Web langsung membuka chat-nya. Supaya tidak double: Do Not Disturb Windows (tombol di Settings). | Event `NotificationChanged` ditolak untuk aplikasi non-MSIX; `RegNotifyChangeKeyValue` tidak terpicu untuk key ini; menulis `ShowBanner` ke registry tidak berlaku langsung; banner Windows 11 bukan jendela tersendiri, jadi tidak bisa disembunyikan |
 | Ganti output audio | `IPolicyConfig::SetDefaultEndpoint` (COM tidak resmi, dipakai juga oleh EarTrumpet/SoundSwitch); tombol di notch terbuka berpindah ke perangkat output berikutnya | Tidak ada API resmi |
 | Kalender | Link ICS rahasia di Settings, diunduh lewat `Windows.Web.Http.HttpClient` di Rust (server kalender tidak mengizinkan CORS), di-parse di frontend; event berikutnya tampil di tampilan jam; pengingat 10 menit sebelum dan saat mulai; diambil ulang tiap 15 menit | Tanpa login OAuth |
 | Shelf | Drop pakai event drag-drop Tauri; drag keluar pakai `tauri-plugin-drag` (CrabNebula) | Drag native Windows tidak tersedia di Tauri inti |
-| Tidak merebut fokus | Opsi `focusable: false` di `tauri.conf.json` | Tauri menyusun ulang style jendela, jadi `WS_EX_NOACTIVATE` yang dipasang manual akan terhapus |
+| Tidak merebut fokus | Jendela memakai `focus: true` dan `focusable: true`, tetapi ditampilkan dengan `ShowWindow(SW_SHOWNOACTIVATE)`. `begin_typing`/`end_typing` meminjam fokus hanya saat mengetik, lalu mengembalikannya ke aplikasi sebelumnya | Tauri menyusun ulang style jendela, jadi `WS_EX_NOACTIVATE` manual tidak awet; perilaku tanpa aktivasi dijaga lewat `ShowWindow` |
 | Deteksi full-screen | `SHQueryUserNotificationState` **atau** jendela aktif menutupi seluruh monitor, dicek setiap 1 detik | Shell Windows tidak mendeteksi semua jendela full-screen (misalnya browser F11) |
-| Penyimpanan data | File JSON di `%APPDATA%\Notchy\` | Tanpa akun, tanpa server, data tetap di laptop |
-| Penjaga (watchdog) | Task Scheduler **"Notchy Watchdog"** (hanya di laptop pengguna, belum ikut installer): saat login + tiap 2 menit menjalankan `notchy.exe --watchdog`, tanpa batas waktu, tetap jalan di baterai, `MultipleInstances IgnoreNew`. Kalau Notchy hidup, salinan baru langsung keluar (single-instance); kalau mati, salinan itu yang mengambil alih (log: `start (restarted by watchdog)`). Exit dari tray menulis `%APPDATA%\Notchy\exited-by-user`, sehingga penjaga membiarkannya mati; dibuka normal (atau autostart) menghapus penanda itu. | Notchy sempat hilang tanpa jejak. Autostart (Run key) hanya berlaku saat login; Notchy bertahan melewati sleep. |
-| Update otomatis | `tauri-plugin-updater` dari GitHub Releases repo ini (repo publik): `releases/latest/download/latest.json`. Dicek saat Notchy menyala, tiap 1 jam, dan 30 detik setelah laptop bangun dari sleep (sejak v0.2.1; sebelumnya tiap 6 jam, dan waktu sleep tidak terhitung). Peek "siap dipasang" muncul sekali per versi. Saat baru menyala, update langsung dipasang (installer NSIS mode passive, Notchy mulai ulang sendiri); setelahnya hanya diunduh lalu muncul peek "Notchy vX siap, klik untuk pasang", jadi tidak pernah restart saat dipakai. Installer ditandatangani: kunci privat di `%USERPROFILE%\.tauri\notchy.key` (tanpa password, **jangan di-commit, wajib dibackup**; kalau hilang, pengguna harus pasang ulang manual), kunci publik di `tauri.conf.json`. Salinan yang jalan dari folder `target\` (milik pengembang) tidak pernah update sendiri. | Pilihan pengguna: tarik dari repo yang sama (dijadikan publik); riwayat git diringkas jadi satu commit supaya bersih |
-| Kesehatan tampilan | Halaman notch mengirim detak jantung tiap 5 detik dari `requestAnimationFrame` (hanya jalan kalau halaman hidup **dan** menggambar). Kalau jendela sedang tampil dan 30 detik tanpa detak: halaman dimuat ulang; 60 detik kemudian masih diam: Notchy restart sendiri. Penghitung direset saat jendela tersembunyi, layar terkunci, atau baru bangun dari sleep. Error JS dan promise yang gagal ditulis ke `notchy.log` ("page error"). Tray punya "Muat ulang notch". Teruji dengan membekukan renderer: pulih dalam ~1,5 menit. | 20 Okt 2026 Notchy "hilang" padahal prosesnya hidup dan jendelanya tampil, hanya tidak menggambar apa pun; penjaga dan log tidak menangkapnya |
+| Penyimpanan data | File JSON di `%APPDATA%\Ghyna\` | Tanpa akun, tanpa server, data tetap di laptop |
+| Penjaga (watchdog) | Task Scheduler **"Ghyna Watchdog"** (hanya di laptop pengguna, belum ikut installer): saat login + tiap 2 menit menjalankan `ghyna.exe --watchdog`, tanpa batas waktu, tetap jalan di baterai, `MultipleInstances IgnoreNew`. Kalau Ghyna hidup, salinan baru langsung keluar (single-instance); kalau mati, salinan itu yang mengambil alih (log: `start (restarted by watchdog)`). Exit dari tray menulis `%APPDATA%\Ghyna\exited-by-user`, sehingga penjaga membiarkannya mati; dibuka normal (atau autostart) menghapus penanda itu. | Ghyna sempat hilang tanpa jejak. Autostart (Run key) hanya berlaku saat login; Ghyna bertahan melewati sleep. |
+| Update otomatis (disiapkan, belum aktif) | Endpoint `tauri-plugin-updater` diarahkan ke `https://github.com/RamantyaDS/Ghyna/releases/latest/download/latest.json`, tetapi build 1.1.0 memakai `CUSTOM_BUILD = true` di `src-tauri/src/update.rs`, sehingga pengecekan update berhenti sebelum menghubungi GitHub. Menu tray "Cek update" hanya menampilkan versi terpasang dan versi terbaru. Repo `RamantyaDS/Ghyna` belum dibuat (GitHub 404), jadi endpoint itu belum bisa dipakai. Alur lama (cek saat menyala, tiap jam, 30 detik setelah bangun dari sleep; installer NSIS passive; kunci `%USERPROFILE%\.tauri\notchy.key`) tetap ada di kode tetapi tidak dijalankan. | Updater dimatikan sampai repo dan rilis Ghyna siap; installer 1.1.0 dibagikan manual tanpa signature |
+| Kesehatan tampilan | Halaman notch mengirim detak jantung tiap 5 detik dari `requestAnimationFrame` (hanya jalan kalau halaman hidup **dan** menggambar). Kalau jendela sedang tampil dan 30 detik tanpa detak: halaman dimuat ulang; 60 detik kemudian masih diam: Ghyna restart sendiri. Penghitung direset saat jendela tersembunyi, layar terkunci, atau baru bangun dari sleep. Error JS dan promise yang gagal ditulis ke `ghyna.log` ("page error"). Tray punya "Muat ulang notch". Teruji dengan membekukan renderer: pulih dalam ~1,5 menit. | 20 Okt 2026 Ghyna "hilang" padahal prosesnya hidup dan jendelanya tampil, hanya tidak menggambar apa pun; penjaga dan log tidak menangkapnya |
 | Halaman GitHub | `README.md` berbahasa Inggris (plus ringkasan Bahasa Indonesia) dengan banner, GIF demo, dan potongan panel di `docs/`. Sumbernya di `D:\Projects\notchy-promo\readme` (`banner.html` dirender oleh `shot.mjs`; GIF dan potongan dari video promo lewat ffmpeg). Deskripsi repo + 14 topik diisi lewat `gh repo edit`. Gambar social preview harus diunggah manual (Settings → General → Social preview, pakai `docs/banner.png`). Tidak menyebut Nusa. | Permintaan pengguna: repo menarik dilihat orang |
 | Tetap paling atas | Tiap detik (di loop watcher) dicek apakah ada jendela biasa yang terlihat di atas notch dalam urutan z; kalau ada, `SetWindowPos(HWND_TOPMOST, SWP_NOMOVE/NOSIZE/NOACTIVATE)` dan dicatat di log (paling sering sekali per 10 menit). Teruji: didorong ke bawah 18 jendela, kembali ke atas < 2 detik. | 21 Okt 2026: notch "hilang" saat Outlook di depan; jendelanya masih bertanda topmost tapi posisinya di bawah jendela biasa (urutan ke-74). Kemungkinan ini juga penyebab "hilang" 20 Okt dan muat ulang otomatis malamnya: WebView2 berhenti menggambar saat tertutup |
-| Log "kotak hitam" | `%APPDATA%\Notchy\notchy.log`: `start vX`, `exit (normal)`, dan `PANIC …` (thread, file:baris, pesan). Release memakai `panic = "unwind"`, sehingga panic di thread latar hanya mematikan thread itu. | Notchy dua kali "hilang" tanpa jejak crash (19 Okt 2026). Ada baris PANIC berarti bug kode; tidak ada baris sama sekali berarti dimatikan dari luar (curiga: Trend Micro Apex One, karena Notchy memakai keyboard hook). |
-| Distribusi | Installer bawaan Tauri (NSIS, per-user, tanpa admin), dipasang manual sekali; sesudahnya update otomatis (baris "Update otomatis"). Data tetap saat update. Cara membuat rilis: bagian 9. | Hanya untuk diri sendiri dan teman. Tanpa code signing. Windows akan menampilkan peringatan SmartScreen; teman cukup klik "Run anyway". |
+| Log "kotak hitam" | `%APPDATA%\Ghyna\ghyna.log`: `start vX`, `exit (normal)`, dan `PANIC …` (thread, file:baris, pesan). Release memakai `panic = "unwind"`, sehingga panic di thread latar hanya mematikan thread itu. | Ghyna dua kali "hilang" tanpa jejak crash (19 Okt 2026). Ada baris PANIC berarti bug kode; tidak ada baris sama sekali berarti dimatikan dari luar (curiga: Trend Micro Apex One, karena Ghyna memakai keyboard hook). |
+| Distribusi | Installer Ghyna bawaan Tauri (NSIS, per-user, tanpa admin), dipasang manual. Update otomatis belum aktif di v1.1.0, jadi versi baru juga dipasang manual. Data tetap saat update. Cara membuat rilis: bagian 9. | Hanya untuk diri sendiri dan teman. Tanpa code signing. Windows akan menampilkan peringatan SmartScreen; teman cukup klik "Run anyway". |
 
 ---
 
 ## 3. Keputusan yang masih terbuka
 
 - [ ] Shortcut keyboard untuk membuka notch.
-- [ ] Ikon aplikasi: masih ikon bawaan Tauri. Kandidat: wordmark "notchy" + pil notch dari video promo.
-- [ ] Overlay volume bawaan Windows masih ikut muncul bersama peek volume Notchy.
+- [ ] Ikon aplikasi: masih ikon bawaan Tauri. Kandidat: wordmark "ghyna" + pil notch dari video promo.
+- [ ] Overlay volume bawaan Windows masih ikut muncul bersama peek volume Ghyna.
 
 ---
 
@@ -88,7 +89,7 @@ Notchy dianggap berhasil kalau:
 | Mode | Lebar × tinggi | Radius sudut bawah | Lengkung "telinga" |
 |---|---|---|---|
 | Tertutup / istirahat | 150 × 30 | 14 | 10 |
-| Menyingkir: ada yang bisa diklik di bawah notch (garis putih; hijau dan terisi sesuai baterai saat mengecas) | 90 × 6 | 4 | 4 |
+| Menyingkir: ada yang bisa diklik di bawah notch (garis putih; lebar mengikuti notch tertutup, hijau dan terisi sesuai baterai saat mengecas) | 150 × 6 | 4 | 4 |
 | Ringkas: musik diputar (cover kiri, equalizer kanan) | 200 × 30 | 14 | 10 |
 | Ringkas: mengecas (cincin baterai + petir, jam) | 200 × 30 | 14 | 10 |
 | Ringkas: musik + baris lirik (piringan berputar, lirik, equalizer) | 380 × 30 | 14 | 10 |
@@ -96,21 +97,23 @@ Notchy dianggap berhasil kalau:
 | Screenshot baru (thumbnail + tombol) | 360 × 96 | 24 | 16 |
 | Notifikasi Windows (ikon app, nama app, judul, isi) | 380 × 72 | 22 | 14 |
 | Notifikasi ringkas (charger, headphone, dsb.) | 310 × 60 | 19 | 13 |
-| Terbuka (musik, timer, air, shelf, to-do) | 420 × 140 | 32 | 22 |
-| Lirik (terbelah) | 520 × 140 | 32 | 22 |
+| Terbuka (musik, timer, air, shelf, to-do, clipboard) | 400 × 132 | 30 | 21 |
+| Lirik (terbelah) | 500 × 140 | 30 | 21 |
 
 - Notch menempel ke tepi atas layar: sudut atas lurus, hanya sudut bawah yang membulat.
 - "Telinga" adalah lengkung cekung kecil di kiri dan kanan atas, supaya notch terlihat menyatu dengan tepi layar.
 - Animasi ukuran: `width`/`height` 0.62 detik dengan `cubic-bezier(0.34, 1.32, 0.5, 1)` (sedikit membal), `border-radius` 0.45 detik.
-- Jendela Tauri dibuat tetap ~600 × 200 supaya mode terbesar plus bayangan muat; sisanya transparan dan click-through.
+- Jendela Tauri dibuat tetap 900 × 200 supaya mode terbesar plus bayangan muat; sisanya transparan dan click-through.
 - Angka-angka ini titik awal dan boleh disesuaikan setelah dicoba di layar asli.
 
 **Visual**
 - Musik: layout player: cover besar sejajar header, progress di bawahnya, tombol lirik di bawah cover, transport di tengah. Warna dasar notch mengambil warna utama cover album selama tampilan musik. Animasi piringan dan equalizer dibuat bertahap (5 kali/detik, serentak) karena animasi 60 fps di jendela transparan memakan ~12% satu core; versi bertahap ~4%.
-- Mode istirahat: cuaca di kiri, jam di tengah; setelah 2 menit tanpa gerakan mouse, jam diganti mata.
+- Mode istirahat: cuaca di kiri, jam di tengah. Setelah 6 detik tanpa aktivitas, jam diganti mata terbuka; setelah 30 detik berikutnya tanpa aktivitas, mata tertidur. Musik/video yang diputar menunda tidur, dan aktivitas baru membangunkan mata.
 - **Hitam polos** (dipilih pengguna, menggantikan glow gradien): latar hitam pekat dengan garis tepi putih tipis (16%) yang ikut melengkung di "telinga", plus sorotan putih sangat halus di dasar. Warna hanya dipakai untuk status: hijau mengecas, merah timer fokus, oranye mic dipakai, biru air, dan warna cover album saat musik. Sudut membulat, animasi spring, tipografi bersih.
-- Notch terbuka punya 5 halaman (Musik/Jam, Timer, Air, To-do, Shelf): titik di bawah, panah kiri/kanan di sisi, dan scroll mouse (kecuali di atas daftar yang bisa di-scroll). Tombol mic dan output audio ada di halaman Jam.
+- Notch terbuka punya 6 halaman (Musik/Jam, Timer, Air, To-do, Shelf, Clipboard): titik di bawah, panah kiri/kanan di sisi, dan scroll mouse (kecuali di atas daftar yang bisa di-scroll). Tombol mic dan output audio ada di halaman Jam.
 - Mata: berkedip setiap 3,5–6,5 detik, melirik ke arah kursor, dan membesar sedikit saat kursor mendekat (dalam ~250px). Arah pandang dihitung di Rust, maksimal ~60 update/detik, dan hanya dikirim saat berubah.
+- Unduhan: nama file, ukuran (bytes/total kalau total diketahui, bytes saja kalau tidak), kecepatan, dan meter persen 48×3 di sudut kanan. Total diketahui: `{persen}%` + bar terisi; total belum diketahui: `…` + track kosong. Tidak ada shimmer atau cahaya bergerak.
+- Transisi halaman: `pageSlide` — halaman lama keluar 220 ms, halaman baru masuk 360 ms + delay 20 ms, `cubicOut`; geser 18 px ke arah navigasi, lift -3 px (keluar) / +5 px (masuk), skala 1 → 0,96, blur 1,8 px, dan cross-fade opacity. Halaman yang keluar tidak menerima pointer.
 
 **Performa**
 - Hanya menggambar saat ada yang bergerak. Saat diam, animasi CSS harus berhenti total.
@@ -155,7 +158,7 @@ Setiap fitur baru dianggap selesai kalau memenuhi **Definition of Done (DoD)**-n
 - **Wi-Fi**: notifikasi saat koneksi putus atau tersambung kembali.
 - **Headphone Bluetooth**: notifikasi saat tersambung, plus baterai kalau perangkatnya melaporkannya.
 
-### E. Fitur tambahan Notchy
+### E. Fitur tambahan Ghyna
 1. **Indikator kamera dan mikrofon**: titik warna di notch saat ada aplikasi yang memakai kamera/mic.
    Sumber data: registry `CapabilityAccessManager\ConsentStore\{webcam,microphone}`.
 2. **Mute mic global**: satu klik di notch untuk mute/unmute mic default, dengan status yang selalu terlihat.
@@ -175,23 +178,31 @@ Dikerjakan sebagai **satu tahap besar**, dirilis sekali setelah lolos pengujian 
    DoD: panggilan Teams/WA sungguhan memunculkan pil, durasi benar, mute bekerja, pil hilang saat panggilan selesai.
 3. **Earbuds tersambung + baterai**: peek model + baterai (kalau perangkat melaporkannya) dan peringatan baterai lemah.
    DoD: earbuds pengguna memunculkan peek; tanpa data baterai tetap muncul "tersambung".
-4. **Progres berjalan**: unduhan browser (file `.crdownload`/`.part` di folder Downloads: ukuran + kecepatan, lalu "Selesai, klik untuk buka"; tanpa persen karena total tidak diketahui). Rekam layar: titik merah + durasi, **hanya kalau riset menemukan sinyal Windows yang bisa dipakai**; kalau tidak, dicoret dan dicatat.
+4. **Progres berjalan**: unduhan browser dipantau dari folder Downloads dan folder unduhan kustom di Preferences browser; nama file, ukuran, kecepatan, dan path final diambil dari Chromium History. Notch menampilkan nama, bytes/total (atau bytes saja kalau total belum diketahui), kecepatan, dan meter persen 48×3 di sudut kanan (`{persen}%` + bar terisi; `…` + track kosong kalau total belum diketahui), tanpa shimmer. Setelah selesai: "Selesai, klik untuk buka". Rekam layar: titik merah + durasi, **hanya kalau riset menemukan sinyal Windows yang bisa dipakai**; kalau tidak, dicoret dan dicatat.
    DoD: unduhan nyata di Edge tampil dan selesai dengan benar; unduhan yang dibatalkan hilang dari notch.
    Sejak v0.2.2: hanya file yang bertambah dalam 15 detik terakhir yang tampil. File yang sudah ada saat pertama terlihat dianggap sisa (unduhan gagal/dibatalkan) sampai ia bertambah lagi, dan tidak dilaporkan "selesai" saat dihapus. Pemeriksaan tiap detik berhenti 60 detik setelah pertumbuhan terakhir. (Pemicu: di laptop teman, sisa `.crdownload` 223 MB tampil terus sebagai "Mengunduh…".)
 5. **Equalizer asli**: batang mengikuti level suara yang diputar (meter audio Windows, ~10×/detik, hanya saat musik main).
    DoD: batang diam saat lagu hening, berdenyut saat ramai; CPU saat musik tidak naik berarti dibanding v0.1.5.
-6. **Cermin kamera**: preview webcam kecil di notch lewat tombol, plus tawaran "Cek kamera" 2 menit sebelum meeting di kalender. Indikator "kamera dipakai" mengabaikan Notchy sendiri.
+6. **Cermin kamera**: preview webcam kecil di notch lewat tombol, plus tawaran "Cek kamera" 2 menit sebelum meeting di kalender. Indikator "kamera dipakai" mengabaikan Ghyna sendiri.
    DoD: preview tampil, kamera mati lagi saat ditutup (lampu padam), tawaran muncul sebelum meeting.
 7. **Drop untuk dibagikan**: zona "Bagikan" di samping Shelf saat file di-drag ke notch, membuka jendela Share Windows.
    DoD: file bisa dibagikan ke aplikasi lewat Share Windows.
 8. **Riwayat clipboard**: 20 item terakhir (teks dan gambar), **di memori saja**, klik untuk menyalin lagi. Isi dari password manager (format `ExcludeClipboardContentFromMonitorProcessing` / `CanIncludeInClipboardHistory = 0`) tidak disimpan.
    DoD: copy teks/gambar tampil; teks bertanda password tidak tampil; hilang setelah restart.
-9. **Pintasan cepat**: halaman tombol (default: kunci layar, sleep, screenshot, buka Downloads), bisa diubah di Settings (aplikasi, folder, link, skrip milik pengguna).
-   DoD: semua tombol default bekerja; tombol buatan sendiri tersimpan dan bekerja.
+9. ~~**Pintasan cepat**~~ — **dihapus di v1.1.0** atas permintaan pengguna; halaman Pintasan dan bagian Settings-nya tidak ditampilkan lagi. Kode `ShortcutsPage.svelte` dan `src-tauri/src/shortcuts.rs` masih ada tetapi tidak dipakai.
+   DoD: tidak ada tab Pintasan; tab yang tersisa tepat 6.
 10. **Gestur**: scroll di pita atas notch (setinggi notch tertutup) = volume (atas = naik); geser touchpad = pindah aktivitas utama (tertutup) atau halaman (terbuka); **tekan lama = kunci notch tetap terbuka** sampai tekan lama lagi atau klik di luar (hover sudah membuka notch, jadi "tekan lama = buka" diganti ini).
     DoD: tidak bentrok dengan scroll di halaman yang terbuka; volume berubah dengan peek volume yang sudah ada.
 11. **Cek update di tray**: menu "Cek update (v0.x.x)". Ada versi baru → langsung pasang dan menyala lagi; sudah terbaru → peek "Sudah versi terbaru"; gagal → peek gagal; versi dari folder build → peek "versi pengembang".
     DoD: ketiga hasil teruji (versi lama → update, versi terbaru, tanpa internet).
+
+### G. v1.1.0: rebrand dan penyempurnaan
+1. **Rebrand Notchy → Ghyna**: nama aplikasi, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, log `ghyna.log`, dan watchdog `Ghyna Watchdog`. Data Notchy lama disalin sekali saat pertama dijalankan.
+2. **Meter unduhan**: persen di sudut kanan, bar 48×3, tanpa shimmer; kalau total belum diketahui tampil `…` dengan track kosong.
+3. **Transisi halaman**: `pageSlide` 220 ms keluar / 360 ms masuk, cross-fade + geser + blur halus.
+4. **Halaman Pintasan dihapus**: tidak ada tab atau bagian Settings untuk Pintasan.
+5. **Mata tidur 30 detik**: jam 6 detik → mata terbuka → tidur setelah 30 detik tanpa aktivitas.
+   DoD: `npm run check` 0 error/0 warning; `npm test` 11/11; `npm run build` sukses; CDP mengukur mata terbuka → tidur 30,2 detik; tab tepat 6; installer `Ghyna_1.1.0_x64-setup.exe` terbentuk dan hash dicatat.
 
 ---
 
@@ -202,7 +213,7 @@ Semua fitur di atas masuk v1. Urutan ini ada karena sebagian fitur bergantung pa
 1. **Fondasi (A)**. Semua fitur lain bergantung pada jendela notch ini. ✅
 2. **Musik dan lirik (B)**, fitur utama sekaligus uji coba sistem "tampilan per mode". ✅ Sudah dites dengan YouTube; aplikasi Spotify belum dites.
 3. **Status sistem (D)** dan **E1–E4**. Semuanya event ringan yang memakai pola "muncul sebentar lalu kembali" yang sama. ✅ Sudah dites: volume, kecerahan, Caps Lock, screenshot, mode mengecas, mute mic, cuaca. Belum dites: ganti bahasa keyboard, Wi-Fi putus/sambung, headphone, kamera/mic dipakai, jendela Settings. Baterai headphone belum dibuat. Screenshot belum bisa di-drag (menunggu Shelf).
-4. **Produktivitas (C)**. ✅ Notch terbuka sekarang punya 5 halaman (Musik/Jam, Timer, Air, To-do, Shelf) dengan titik dan panah kiri/kanan, plus scroll mouse. Sudah dites: timer jalan dan tampil di notch kecil, catat minum, tambah to-do dengan mengetik di notch, screenshot masuk Shelf, navigasi. Belum dites: drag file dari Explorer ke notch, drag file keluar dari Shelf, bunyi chime, dan pengingat to-do/minum saat waktunya tiba.
+4. **Produktivitas (C)**. ✅ Notch terbuka sekarang punya 6 halaman (Musik/Jam, Timer, Air, To-do, Shelf, Clipboard) dengan titik dan panah kiri/kanan, plus scroll mouse. Sudah dites: timer jalan dan tampil di notch kecil, catat minum, tambah to-do dengan mengetik di notch, screenshot masuk Shelf, navigasi. Belum dites: drag file dari Explorer ke notch, drag file keluar dari Shelf, bunyi chime, dan pengingat to-do/minum saat waktunya tiba.
 5. **E5–E7**. ✅ Riset E6: membaca notifikasi **tidak** butuh MSIX (`UserNotificationListener` mengizinkan aplikasi biasa), tapi event perubahannya butuh MSIX. Sudah dites: notifikasi uji tampil di notch, tombol output audio tampil, parser kalender (zona waktu, event berulang, EXDATE, dibatalkan, seharian). Belum dites: berpindah output (laptop ini hanya punya satu output), kalender dengan link ICS asli, jendela Settings.
 6. **Penyempurnaan setelah v1** ✅
    - Tampilan hitam polos; garis menyingkir hanya saat ada yang bisa diklik di bawah notch (UI Automation).
@@ -223,9 +234,13 @@ Semua fitur di atas masuk v1. Urutan ini ada karena sebagian fitur bergantung pa
    - Uji mandiri dengan screenshot (`PrintWindow` + `PW_RENDERFULLCONTENT`; screenshot layar biasa tidak menangkap jendela WebView2 transparan, dan PrintWindow ikut menggambar bingkai caption tersembunyi yang tidak tampil di layar): musik + lirik + equalizer bergerak; lirik + unduhan; lirik + panggilan + unduhan dan geser ganti aktivitas utama (Zoom utama dengan mute, unduhan utama dengan garis berjalan); browser baru dianggap panggilan setelah 10 detik; peek "Selesai diunduh"; clipboard (teks bertanda password manager tidak tersimpan, gambar tidak dobel, kosong lagi setelah restart); halaman Pintasan dan tombol Downloads; tekan lama mengunci terbuka, klik di luar melepas; scroll volume dengan peek; cermin kamera terbuka, tetap terbuka, kamera dilepas setelah "Selesai".
    - Uji bersama pengguna, lolos semua: panggilan sungguhan + mute, drag ke "Bagikan" membuka Share, "Cek update" (peek versi pengembang), timer + musik, geser touchpad, pintasan link, klik notif WA, unduhan asli. Earbuds belum (pengguna tidak punya).
    - Perbaikan dari pengujian: kecepatan unduhan 0 B/s (daftar folder tidak memperbarui ukuran file yang sedang ditulis → baca ukuran dari file, sekali per detik); titik mic menumpuk di gelembung panggilan (titik pindah ke ujung pulau, mic disembunyikan saat panggilan); gambar clipboard dobel; scroll volume tanpa tanda saat notch terbuka (peek volume tampil di atas halaman); tombol kamera tidak terjangkau saat musik main ("Kamera" jadi pintasan default); equalizer + piringan menggambar ulang ~13×/detik (meter 5×/detik dan piringan diputar oleh detak yang sama); lirik macet saat aktivitas lain memimpin (pengatur waktu lirik kini jalan selama musik ada di pulau).
-   - Uji sendiri yang perlu diingat: tulisan registry/file dari shell Claude yang di-sandbox tidak terlihat proses lain; tulis lewat proses WMI (`Win32_Process.Create`). Hook mouse Notchy tidak melihat `SetCursorPos`; pakai `mouse_event` (input tersuntik).
+   - Uji sendiri yang perlu diingat: tulisan registry/file dari shell Claude yang di-sandbox tidak terlihat proses lain; tulis lewat proses WMI (`Win32_Process.Create`). Hook mouse Ghyna tidak melihat `SetCursorPos`; pakai `mouse_event` (input tersuntik).
    - Update: v0.1.5 terpasang → v0.2.0 lewat updater dalam ~9 detik; "Cek update (v0.2.0)" di versi terpasang → "Sudah versi terbaru". Penanda NSS ada di exe dalam installer.
-   - Uji tahan lama semalam **dilewati** atas keputusan pengguna (rilis 22 Okt 2026); pantau `notchy.log` beberapa hari pertama.
+   - Uji tahan lama semalam **dilewati** atas keputusan pengguna (rilis 22 Okt 2026); pantau `ghyna.log` beberapa hari pertama.
+
+8. **v1.1.0 (bagian 5G): rebrand dan penyempurnaan.** ✅ Rilis 27 Okt 2026.
+   - Rebrand Notchy → Ghyna (nama, identifier, path data, log, watchdog) + migrasi data lama; meter persen unduhan di sudut kanan tanpa shimmer; transisi halaman `pageSlide`; halaman Pintasan dihapus; mata tidur setelah 30 detik.
+   - Verifikasi: `npm run check` 0 error/0 warning; `npm test` 11/11; `npm run build` sukses; CDP mengukur mata terbuka → tidur **30,2 detik**; tab tepat 6; installer `Ghyna_1.1.0_x64-setup.exe` (4.007.317 byte, SHA-256 `2C4E4994F9C39F8A596F36623DCA3E5DF71FA2C6600FBAFE4EA7E1B9B7777FE1`).
 
 Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 
@@ -239,6 +254,7 @@ Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 - Lirik dari Spotify atau sumber lain yang butuh login/scraping.
 - Jadwal sholat.
 - Tema yang bisa dikustomisasi bebas (cukup satu gaya yang rapi dulu).
+- Halaman Pintasan cepat (dihapus di v1.1.0; pengguna tidak membutuhkannya).
 
 ---
 
@@ -261,13 +277,18 @@ Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 | v0.1.4 | 20 Okt 2026 | Baris lirik di notch kecil langsung muncul setelah ganti lagu, pause/play, geser posisi, atau kembali dari tampilan lain (sebelumnya jam internalnya basi sehingga lirik tertahan sampai ada kejadian lain, misalnya minimize semua jendela) |
 | v0.1.5 | 21 Okt 2026 | Notch tidak lagi "hilang" di balik jendela lain (misalnya Outlook): kalau terdorong ke bawah, dalam 1 detik kembali paling atas |
 | v0.2.0 | 22 Okt 2026 | Bagian 5F: pulau terbelah (musik/timer/panggilan/unduhan berdampingan, geser untuk ganti), pil panggilan + mute, progres unduhan, equalizer asli, cek kamera + Join meeting, drop untuk Bagikan, riwayat clipboard, halaman pintasan, scroll volume, tekan lama untuk mengunci terbuka, baterai earbuds, "Cek update" di tray |
-| v0.2.1 | 22 Okt 2026 | Sakelar "Pakai fitur minum air" di Settings; cek update tiap jam dan setelah bangun dari sleep. (Pemicu: teman di v0.1.2 tidak kunjung ter-update karena Notchy-nya tidak dibuka ulang.) |
+| v0.2.1 | 22 Okt 2026 | Sakelar "Pakai fitur minum air" di Settings; cek update tiap jam dan setelah bangun dari sleep. (Pemicu: teman di v0.1.2 tidak kunjung ter-update karena aplikasinya tidak dibuka ulang.) |
 | v0.2.2 | 23 Okt 2026 | Sisa unduhan yang gagal/dibatalkan (`.crdownload`/`.part` yang tidak bertambah) tidak lagi tampil terus sebagai "Mengunduh…". Hanya tes otomatis; uji langsung dilewati. |
+| v1.1.0 | 27 Okt 2026 | Rebrand Notchy → Ghyna (nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, log `ghyna.log`, watchdog, migrasi data lama); meter persen unduhan 48×3 di sudut kanan tanpa shimmer; transisi halaman baru; halaman Pintasan dihapus; mata tidur setelah 30 detik. Installer: `Ghyna_1.1.0_x64-setup.exe` (4.007.317 byte, SHA-256 `2C4E4994F9C39F8A596F36623DCA3E5DF71FA2C6600FBAFE4EA7E1B9B7777FE1`). |
 
-**Cara membuat rilis baru** (sejak v0.1.2, satu perintah)
-1. Pastikan semua perubahan sudah di-commit, lalu `.\scripts\release.ps1 <versi> "catatan rilis"`.
-2. Skrip itu: menaikkan versi di `package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`; menjeda `Notchy Watchdog` dan menutup Notchy; build installer bertanda tangan (kunci `%USERPROFILE%\.tauri\notchy.key`, mengulang otomatis kalau antivirus memicu os error 1224); menjalankan Notchy lagi dan menyalakan penjaga; menulis `latest.json`; commit, tag `v<versi>`, push; membuat GitHub Release berisi setup, `.sig`, dan `latest.json`.
-   Peringatan "__TAURI_BUNDLE_TYPE variable not found in binary" saat pengemasan diulang itu aman selama `notchy.exe` **di dalam installer** memuat `__TAURI_BUNDLE_TYPE_VAR_NSS`; tanpa penanda itu updater tidak tahu jenis installernya. Cek dengan 7-Zip: `7z x Notchy_<versi>_x64-setup.exe notchy.exe -r`, lalu cari teks itu. Exe di `target\release` bisa tetap `VAR_UNK` (Tauri menandai salinan yang dikemas); itu normal. v0.1.3–v0.1.5 sudah dicek: `NSS`.
-3. Salinan teman yang sudah v0.1.2 ke atas akan update sendiri (saat menyala, atau lewat peek dalam 6 jam). Yang masih v0.1.0/v0.1.1 perlu menjalankan setup terbaru sekali secara manual (ada di halaman Releases).
+**Cara membuat rilis baru (v1.1.0, manual)**
+1. Jalankan `npm run check`, `npm test`, dan `npm run build` di `_research\Notchy`.
+2. Jalankan `npm run tauri build` (butuh Node, Rust, dan MSVC). Installer ada di `src-tauri\target\release\bundle\nsis\Ghyna_<versi>_x64-setup.exe`.
+3. Salin installer ke folder distribusi, lalu catat ukuran dan SHA-256. Untuk 1.1.0: `Ghyna_1.1.0_x64-setup.exe` (4.007.317 byte, SHA-256 `2C4E4994F9C39F8A596F36623DCA3E5DF71FA2C6600FBAFE4EA7E1B9B7777FE1`).
+4. Update otomatis belum dipakai: repo `RamantyaDS/Ghyna` belum ada (404) dan `CUSTOM_BUILD = true` di `src-tauri/src/update.rs`. Jadi belum ada `latest.json` atau GitHub Release Ghyna; installer dibagikan manual.
+
+**Cara lama (Notchy, legacy, jangan dipakai untuk Ghyna)**: `scripts/release.ps1 <versi> "catatan rilis"` masih menunjuk `Notchy Watchdog`, `notchy.exe`, repo `RamantyaDS/Notchy`, dan kunci `%USERPROFILE%\.tauri\notchy.key`; skrip ini belum disesuaikan untuk Ghyna. Dulu skrip itu menaikkan versi di `package.json`, `src-tauri/tauri.conf.json`, dan `src-tauri/Cargo.toml`, membangun installer bertanda tangan, menulis `latest.json`, commit/tag/push, lalu membuat GitHub Release.
+
+Kalau nanti updater diaktifkan, peringatan "__TAURI_BUNDLE_TYPE variable not found in binary" saat pengemasan diulang aman selama `ghyna.exe` **di dalam installer** memuat `__TAURI_BUNDLE_TYPE_VAR_NSS`; tanpa penanda itu updater tidak tahu jenis installernya. Cek dengan 7-Zip: `7z x Ghyna_<versi>_x64-setup.exe ghyna.exe -r`, lalu cari teks itu. Exe di `target\release` bisa tetap `VAR_UNK` (Tauri menandai salinan yang dikemas); itu normal. v0.1.3–v0.1.5 (dulu Notchy) sudah dicek: `NSS`.
 
 **Video promo** (bukan bagian repo ini): `D:\Projects\notchy-promo` – Reels 9:16, 27 detik, konsep "Satu garis, semuanya"; render lewat `render-par.mjs` (batas segmen dikunci ke frame), musik `music.html`, campur VO `mix.mjs`.

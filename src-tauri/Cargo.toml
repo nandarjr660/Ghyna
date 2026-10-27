@@ -1,8 +1,8 @@
 [package]
-name = "notchy"
-version = "0.2.8"
+name = "ghyna"
+version = "1.1.0"
 description = "Dynamic Island-style notch for Windows"
-authors = ["you"]
+authors = ["nandarjr660"]
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,14 +11,14 @@ edition = "2024"
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "notchy_lib"
+name = "ghyna_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon", "protocol-asset"] }
+tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"
@@ -47,6 +47,8 @@ windows = { version = "0.61", features = [
     "ApplicationModel",
     "Web_Http",
     "Win32_Devices_FunctionDiscovery",
+    "Win32_Devices_DeviceAndDriverInstallation",
+    "Win32_Devices_Properties",
     "Win32_Foundation",
     "Win32_Globalization",
     "Win32_Graphics_Gdi",

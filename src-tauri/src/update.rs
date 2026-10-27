@@ -3,7 +3,7 @@
 //! Checked at start, every hour, and shortly after the laptop wakes from sleep.
 //! Right after start nobody is using the notch yet, so a new version is installed
 //! at once; later on it is only downloaded and offered as a peek ("click to
-//! install", once per version), so Notchy never restarts mid-use.
+//! install", once per version), so Ghyna never restarts mid-use.
 //! The tray's "Cek update" checks right away and installs whatever it finds.
 //! The copy run from the build folder (the developer's own) never updates itself.
 
@@ -19,9 +19,9 @@ use crate::{log_line, peek};
 /// A downloaded update waiting for its peek to be clicked.
 static READY: Mutex<Option<(Update, Vec<u8>)>> = Mutex::new(None);
 
-/// This is a locally built fork with extra features. The official updater
-/// would replace it with an upstream build and remove those features.
-const CUSTOM_BUILD: bool = true;
+/// Official Ghyna builds update from nandarjr660/Ghyna. Developer builds
+/// running from target/ never update themselves.
+const CUSTOM_BUILD: bool = false;
 
 fn is_dev_build() -> bool {
     let exe = std::env::current_exe().unwrap_or_default();
@@ -120,7 +120,7 @@ async fn fetch(app: &AppHandle) -> Result<Option<(Update, Vec<u8>)>, ()> {
     }
 }
 
-/// Runs the installer; it closes Notchy and starts the new version.
+/// Runs the installer; it closes Ghyna and starts the new version.
 fn install(update: Update, bytes: Vec<u8>) {
     log_line(&format!("updating to v{}", update.version));
     if let Err(e) = update.install(bytes) {

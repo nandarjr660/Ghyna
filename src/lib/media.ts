@@ -12,7 +12,7 @@ export type NowPlaying = {
   duration: number;
   /** Unix ms at which `position` was true (as reported by the player). */
   updatedAt: number;
-  /** Unix ms at which Notchy received this state. */
+  /** Unix ms at which Ghyna received this state. */
   receivedAt: number;
 };
 

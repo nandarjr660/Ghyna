@@ -60,7 +60,7 @@ pub fn start(app: AppHandle) {
     APP.set(app).ok();
     std::thread::spawn(|| unsafe {
         let instance = GetModuleHandleW(None).unwrap_or_default();
-        let class = w!("NotchyClipboard");
+        let class = w!("GhynaClipboard");
         RegisterClassW(&WNDCLASSW { lpfnWndProc: Some(proc), hInstance: instance.into(), lpszClassName: class, ..Default::default() });
         let Ok(hwnd) = CreateWindowExW(
             WINDOW_EX_STYLE(0),

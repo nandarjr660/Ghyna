@@ -13,6 +13,11 @@ use windows::core::{w, GUID, PCWSTR};
 use windows::Networking::Connectivity::{
     NetworkConnectivityLevel, NetworkInformation, NetworkStatusChangedEventHandler,
 };
+use windows::Win32::Devices::DeviceAndDriverInstallation::{
+    SetupDiDestroyDeviceInfoList, SetupDiEnumDeviceInfo, SetupDiGetClassDevsW, SetupDiGetDevicePropertyW,
+    DIGCF_PRESENT, GUID_DEVCLASS_CAMERA, HDEVINFO, SP_DEVINFO_DATA,
+};
+use windows::Win32::Devices::Properties::{DEVPKEY_Device_PowerData, DEVPROP_TYPE_BINARY, DEVPROPTYPE};
 use windows::Win32::Foundation::{HANDLE, HWND, LPARAM, LRESULT, WPARAM};
 use windows::Win32::Globalization::LCIDToLocaleName;
 use windows::Win32::System::Com::{CoInitializeEx, CoTaskMemFree, COINIT_MULTITHREADED};
@@ -54,7 +59,7 @@ pub fn start(app: AppHandle) {
 pub fn install_on_hook_thread() {
     unsafe {
         let instance = GetModuleHandleW(None).unwrap_or_default();
-        let class = w!("NotchyPower");
+        let class = w!("GhynaPower");
         RegisterClassW(&WNDCLASSW {
             lpfnWndProc: Some(power_proc),
             hInstance: instance.into(),
@@ -304,23 +309,102 @@ pub fn app_name(id: &str) -> String {
     id.rsplit('.').next().unwrap_or(id).to_string()
 }
 
-/// While Notchy's own camera mirror runs, its WebView2 shows up as a camera
+/// While Ghyna's own camera mirror runs, its WebView2 shows up as a camera
 /// user; that one isn't news.
 pub static MIRROR_ON: AtomicBool = AtomicBool::new(false);
 
 fn is_ours(id: &str) -> bool {
     let lower = id.to_ascii_lowercase();
-    lower.ends_with("#notchy.exe") || lower.ends_with("#msedgewebview2.exe")
+    lower.ends_with("#ghyna.exe") || lower.ends_with("#msedgewebview2.exe")
 }
 
 fn apps_using(device: &str) -> Vec<String> {
     let mirror = device == "webcam" && MIRROR_ON.load(Ordering::Relaxed);
-    sessions(device).iter().filter(|(id, _)| !(mirror && is_ours(id))).map(|(id, _)| app_name(id)).collect()
+    let mut apps: Vec<String> =
+        sessions(device).iter().filter(|(id, _)| !(mirror && is_ours(id))).map(|(id, _)| app_name(id)).collect();
+    // Chrome, ffmpeg and other DirectShow users never show up in ConsentStore.
+    // Their camera still leaves D3 for D0, which is the same signal Windows uses
+    // for its own camera indicator. Only consult it when the registry is silent,
+    // and never for our own mirror.
+    if device == "webcam" && !mirror && apps.is_empty() && camera_device_active() {
+        apps.push("Kamera".into());
+    }
+    apps
+}
+
+/// True when at least one camera-class device is in D0 (fully on). This reads
+/// the device power state only; it does not open the camera or turn on its LED.
+fn camera_device_active() -> bool {
+    struct DevInfoSet(HDEVINFO);
+    impl Drop for DevInfoSet {
+        fn drop(&mut self) {
+            unsafe {
+                let _ = SetupDiDestroyDeviceInfoList(self.0);
+            }
+        }
+    }
+
+    unsafe {
+        let Ok(set) = SetupDiGetClassDevsW(Some(&GUID_DEVCLASS_CAMERA), PCWSTR::null(), None, DIGCF_PRESENT)
+        else {
+            return false;
+        };
+        let set = DevInfoSet(set);
+        let mut info = SP_DEVINFO_DATA {
+            cbSize: std::mem::size_of::<SP_DEVINFO_DATA>() as u32,
+            ..Default::default()
+        };
+        for index in 0..32 {
+            if SetupDiEnumDeviceInfo(set.0, index, &mut info).is_err() {
+                break;
+            }
+            let mut kind = DEVPROPTYPE(0);
+            let mut data = [0u8; 64];
+            let mut size = 0u32;
+            if SetupDiGetDevicePropertyW(
+                set.0,
+                &info,
+                &DEVPKEY_Device_PowerData,
+                &mut kind,
+                Some(&mut data),
+                Some(&mut size),
+                0,
+            )
+            .is_err()
+            {
+                continue;
+            }
+            // CM_POWER_DATA: PD_Size at 0, PD_MostRecentPowerState at 4.
+            // 1 = D0 (on), 4 = D3 (idle).
+            if kind == DEVPROP_TYPE_BINARY && size >= 8 && u32::from_ne_bytes([data[4], data[5], data[6], data[7]]) == 1
+            {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 #[tauri::command]
 pub fn in_use_state() -> InUse {
     InUse { camera: apps_using("webcam"), mic: apps_using("microphone") }
+}
+
+fn publish_in_use(app: &AppHandle) {
+    let now = in_use_state();
+    let mut last = IN_USE.lock().unwrap();
+    if last.as_ref() != Some(&now) {
+        let _ = app.emit("in-use", &now);
+        // Announce a device being picked up, not put down.
+        if let Some(prev) = last.as_ref() {
+            for (kind, apps, before) in [("camera", &now.camera, &prev.camera), ("mic-in-use", &now.mic, &prev.mic)] {
+                if let Some(new) = apps.iter().find(|a| !before.contains(a)) {
+                    peek(app, kind, json!({ "app": new }));
+                }
+            }
+        }
+        *last = Some(now);
+    }
 }
 
 fn start_privacy(app: AppHandle) {
@@ -329,21 +413,7 @@ fn start_privacy(app: AppHandle) {
         std::thread::spawn(move || {
             let Ok(key) = RegKey::predef(HKEY_CURRENT_USER).open_subkey(format!(r"{CONSENT}\{device}")) else { return };
             loop {
-                let now = in_use_state();
-                let mut last = IN_USE.lock().unwrap();
-                if last.as_ref() != Some(&now) {
-                    let _ = app.emit("in-use", &now);
-                    // Announce a device being picked up, not put down.
-                    if let Some(prev) = last.as_ref() {
-                        for (kind, apps, before) in [("camera", &now.camera, &prev.camera), ("mic-in-use", &now.mic, &prev.mic)] {
-                            if let Some(new) = apps.iter().find(|a| !before.contains(a)) {
-                                peek(&app, kind, json!({ "app": new }));
-                            }
-                        }
-                    }
-                    *last = Some(now);
-                }
-                drop(last);
+                publish_in_use(&app);
                 if device == "microphone" {
                     crate::calls::poke();
                 }
@@ -354,6 +424,13 @@ fn start_privacy(app: AppHandle) {
             }
         });
     }
+
+    // ConsentStore is silent for DirectShow users such as Chrome and ffmpeg.
+    // Poll the camera device power state so those sessions are still caught.
+    std::thread::spawn(move || loop {
+        publish_in_use(&app);
+        std::thread::sleep(Duration::from_millis(1200));
+    });
 }
 
 fn wait_for_change(key: &RegKey) -> bool {

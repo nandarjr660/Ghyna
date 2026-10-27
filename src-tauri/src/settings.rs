@@ -1,4 +1,4 @@
-//! Settings in %APPDATA%\Notchy\settings.json, edited in a small separate window
+//! Settings in %APPDATA%\Ghyna\settings.json, edited in a small separate window
 //! (the notch itself can't take keyboard focus).
 
 use std::path::PathBuf;
@@ -97,7 +97,7 @@ impl Default for Settings {
 }
 
 fn path() -> PathBuf {
-    PathBuf::from(std::env::var("APPDATA").unwrap_or_default()).join("Notchy").join("settings.json")
+    crate::data_dir().join("settings.json")
 }
 
 #[tauri::command]
@@ -159,7 +159,7 @@ pub fn open_window(app: &AppHandle) {
         return;
     }
     let _ = WebviewWindowBuilder::new(app, "settings", WebviewUrl::App("settings".into()))
-        .title("Notchy Settings")
+        .title("Ghyna Settings")
         .inner_size(460.0, 640.0)
         .resizable(false)
         .center()

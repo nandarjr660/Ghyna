@@ -19,30 +19,8 @@
     notificationApps: string[];
     calendarUrl: string;
     smallLyrics: boolean;
-    shortcuts: Shortcut[];
   };
-  type Shortcut = { name: string; action: string; target: string };
   type NotificationApp = { aumid: string; name: string };
-
-  const ACTIONS: [string, string][] = [
-    ["lock", "Kunci layar"],
-    ["sleep", "Sleep"],
-    ["screenshot", "Screenshot"],
-    ["downloads", "Buka Downloads"],
-    ["camera", "Cek kamera"],
-    ["open", "Buka aplikasi / file / folder / link / skrip"],
-  ];
-  const DEFAULT_SHORTCUTS: Shortcut[] = [
-    { name: "Kunci", action: "lock", target: "" },
-    { name: "Sleep", action: "sleep", target: "" },
-    { name: "Screenshot", action: "screenshot", target: "" },
-    { name: "Downloads", action: "downloads", target: "" },
-    { name: "Kamera", action: "camera", target: "" },
-  ];
-  function editShortcut(i: number, patch: Partial<Shortcut>) {
-    if (!settings) return;
-    save({ shortcuts: settings.shortcuts.map((s, j) => (j === i ? { ...s, ...patch } : s)) });
-  }
 
   let settings = $state<Settings | null>(null);
   let query = $state("");
@@ -146,7 +124,7 @@
 {/snippet}
 
 <main>
-  <h1>Notchy</h1>
+  <h1>Ghyna</h1>
   {#if saved}<p class="saved">Tersimpan</p>{/if}
 
   <section>
@@ -209,7 +187,7 @@
       {/if}
       <p class="current">
         Supaya notifikasi hanya muncul di notch (tidak double), nyalakan <strong>Do not disturb</strong> di
-        Windows. Notifikasi tetap masuk ke Notification Center, dan Notchy tetap menampilkannya.
+        Windows. Notifikasi tetap masuk ke Notification Center, dan Ghyna tetap menampilkannya.
         Klik notifikasi di notch untuk membuka aplikasinya.
       </p>
       <button class="secondary" onclick={() => invoke("open_dnd_settings")}>Buka pengaturan Do not disturb</button>
@@ -244,44 +222,6 @@
         placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
         onchange={(e) => save({ calendarUrl: e.currentTarget.value.trim() })}
       />
-    {/if}
-  </section>
-
-  <section>
-    <h2>Pintasan</h2>
-    <p class="current">
-      Tombol di halaman Pintasan pada notch (maksimal 8). "Buka" menerima aplikasi (.exe), file, folder, link
-      https://, atau skrip (.bat, .cmd, .ps1) milikmu sendiri.
-    </p>
-    {#if settings}
-      {#each settings.shortcuts as s, i}
-        <div class="shortcut">
-          <input class="name" value={s.name} placeholder="Nama" onchange={(e) => editShortcut(i, { name: e.currentTarget.value.trim() })} />
-          <select value={s.action} onchange={(e) => editShortcut(i, { action: e.currentTarget.value })}>
-            {#each ACTIONS as [value, label]}<option {value}>{label}</option>{/each}
-          </select>
-          <button class="link" onclick={() => save({ shortcuts: settings!.shortcuts.filter((_, j) => j !== i) })} aria-label="Hapus pintasan">Hapus</button>
-          {#if s.action === "open"}
-            <input
-              class="wide target"
-              value={s.target}
-              placeholder="C:\Tools\backup.bat atau https://…"
-              onchange={(e) => editShortcut(i, { target: e.currentTarget.value.trim() })}
-            />
-          {/if}
-        </div>
-      {/each}
-      <div class="row-buttons">
-        {#if settings.shortcuts.length < 8}
-          <button
-            class="secondary"
-            onclick={() => save({ shortcuts: [...settings!.shortcuts, { name: "Baru", action: "open", target: "" }] })}
-          >
-            Tambah pintasan
-          </button>
-        {/if}
-        <button class="link" onclick={() => save({ shortcuts: DEFAULT_SHORTCUTS })}>Kembalikan default</button>
-      </div>
     {/if}
   </section>
 
@@ -343,8 +283,8 @@
 <style>
   :global(body) {
     margin: 0;
-    background: #0b0d14;
-    color: #eceff7;
+    background: var(--surface);
+    color: var(--text);
     font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif;
   }
   main {
@@ -361,10 +301,10 @@
   .current {
     margin: 0 0 12px;
     font-size: 13px;
-    color: #8c94a8;
+    color: var(--muted-strong);
   }
   .current strong {
-    color: #eceff7;
+    color: var(--text);
   }
   form {
     display: flex;
@@ -373,23 +313,23 @@
   input {
     flex: 1;
     padding: 8px 10px;
-    border: 1px solid rgba(236, 239, 247, 0.15);
+    border: 1px solid var(--line);
     border-radius: 8px;
-    background: #141826;
+    background: var(--surface-raised);
     color: inherit;
     font: inherit;
     font-size: 13px;
   }
   input:focus {
-    outline: 2px solid #2d5bff;
+    outline: 2px solid var(--accent);
     outline-offset: 1px;
   }
   form button {
     padding: 8px 14px;
     border: 0;
     border-radius: 8px;
-    background: #2d5bff;
-    color: #fff;
+    background: var(--accent);
+    color: var(--accent-ink);
     font: inherit;
     font-size: 13px;
     cursor: pointer;
@@ -416,18 +356,18 @@
     cursor: pointer;
   }
   li button:hover {
-    background: #141826;
+    background: var(--surface-raised);
   }
   li span {
     font-size: 12px;
-    color: #8c94a8;
+    color: var(--muted-strong);
   }
   .link {
     margin-left: 6px;
     padding: 0;
     border: 0;
     background: none;
-    color: #19b8ff;
+    color: var(--accent);
     font: inherit;
     cursor: pointer;
   }
@@ -437,7 +377,7 @@
     right: 24px;
     margin: 0;
     font-size: 12.5px;
-    color: #34d399;
+    color: var(--accent);
   }
   section {
     margin-bottom: 22px;
@@ -451,7 +391,7 @@
   }
   .field span {
     width: 150px;
-    color: #c4c9d6;
+    color: var(--text);
   }
   .field input {
     flex: none;
@@ -459,7 +399,7 @@
   }
   .secondary {
     padding: 7px 14px;
-    border: 1px solid rgba(236, 239, 247, 0.2);
+    border: 1px solid var(--line);
     border-radius: 8px;
     background: none;
     color: inherit;
@@ -468,7 +408,7 @@
     cursor: pointer;
   }
   .secondary:hover {
-    background: #141826;
+    background: var(--surface-raised);
   }
   .field.check span {
     width: auto;
@@ -483,38 +423,7 @@
   .field em {
     font-style: normal;
     font-size: 12px;
-    color: #8c94a8;
-  }
-  .shortcut {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    margin: 6px 0;
-  }
-  .shortcut .name {
-    flex: none;
-    width: 110px;
-  }
-  select {
-    flex: 1;
-    min-width: 0;
-    padding: 8px 6px;
-    border: 1px solid rgba(236, 239, 247, 0.15);
-    border-radius: 8px;
-    background: #141826;
-    color: inherit;
-    font: inherit;
-    font-size: 13px;
-  }
-  .shortcut .target {
-    flex-basis: 100%;
-  }
-  .row-buttons {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 8px;
+    color: var(--muted-strong);
   }
   .app-picker {
     margin: 8px 0 0 24px;
@@ -528,14 +437,14 @@
   .app-count {
     margin-left: auto;
     font-size: 12px;
-    color: #8c94a8;
+    color: var(--muted-strong);
   }
   .app-list {
     max-height: 210px;
     overflow-y: auto;
     margin-top: 6px;
     padding: 4px;
-    border: 1px solid rgba(236, 239, 247, 0.12);
+    border: 1px solid var(--line);
     border-radius: 8px;
   }
   .app {
@@ -547,7 +456,7 @@
     font-size: 13px;
   }
   .app:hover {
-    background: #141826;
+    background: var(--surface-raised);
   }
   .app input {
     width: auto;
@@ -555,7 +464,7 @@
   }
   .app-name {
     flex: none;
-    color: #eceff7;
+    color: var(--text);
   }
   .app-id {
     flex: 1;
@@ -564,9 +473,9 @@
     text-overflow: ellipsis;
     white-space: nowrap;
     font-size: 11px;
-    color: #697086;
+    color: var(--muted-strong);
   }
   .warn {
-    color: #fbbf24;
+    color: var(--warning);
   }
 </style>

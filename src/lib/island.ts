@@ -1,8 +1,8 @@
-// What the closed notch shows when several things run at once (notchy.md §5F.1,
+// What the closed notch shows when several things run at once (ghyna.md §5F.1,
 // style 1B): one pill, the main activity first, up to two more at its right end.
 
 export type Call = { app: string; start: number };
-export type Download = { name: string; bytes: number; speed: number };
+export type Download = { name: string; bytes: number; speed: number; total: number };
 
 export type Activity =
   | { kind: "call"; call: Call }
@@ -25,7 +25,7 @@ export function arrange(activities: Activity[], turn = 0): { main: Activity | nu
   return { main: list[0], side: list.slice(1, 3) };
 }
 
-/** Width of a main activity, logical px (notchy.md §4). */
+/** Width of a main activity, logical px (ghyna.md §4). */
 export function mainWidth(a: Activity): number {
   switch (a.kind) {
     case "music":
@@ -33,7 +33,7 @@ export function mainWidth(a: Activity): number {
     case "call":
       return 230;
     case "download":
-      return 260;
+      return 280;
     case "timer":
       return 200;
   }

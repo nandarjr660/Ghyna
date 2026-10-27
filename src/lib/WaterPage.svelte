@@ -21,6 +21,10 @@
         <span>Pengingat</span>
         <i></i>
       </button>
+      <button class="drink" onclick={() => water.drink()} aria-label="Minum">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.4 6 10.5a6 6 0 0 1-12 0C6 10.4 8.5 7.2 12 3z" /></svg>
+        Minum {s.glassMl} ml
+      </button>
     </div>
 
     <div class="body">
@@ -33,10 +37,6 @@
         <div class="progress" aria-hidden="true"><i style:width="{pct}%"></i></div>
         <div class="bottom">
           <span class="status" class:quiet={!enabled}>{status}</span>
-          <button class="drink" onclick={() => water.drink()}>
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c3.5 4.2 6 7.4 6 10.5a6 6 0 0 1-12 0C6 10.4 8.5 7.2 12 3z" /></svg>
-            Minum {s.glassMl} ml
-          </button>
         </div>
       </div>
 
@@ -76,7 +76,7 @@
   .title {
     font-size: 16px;
     font-weight: 600;
-    color: #38bdf8;
+    color: var(--accent);
   }
   .count {
     font-size: 12.5px;
@@ -85,10 +85,11 @@
   }
   .reminder {
     margin-left: auto;
+    margin-right: 4px;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 0 6px;
+    padding: 0 4px;
     border: 0;
     background: none;
     color: rgba(255, 255, 255, 0.42);
@@ -124,10 +125,10 @@
       background 0.2s;
   }
   .reminder.on i {
-    background: #fff;
+    background: var(--accent);
   }
   .reminder.on i::after {
-    background: #000;
+    background: var(--accent-ink);
     transform: translateX(10px);
   }
 
@@ -177,16 +178,13 @@
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: #fff;
-  }
-  .progress i {
-    background: #38bdf8;
+    background: var(--accent);
   }
   .bars i.now {
-    background: #38bdf8;
+    background: var(--accent);
   }
   .amount {
-    color: #38bdf8;
+    color: var(--accent);
   }
   .bottom {
     display: flex;
@@ -219,8 +217,8 @@
     padding: 0 14px;
     border: 0;
     border-radius: 8px;
-    background: #fff;
-    color: #000;
+    background: var(--accent);
+    color: var(--accent-ink);
     font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
@@ -236,13 +234,13 @@
     stroke-width: 2;
   }
   .drink:hover {
-    background: rgba(255, 255, 255, 0.86);
+    background: var(--accent-strong);
   }
   .drink:active {
     transform: scale(0.97);
   }
   button:focus-visible {
-    outline: 1.5px solid rgba(255, 255, 255, 0.8);
+    outline: 1.5px solid var(--accent);
     outline-offset: 2px;
   }
 

@@ -85,7 +85,7 @@
   .title {
     font-size: 12px;
     font-weight: 600;
-    color: #06b6d4;
+    color: var(--accent);
   }
   .count {
     font-size: 9.5px;
@@ -104,7 +104,7 @@
   button {
     border: 0;
     background: none;
-    color: #fff;
+    color: var(--text);
     font: inherit;
     cursor: pointer;
   }
@@ -252,12 +252,12 @@
     color: rgba(255, 255, 255, 0.7);
   }
   .action.ok {
-    color: #06b6d4;
+    color: var(--accent);
     opacity: 1;
   }
 
   button:focus-visible {
-    outline: 1.5px solid rgba(255, 255, 255, 0.8);
+    outline: 1.5px solid var(--accent);
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {

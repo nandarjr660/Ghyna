@@ -1,10 +1,21 @@
 <script lang="ts">
+import { open } from "@tauri-apps/plugin-dialog";
+
+function addFiles() {
+  // Open file picker dialog, allow multiple selection
+  // @ts-ignore – Tauri dialog returns string | string[] | null
+  open({ multiple: true, directory: false }).then((result) => {
+    // result can be a string or an array of strings
+    const paths = Array.isArray(result) ? result : result ? [result] : [];
+    if (paths.length) shelf.add(paths);
+  }).catch((e) => console.error('Failed to open file dialog:', e));
+}
+
   import { convertFileSrc, invoke } from "@tauri-apps/api/core";
   import { startDrag } from "@crabnebula/tauri-plugin-drag";
   import type { Shelf, ShelfItem } from "./productivity.svelte";
 
-  // dropTarget: which zone the dragged file is over ("shelf" or "share").
-  let { shelf, dropping, dropTarget = null }: { shelf: Shelf; dropping: boolean; dropTarget?: string | null } = $props();
+  let { shelf, dropping }: { shelf: Shelf; dropping: boolean } = $props();
 
   const IMAGE = /\.(png|jpe?g|gif|webp|bmp)$/i;
   const ext = (name: string) => (name.includes(".") ? name.split(".").pop()!.slice(0, 4).toUpperCase() : "");
@@ -37,12 +48,23 @@
     if (!pressed || Math.hypot(e.clientX - pressed.x, e.clientY - pressed.y) < 6) return;
     const { item } = pressed;
     pressed = null;
-    startDrag({ item: [item.path], icon: dragIcon(item) });
+    startDrag({ item: [item.path], icon: dragIcon(item) }).then(() => shelf.remove(item.path)).catch(() => {});
   }
   function up() {
-    if (pressed) invoke("open_path", { path: pressed.item.path });
-    pressed = null;
-  }
+  if (pressed) invoke("open_path", { path: pressed.item.path });
+  pressed = null;
+}
+
+function handleDrop(e: DragEvent) {
+  e.preventDefault();
+  const dt = e.dataTransfer;
+  if (!dt) return;
+  const files = Array.from(dt.files);
+  // Tauri's file objects expose a `path` property
+  const paths = files.map((f:any) => (f as any).path).filter(Boolean);
+  if (paths.length) shelf.add(paths);
+}
+
 
   const size = (bytes: number) =>
     bytes >= 1e6 ? `${(bytes / 1e6).toFixed(1)} MB` : bytes >= 1e3 ? `${Math.round(bytes / 1e3)} KB` : `${bytes} B`;
@@ -50,9 +72,9 @@
 
 <svelte:window onpointermove={move} onpointerup={() => (pressed = null)} />
 
-<div class="page" class:dropping>
+<div class="page" class:dropping data-drop="shelf" ondragover={e => e.preventDefault()} ondrop={handleDrop} role="region" aria-label="Shelf drop zone">
   <div class="header">
-    <span class="title">Shelf</span>
+        <span class="title">Shelf</span>
     <span class="count">{shelf.items.length}</span>
     <span class="hint">tarik keluar · klik buka</span>
     {#if shelf.items.length}
@@ -63,15 +85,11 @@
   </div>
 
   {#if dropping}
-    <!-- Two places to drop: keep it on the shelf, or hand it to Windows' Share window. -->
+    <!-- Files dropped while the shelf is open are always saved here. -->
     <div class="zones">
-      <div class="zone" class:hot={dropTarget !== "share"} data-drop="shelf">
+      <div class="zone hot" data-drop="shelf">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v11H4zM4 8l2-3h5l2 3M12 12v4M10 14h4" /></svg>
         <span><strong>Simpan</strong><small>di Shelf</small></span>
-      </div>
-      <div class="zone" class:hot={dropTarget === "share"} data-drop="share">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12v7h16v-7M12 3v12M8 7l4-4 4 4" /></svg>
-        <span><strong>Bagikan</strong><small>via Windows</small></span>
       </div>
     </div>
   {:else if shelf.items.length === 0}
@@ -95,7 +113,10 @@
           </span>
           <span class="name">{item.name}</span>
           <span class="size">{item.dir ? "Folder" : size(item.size)}</span>
-          <button class="remove" onpointerdown={(e) => e.stopPropagation()} onclick={() => shelf.remove(item.path)} aria-label="Hapus dari shelf">
+          <button class="copy" onpointerdown={(e) => e.stopPropagation()} onclick={() => shelf.add([item.path])} aria-label="Copy ke Shelf" title="Copy ke Shelf">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 9H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M15 15h4a2 2 0 0 0 2-2v-4"/><path d="M9 15v4a2 2 0 0 0 2 2h4"/><path d="M15 9V5a2 2 0 0 0-2-2h-4"/></svg>
+          </button>
+          <button class="remove" onpointerdown={(e) => e.stopPropagation()} onclick={() => shelf.remove(item.path)} aria-label="Hapus dari shelf" title="Hapus dari shelf">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
           </button>
         </div>
@@ -124,7 +145,7 @@
   .title {
     font-size: 14px;
     font-weight: 600;
-    color: #a855f7;
+    color: var(--accent);
   }
   .count {
     font-size: 11.5px;
@@ -291,7 +312,7 @@
     height: 40px;
     overflow: hidden;
     border-radius: 6px;
-    background: #121212;
+    background: var(--surface-raised);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   }
   .thumb img {

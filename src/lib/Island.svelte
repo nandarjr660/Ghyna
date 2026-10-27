@@ -1,5 +1,5 @@
 <script lang="ts">
-  // The closed notch while things run (notchy.md §5F.1, style 1B): the main
+  // The closed notch while things run (ghyna.md §5F.1, style 1B): the main
   // activity, then up to two more at the right end behind a thin divider.
   import { invoke } from "@tauri-apps/api/core";
   import { untrack } from "svelte";
@@ -52,6 +52,15 @@
   const discStyle = $derived(
     (media?.art ? `background-image:url(${media.art});` : "") + (playing && levels ? `transform:rotate(${angle}deg)` : ""),
   );
+
+  // Real percentage when browser history knows the final size; 0 otherwise
+  // (the meter then waits without pretending to know).
+  const downloadProgress = $derived(
+    main.kind === "download" && main.download.total > 0
+      ? Math.min(1, main.download.bytes / main.download.total)
+      : 0,
+  );
+  const downloadPercent = $derived(Math.round(downloadProgress * 100));
 </script>
 
 {#snippet ring(progress: number, rest: boolean)}
@@ -97,12 +106,33 @@
           {/if}
         </svg>
       </button>
-    __else if main.kind === "download"}
-      <span class="blue">{@render arrow()}</span>
-      <span class="blue label name">{main.download.name}</span>
-      <span class="blue dim num">{bytes(main.download.bytes)}</span>
-      <span class="run" class:on={active}></span>
-      <span class="download-progress"><i style:width={`${main.download.speed > 1_000_000 ? "60%" : main.download.speed > 100_000 ? "40%" : "20%"}%`}></span>
+    {:else if main.kind === "download"}
+      <span class="dl-arrow">{@render arrow()}</span>
+      <span class="dl-text">
+        <span class="dl-name">{main.download.name}</span>
+        <span class="dl-meta">
+          {#if main.download.total > 0}
+            {bytes(main.download.bytes)} <span class="dl-of">/</span> {bytes(main.download.total)}
+          {:else}
+            {bytes(main.download.bytes)}
+          {/if}
+          {#if main.download.speed > 0}<span class="dl-speed"> · {bytes(main.download.speed)}/s</span>{/if}
+        </span>
+      </span>
+      {#if main.download.total > 0}
+        <span
+          class="dl-meter"
+          title="{bytes(main.download.bytes)} dari {bytes(main.download.total)}"
+        >
+          <span class="dl-pct">{downloadPercent}%</span>
+          <span class="dl-bar" aria-hidden="true"><i style:transform={`scaleX(${downloadProgress})`}></i></span>
+        </span>
+      {:else}
+        <span class="dl-meter waiting" title="Ukuran akhir belum diketahui">
+          <span class="dl-pct">…</span>
+          <span class="dl-bar" aria-hidden="true"><i></i></span>
+        </span>
+      {/if}
     {/if}
   </div>
 
@@ -150,6 +180,26 @@
     gap: 8px;
     height: 100%;
   }
+  /* Keep the music visualizer anchored at the right edge; lyric length must
+     never push it along the row. */
+  .main.music .line {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    padding-right: 26px;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .main.music {
+    position: relative;
+  }
+  .main.music :global(.bars) {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    flex: none;
+    transform: translateY(-50%);
+  }
   .main.timer {
     justify-content: center;
     gap: 30px;
@@ -171,12 +221,12 @@
     border-radius: 50%;
   }
   .cam {
-    background: #34d399;
-    box-shadow: 0 0 6px #34d399;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent-line);
   }
   .mic {
-    background: #fb923c;
-    box-shadow: 0 0 6px #fb923c;
+    background: var(--warning);
+    box-shadow: 0 0 6px rgba(240, 182, 110, 0.4);
   }
   .sep {
     flex: none;
@@ -185,15 +235,15 @@
     background: rgba(255, 255, 255, 0.18);
   }
   .line {
-    flex: 1;
-    min-width: 0;
+    flex: none;
+    width: max-content;
     padding: 0 6px;
     text-align: center;
     font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
   }
   .clock-line,
   .big {
@@ -220,17 +270,17 @@
     font-size: 11.5px;
   }
   .dim {
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--muted-strong);
     font-weight: 600;
   }
   .green {
-    color: #34d399;
+    color: var(--accent);
   }
   .red {
-    color: #fb7185;
+    color: var(--danger);
   }
   .blue {
-    color: #38bdf8;
+    color: var(--info);
   }
   .icon {
     display: block;
@@ -249,8 +299,8 @@
     border-radius: 50%;
     display: grid;
     place-items: center;
-    background: #34d399;
-    color: #000;
+    background: var(--accent);
+    color: var(--accent-ink);
   }
   .badge .icon {
     width: 11px;
@@ -265,12 +315,12 @@
     border-radius: 50%;
     display: grid;
     place-items: center;
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
+    background: rgba(239, 250, 243, 0.12);
+    color: var(--text);
     cursor: pointer;
   }
   .mute.off {
-    background: #ef4444;
+    background: var(--danger);
   }
   .mute .icon {
     width: 11px;
@@ -289,68 +339,118 @@
   }
   .ring circle {
     fill: none;
-    stroke: rgba(251, 113, 133, 0.25);
+    stroke: rgba(240, 128, 128, 0.25);
     stroke-width: 2.6;
   }
   .ring .fill {
-    stroke: #fb7185;
+    stroke: var(--danger);
     stroke-linecap: round;
   }
   .ring.rest circle {
-    stroke: rgba(52, 211, 153, 0.25);
+    stroke: var(--accent-soft);
   }
   .ring.rest .fill {
-    stroke: #34d399;
+    stroke: var(--accent);
   }
   .big.rest {
-    color: #fff;
+    color: var(--text);
   }
 
-  /* Download progress visualization */
-  .download-progress {
+  /* The download's right corner: a compact meter, so the row stays balanced
+     instead of trailing off after the file name. */
+  .main.download {
+    gap: 7px;
+  }
+  .dl-arrow {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 14px;
+    height: 14px;
+    color: var(--accent);
+  }
+  .dl-arrow .icon {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2;
+  }
+  .dl-text {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .dl-name {
+    font-size: 11.5px;
+    font-weight: 600;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dl-meta {
+    font-size: 9.5px;
+    font-weight: 500;
+    line-height: 1.15;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+  }
+  .dl-of {
+    padding: 0 1px;
+    color: var(--accent-line);
+  }
+  .dl-speed {
+    color: var(--muted-strong);
+  }
+  .dl-meter {
+    flex: none;
+    width: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .dl-pct {
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .dl-meter.waiting .dl-pct {
+    color: var(--muted-strong);
+    letter-spacing: 0.06em;
+  }
+  .dl-bar {
+    display: block;
+    width: 100%;
     height: 3px;
-    margin-top: 4px;
-    background: rgba(56, 189, 248, 0.12);
-    border-radius: 1px;
+    border-radius: 999px;
+    background: var(--accent-soft);
     overflow: hidden;
   }
-  .download-progress i {
+  .dl-bar i {
     display: block;
+    width: 100%;
     height: 100%;
-    background: #38bdf8;
-    border-radius: 1px;
+    background: linear-gradient(90deg, var(--accent-strong), var(--accent));
+    border-radius: inherit;
+    transform-origin: left center;
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .dl-meter.waiting .dl-bar i {
+    transform: none;
+    opacity: 0;
   }
 
-  /* A download has no known end, so a light runs along the bottom instead of a bar. */
-  .run {
-    position: absolute;
-    left: 14px;
-    right: 14px;
-    bottom: 3px;
-    height: 2px;
-    border-radius: 1px;
-    overflow: hidden;
-    background: rgba(56, 189, 248, 0.15);
-  }
-  .run::after {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 35%;
-    background: linear-gradient(90deg, transparent, #38bdf8, transparent);
-  }
-  /* Stepped like the other animations: few repaints. */
-  .run.on::after {
-    animation: run 1.6s steps(8) infinite;
-  }
-  @keyframes run {
-    from {
-      transform: translateX(-100%);
-    }
-    to {
-      transform: translateX(290%);
+  @media (prefers-reduced-motion: reduce) {
+    .dl-bar i {
+      transition: none;
     }
   }
 
@@ -361,7 +461,7 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: #1b1f2e center / cover;
+    background: var(--surface-raised) center / cover;
     box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.25);
   }
   .disc.small {
@@ -373,8 +473,8 @@
     position: absolute;
     inset: 37.5%;
     border-radius: 50%;
-    background: #000;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+    background: var(--surface);
+    box-shadow: 0 0 0 1px var(--line);
   }
   /* Stepped in time with the bars (one change every 0.2 s), see Bars.svelte. */
   .disc.spin {

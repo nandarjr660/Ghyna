@@ -82,7 +82,7 @@
     height: 7px;
     margin-right: 6px;
     border-radius: 50%;
-    background: #ef4444;
+    background: var(--danger);
   }
   .detail {
     margin-top: 3px;

@@ -118,7 +118,7 @@
   .title {
     font-size: 15px;
     font-weight: 600;
-    color: #fb923c;
+    color: var(--accent);
   }
   .count {
     flex: 1;
@@ -164,7 +164,7 @@
   }
 
   .progress i {
-    background: #fb923c;
+    background: var(--accent);
   }
   .progress {
     flex: none;
@@ -172,7 +172,7 @@
     margin-top: 12px;
     overflow: hidden;
     border-radius: 1px;
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--accent-soft);
   }
 
   .form {
@@ -213,12 +213,12 @@
     height: 26px;
     padding: 0;
     border-radius: 7px;
-    background: #fb923c;
-    color: #000;
+    background: var(--accent);
+    color: var(--accent-ink);
     transition: background 0.18s;
   }
   .save:hover {
-    background: rgba(255, 255, 255, 0.86);
+    background: var(--accent-strong);
   }
   .save svg {
     width: 12px;

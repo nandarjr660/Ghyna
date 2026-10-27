@@ -37,7 +37,7 @@
     code: "M8 9l-3 3 3 3M16 9l3 3-3 3M13 6l-2 12",
   };
 
-  type View = { icon: string; tone?: string; title: string; detail?: string; value?: string; level?: number; battery?: number };
+  type View = { icon: string; tone?: string; title: string; detail?: string; value?: string; level?: number; battery?: number; charging?: boolean };
 
   const view = $derived.by((): View | null => {
     const p = peek;
@@ -45,63 +45,63 @@
       case "volume":
         return { icon: p.muted ? "muted" : "volume", title: p.muted ? "Suara dimatikan" : "Volume", level: p.muted ? 0 : p.level };
       case "brightness":
-        return { icon: "sun", tone: "#fbbf24", title: "Kecerahan", level: p.level };
+        return { icon: "sun", tone: "#f0b66e", title: "Kecerahan", level: p.level };
       case "mic":
         return p.muted
-          ? { icon: "micOff", tone: "#f87171", title: "Mikrofon dimatikan" }
-          : { icon: "mic", tone: "#34d399", title: "Mikrofon aktif" };
+          ? { icon: "micOff", tone: "#f08080", title: "Mikrofon dimatikan" }
+          : { icon: "mic", tone: "#8fe6b4", title: "Mikrofon aktif" };
       case "caps":
-        return { icon: "caps", tone: p.on ? "#38bdf8" : undefined, title: "Caps Lock", value: p.on ? "ON" : "OFF" };
+        return { icon: "caps", tone: p.on ? "#8fd8c4" : undefined, title: "Caps Lock", value: p.on ? "ON" : "OFF" };
       case "language":
         return { icon: "keyboard", title: "Bahasa keyboard", detail: p.locale, value: String(p.locale).split("-")[0].toUpperCase() };
       case "power":
         return p.charging
-          ? { icon: "bolt", tone: "#34d399", title: "Mengisi daya", detail: "Charger tersambung", value: `${p.percent}%` }
-          : { icon: "battery", title: "Memakai baterai", detail: "Charger dicabut", value: `${p.percent}%` };
+          ? { icon: "bolt", tone: "#38bdf8", title: "Mengisi daya", detail: "Charger tersambung", battery: p.percent, charging: true }
+          : { icon: "battery", title: "Memakai baterai", detail: "Charger dicabut", battery: p.percent, charging: false };
       case "network":
         return p.online
-          ? { icon: "wifi", tone: "#38bdf8", title: p.wifi ? "Wi-Fi tersambung" : "Internet tersambung", detail: p.name }
-          : { icon: "wifiOff", tone: "#f87171", title: "Koneksi terputus", detail: "Tidak ada internet" };
+          ? { icon: "wifi", tone: "#8fd8c4", title: p.wifi ? "Wi-Fi tersambung" : "Internet tersambung", detail: p.name }
+          : { icon: "wifiOff", tone: "#f08080", title: "Koneksi terputus", detail: "Tidak ada internet" };
       case "output":
         return p.headphones
           ? {
               icon: "headphones",
-              tone: "#a78bfa",
+              tone: "#8fd8c4",
               title: p.battery != null ? p.name : "Headphone tersambung",
               detail: p.battery != null ? "Tersambung" : p.name,
               battery: p.battery ?? undefined,
             }
           : { icon: "speaker", title: "Audio keluar lewat", detail: p.name };
       case "earbuds-low":
-        return { icon: "headphones", tone: "#fb923c", title: `Baterai tinggal ${p.battery}%`, detail: p.name, battery: p.battery };
+        return { icon: "headphones", tone: "#f0b66e", title: `Baterai tinggal ${p.battery}%`, detail: p.name, battery: p.battery };
       case "update-info":
         return p.state === "checking"
-          ? { icon: "sync", tone: "#38bdf8", title: "Mengecek update…", detail: `Notchy v${p.version}` }
+          ? { icon: "sync", tone: "#8fd8c4", title: "Mengecek update…", detail: `Ghyna v${p.version}` }
           : p.state === "latest"
-            ? { icon: "done", tone: "#34d399", title: "Sudah versi terbaru", detail: `Notchy v${p.version}` }
+            ? { icon: "done", tone: "#8fe6b4", title: "Sudah versi terbaru", detail: `Ghyna v${p.version}` }
             : p.state === "dev"
               ? { icon: "code", title: "Versi pengembang", detail: "Update lewat build, bukan updater" }
-              : { icon: "alert", tone: "#f87171", title: "Gagal mengecek update", detail: "Cek koneksi internet" };
+              : { icon: "alert", tone: "#f08080", title: "Gagal mengecek update", detail: "Cek koneksi internet" };
       case "camera":
-        return { icon: "camera", tone: "#34d399", title: "Kamera dipakai", detail: p.app };
+        return { icon: "camera", tone: "#8fe6b4", title: "Kamera dipakai", detail: p.app };
       case "mic-in-use":
-        return { icon: "mic", tone: "#fb923c", title: "Mikrofon dipakai", detail: p.app };
+        return { icon: "mic", tone: "#f0b66e", title: "Mikrofon dipakai", detail: p.app };
       case "timer":
         return p.phase === "break"
-          ? { icon: "timer", tone: "#34d399", title: "Waktunya istirahat", detail: "Sesi fokus selesai" }
-          : { icon: "timer", tone: "#fb7185", title: "Istirahat selesai", detail: "Siap fokus lagi?" };
+          ? { icon: "timer", tone: "#8fe6b4", title: "Waktunya istirahat", detail: "Sesi fokus selesai" }
+          : { icon: "timer", tone: "#f08080", title: "Istirahat selesai", detail: "Siap fokus lagi?" };
       case "water":
         return {
           icon: "drop",
-          tone: "#38bdf8",
+          tone: "#8fd8c4",
           title: "Waktunya minum",
           detail: `${(p.today / 1000).toLocaleString("id-ID")} dari ${(p.goal / 1000).toLocaleString("id-ID")} L hari ini`,
         };
       case "todo":
-        return { icon: "check", tone: "#fb923c", title: p.text, detail: `Pengingat ${p.time}` };
+        return { icon: "check", tone: "#f0b66e", title: p.text, detail: `Pengingat ${p.time}` };
       case "calendar": {
         const at = new Date(p.start).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":");
-        return { icon: "calendar", tone: "#fb923c", title: p.title, detail: p.before ? `Mulai ${p.before} menit lagi · ${at}` : `Dimulai sekarang · ${at}` };
+        return { icon: "calendar", tone: "#f0b66e", title: p.title, detail: p.before ? `Mulai ${p.before} menit lagi · ${at}` : `Dimulai sekarang · ${at}` };
       }
       default:
         return null;
@@ -117,7 +117,12 @@
 {#if peek.kind === "notification"}
   <!-- A Windows notification, mirrored: app icon, app name, title and text. Click opens the app. -->
   <button class="note" onclick={() => onOpen?.()} title="Buka {peek.app}">
-    {#if peek.icon}
+    {#if peek.photo}
+      <span class="avatar">
+        <img class="photo" src={peek.photo} alt="" />
+        {#if peek.icon}<img class="badge" src={peek.icon} alt="" />{/if}
+      </span>
+    {:else if peek.icon}
       <img class="app-icon" src={peek.icon} alt="" />
     {:else}
       <span class="app-icon fallback">{String(peek.app).slice(0, 1)}</span>
@@ -145,7 +150,7 @@
 {:else if peek.kind === "download-done"}
   <!-- A download finished: click opens it. -->
   <button class="note" onclick={() => onOpen?.()}>
-    <span class="icon" style:color="#34d399" style:background="#34d39922">
+    <span class="icon" style:color="#8fe6b4" style:background="#8fe6b422">
       <svg viewBox="0 0 24 24"><path d={ICONS.done} /></svg>
     </span>
     <div class="text">
@@ -156,7 +161,7 @@
 {:else if peek.kind === "meeting"}
   <!-- A meeting with a link starts soon: check the camera, or join. -->
   <div class="row">
-    <span class="icon" style:color="#fb923c" style:background="#fb923c22">
+    <span class="icon" style:color="#f0b66e" style:background="#f0b66e22">
       <svg viewBox="0 0 24 24"><path d={ICONS.calendar} /></svg>
     </span>
     <div class="text">
@@ -169,19 +174,19 @@
     </div>
   </div>
 {:else if peek.kind === "update"}
-  <!-- A new version is downloaded; clicking installs it (Notchy restarts in a few seconds). -->
+  <!-- A new version is downloaded; clicking installs it (Ghyna restarts in a few seconds). -->
   <button class="note" onclick={() => onOpen?.()}>
-    <span class="icon" style:color="#38bdf8" style:background="#38bdf822">
+    <span class="icon" style:color="#8fd8c4" style:background="#8fd8c422">
       <svg viewBox="0 0 24 24"><path d={ICONS.download} /></svg>
     </span>
     <div class="text">
-      <div class="title">Notchy v{peek.version} siap</div>
-      <div class="detail">Klik untuk pasang, Notchy mulai ulang sebentar</div>
+      <div class="title">Ghyna v{peek.version} siap</div>
+      <div class="detail">Klik untuk pasang, Ghyna mulai ulang sebentar</div>
     </div>
   </button>
 {:else if view}
   <div class="row">
-    <span class="icon" style:color={view.tone ?? "#fff"} style:background={view.tone ? `${view.tone}22` : "rgba(255,255,255,.1)"}>
+    <span class="icon" style:color={view.tone ?? "var(--text)"} style:background={view.tone ? `${view.tone}22` : "var(--accent-soft)"}>
       <svg viewBox="0 0 24 24"><path d={ICONS[view.icon]} /></svg>
     </span>
     <div class="text">
@@ -189,11 +194,24 @@
       {#if view.detail}<div class="detail">{view.detail}</div>{/if}
     </div>
     {#if view.level !== undefined}
-      <div class="level"><span style:width="{Math.round(view.level * 100)}%"></span></div>
+      <div class="level"><span style:transform="scaleX({view.level})"></span></div>
       <span class="value">{Math.round(view.level * 100)}</span>
     {:else if view.battery !== undefined}
       <div class="level short">
-        <span style:width="{view.battery}%" style:background={view.battery < 15 ? "#fb923c" : "#34d399"}></span>
+        <span
+          class:charging={view.charging}
+          style:transform="scaleX({view.battery / 100})"
+          style:background={view.charging
+            ? "linear-gradient(90deg, #38bdf8, #a0e9fd)"
+            : view.battery < 15
+            ? "linear-gradient(90deg, var(--danger), #f3b0b0)"
+            : view.battery < 25
+            ? "linear-gradient(90deg, var(--warning), #f6d2a6)"
+            : "linear-gradient(90deg, var(--accent-strong), var(--accent))"}
+        ></span>
+        {#if view.charging}
+          <svg class="bolt-badge" viewBox="0 0 24 24"><path d={ICONS.bolt} /></svg>
+        {/if}
       </div>
       <span class="value">{view.battery}%</span>
     {:else if view.value}
@@ -239,7 +257,7 @@
   .detail {
     margin-top: 2px;
     font-size: 11.5px;
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--muted-strong);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -249,15 +267,17 @@
     width: 92px;
     height: 5px;
     border-radius: 3px;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(239, 250, 243, 0.14);
     overflow: hidden;
   }
   .level span {
     display: block;
+    width: 100%;
     height: 100%;
     border-radius: 3px;
-    background: #fff;
-    transition: width 0.15s ease-out;
+    background: var(--accent);
+    transform-origin: left center;
+    transition: transform 0.15s ease-out;
   }
   .level.short {
     width: 56px;
@@ -267,8 +287,8 @@
     margin-top: 0;
   }
   .actions button.primary {
-    background: #fff;
-    color: #000;
+    background: var(--accent);
+    color: var(--accent-ink);
     font-weight: 600;
   }
   .value {
@@ -296,7 +316,7 @@
     border-radius: inherit;
   }
   .note:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(239, 250, 243, 0.04);
   }
   .app-icon {
     flex: none;
@@ -308,12 +328,41 @@
   .app-icon.fallback {
     display: grid;
     place-items: center;
-    background: #2a2e3a;
+    background: var(--surface-raised);
     font-weight: 700;
+  }
+  /* The sender's own picture (a WhatsApp avatar, say), with the source app
+     badge in the corner so it is still clear where it came from. */
+  .avatar {
+    position: relative;
+    flex: none;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--surface-raised);
+  }
+  .avatar .photo {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+    display: block;
+  }
+  .avatar .badge {
+    position: absolute;
+    right: -3px;
+    bottom: -3px;
+    width: 17px;
+    height: 17px;
+    padding: 1px;
+    border-radius: 6px;
+    border: 2px solid var(--surface);
+    background: var(--surface);
+    object-fit: contain;
   }
   .app {
     font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--muted);
   }
   .one {
     white-space: nowrap;
@@ -338,7 +387,7 @@
     border-radius: 10px;
     overflow: hidden;
     cursor: pointer;
-    background: #1b1f2e;
+    background: var(--surface-raised);
   }
   .thumb img {
     width: 100%;
@@ -355,13 +404,13 @@
     padding: 4px 10px;
     border: 0;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
+    background: rgba(239, 250, 243, 0.1);
+    color: var(--text);
     font: inherit;
     font-size: 11.5px;
     cursor: pointer;
   }
   .actions button:hover {
-    background: rgba(255, 255, 255, 0.24);
+    background: rgba(239, 250, 243, 0.16);
   }
 </style>

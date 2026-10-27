@@ -200,7 +200,7 @@ fn set_pinned(on: bool) {
     set_click_through(!on && !inside && !TYPING.load(Ordering::Relaxed));
 }
 
-/// The camera mirror is on: Notchy's own camera use isn't shown as news.
+/// The camera mirror is on: Ghyna's own camera use isn't shown as news.
 #[tauri::command]
 fn set_mirror(on: bool) {
     system::MIRROR_ON.store(on, Ordering::Relaxed);
@@ -546,7 +546,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
 
     TrayIconBuilder::new()
         .icon(app.default_window_icon().unwrap().clone())
-        .tooltip("Notchy")
+        .tooltip("Ghyna")
         .menu(&menu)
         .show_menu_on_left_click(true)
         .on_menu_event(move |app, event| match event.id.as_ref() {
@@ -563,7 +563,7 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
             "reload" => health::reload(app, "from the tray"),
             "update" => update::check_now(app.clone()),
             "quit" => {
-                // Tells the watchdog task this was on purpose, so it doesn't bring Notchy back.
+                // Tells the watchdog task this was on purpose, so it doesn't bring Ghyna back.
                 let _ = std::fs::write(exited_flag(), "");
                 app.exit(0)
             }
@@ -575,16 +575,18 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // A black box for "Notchy just disappeared": start, clean exit and any panic go to
-    // %APPDATA%\Notchy\notchy.log. No log line at all means something outside killed it.
+    migrate_legacy_data();
+
+    // A black box for "Ghyna just disappeared": start, clean exit and any panic go to
+    // %APPDATA%\Ghyna\ghyna.log. No log line at all means something outside killed it.
     std::panic::set_hook(Box::new(|info| {
         let thread = std::thread::current().name().unwrap_or("?").to_string();
         log_line(&format!("PANIC in thread '{thread}': {info}"));
     }));
 
-    // Watchdog: a scheduled task runs `notchy.exe --watchdog` every few minutes. If Notchy
+    // Watchdog: a scheduled task runs `ghyna.exe --watchdog` every few minutes. If Ghyna
     // is alive, the single-instance plugin ends the new copy at once; if it died, this copy
-    // takes over. After Exit from the tray it stays off until Notchy is opened by hand.
+    // takes over. After Exit from the tray it stays off until Ghyna is opened by hand.
     let watchdog = std::env::args().any(|a| a == "--watchdog");
     if watchdog && exited_flag().exists() {
         return;
@@ -646,7 +648,7 @@ pub fn run() {
             shortcuts::run_link,
         ])
         .setup(move |app| {
-            // Logged here, not earlier: a second copy (e.g. a watchdog run while Notchy is
+            // Logged here, not earlier: a second copy (e.g. a watchdog run while Ghyna is
             // alive) is ended by the single-instance plugin before setup and leaves no line.
             let how = if watchdog { "restarted by watchdog" } else { "normal" };
             log_line(&format!("start v{} ({how})", env!("CARGO_PKG_VERSION")));
@@ -685,20 +687,45 @@ pub fn run() {
         });
 }
 
-fn data_dir() -> std::path::PathBuf {
-    std::path::PathBuf::from(std::env::var("APPDATA").unwrap_or_default()).join("Notchy")
+pub(crate) fn data_dir() -> std::path::PathBuf {
+    std::path::PathBuf::from(std::env::var("APPDATA").unwrap_or_default()).join("Ghyna")
 }
 
-/// Present while the user has quit Notchy from the tray; the watchdog leaves it off.
+/// Carries Notchy's settings and small data files over on the first Ghyna run,
+/// so the rename doesn't feel like a fresh install. Existing Ghyna files win.
+fn migrate_legacy_data() {
+    let old = std::path::PathBuf::from(std::env::var("APPDATA").unwrap_or_default()).join("Notchy");
+    let new = data_dir();
+    let Ok(entries) = std::fs::read_dir(old) else { return };
+    if std::fs::create_dir_all(&new).is_err() {
+        return;
+    }
+    for entry in entries.flatten() {
+        let source = entry.path();
+        if !source.is_file() {
+            continue;
+        }
+        // The old log stays behind: Ghyna starts its own.
+        if source.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("log")) {
+            continue;
+        }
+        let target = new.join(entry.file_name());
+        if !target.exists() {
+            let _ = std::fs::copy(source, target);
+        }
+    }
+}
+
+/// Present while the user has quit Ghyna from the tray; the watchdog leaves it off.
 fn exited_flag() -> std::path::PathBuf {
     data_dir().join("exited-by-user")
 }
 
-/// Appends a timestamped line to %APPDATA%\Notchy\notchy.log, starting over past 512 KB.
+/// Appends a timestamped line to %APPDATA%\Ghyna\ghyna.log, starting over past 512 KB.
 fn log_line(msg: &str) {
     use std::io::Write;
     let dir = data_dir();
-    let path = dir.join("notchy.log");
+    let path = dir.join("ghyna.log");
     let _ = std::fs::create_dir_all(&dir);
     if std::fs::metadata(&path).is_ok_and(|m| m.len() > 512 * 1024) {
         let _ = std::fs::remove_file(&path);

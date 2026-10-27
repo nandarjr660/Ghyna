@@ -1,16 +1,20 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { listen } from "@tauri-apps/api/event";
+
+
   import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { listen } from "@tauri-apps/api/event";
+
+
   import { onMount, untrack } from "svelte";
-  import { fade, fly } from "svelte/transition";
+  import { cubicOut } from "svelte/easing";
+  import { fade } from "svelte/transition";
   import ClipboardPage, { type ClipEntry } from "$lib/ClipboardPage.svelte";
   import Island from "$lib/Island.svelte";
   import Mirror from "$lib/Mirror.svelte";
   import Peek, { type PeekData } from "$lib/Peek.svelte";
   import Player from "$lib/Player.svelte";
   import ShelfPage from "$lib/ShelfPage.svelte";
-  import ShortcutsPage, { type Shortcut } from "$lib/ShortcutsPage.svelte";
   import { arrange, islandWidth, type Activity, type Call, type Download } from "$lib/island";
   import TimerPage from "$lib/TimerPage.svelte";
   import TodoPage from "$lib/TodoPage.svelte";
@@ -21,7 +25,7 @@
   import { fetchWeather, type Weather } from "$lib/weather";
   import { upcoming, type CalEvent } from "$lib/calendar";
 
-  // Black box for the page: errors go to notchy.log, and a heartbeat tells Rust the
+  // Black box for the page: errors go to ghyna.log, and a heartbeat tells Rust the
   // page still runs and draws (sent from an animation frame, which only comes while
   // the page renders). Without beats for a while, Rust reloads the page.
   const logJs = (msg: string) => invoke("log_js", { msg }).catch(() => {});
@@ -29,7 +33,7 @@
   window.addEventListener("unhandledrejection", (e) => logJs(`unhandled: ${e.reason?.stack ?? e.reason}`));
   setInterval(() => requestAnimationFrame(() => invoke("heartbeat").catch(() => {})), 5000);
 
-  // Sizes from notchy.md §4 (logical px).
+  // Sizes from ghyna.md §4 (logical px).
   const SIZES = {
     // Tucked keeps the normal closed notch width; only its height collapses.
     tucked: { w: 150, h: 6, r: 4, e: 4 },
@@ -48,12 +52,11 @@
     todo: { w: 400, h: 132, r: 30, e: 21 },
     shelf: { w: 400, h: 132, r: 30, e: 21 },
     clipboard: { w: 400, h: 132, r: 30, e: 21 },
-    shortcuts: { w: 400, h: 132, r: 30, e: 21 },
     mirror: { w: 400, h: 132, r: 30, e: 21 },
   };
 
   // Pages of the open notch, switched with the dots or the mouse wheel.
-  const ALL_PAGES = ["now", "pomodoro", "water", "todo", "shelf", "clipboard", "shortcuts"] as const;
+  const ALL_PAGES = ["now", "pomodoro", "water", "todo", "shelf", "clipboard"] as const;
   type PageName = (typeof ALL_PAGES)[number];
   // The water reminder can be paused; the Air page stays available for logging.
   let waterEnabled = $state(true);
@@ -79,6 +82,7 @@
   // The active window sits under the notch (e.g. a maximized browser): shrink to a thin line.
   let tucked = $state(false);
   let blink = $state(false);
+  let wink = $state<"left" | "right" | null>(null);
   // A quiet cursor steps the notch through: clock -> awake eyes -> sleeping eyes.
   let idleStage = $state<"clock" | "awake" | "sleep">("clock");
   let waving = $state(false);
@@ -86,13 +90,23 @@
   let look = $state<[number, number, number]>([0, 0, 0]);
   // A small autonomous glance so the eyes feel alive when the cursor is far away.
   let gaze = $state(0);
+  let gazeY = $state(0);
+  let gazeTilt = $state(0);
   const eyeX = $derived(look[2] > 0.35 ? look[0] : gaze);
-  const eyeY = $derived(look[2] > 0.35 ? look[1] : 0);
+  const eyeY = $derived(look[2] > 0.35 ? look[1] : gazeY);
   let now = $state(new Date());
   let media = $state<NowPlaying | null>(null);
   let lyricsOn = $state(false);
   let peek = $state<PeekData | null>(null);
   let power = $state<Power>({ charging: false, percent: 100, battery: false });
+// Determine eye color / expression based on battery level
+// low15: <=15% (angry red), low20: 16-20% (annoyed orange), normal: >20% (warm green)
+const eyeState = $derived(
+  power.charging ? "charging" :
+  power.percent <= 15 ? "low15" :
+  power.percent <= 20 ? "low20" :
+  "normal"
+);
   let inUse = $state<InUse>({ camera: [], mic: [] });
   let micMuted = $state(false);
   let weather = $state<Weather | null>(null);
@@ -113,7 +127,6 @@
   // Horizontal swipes cycle which activity leads.
   let turn = $state(0);
   let clipItems = $state<ClipEntry[]>([]);
-  let shortcuts = $state<Shortcut[]>([]);
   // Long-pressed open: stays open until long-pressed again or a click elsewhere.
   let pinned = $state(false);
   // Camera check in the notch, optionally for a meeting.
@@ -238,7 +251,26 @@
   const todo = new Todo(showPeek);
   const shelf = new Shelf();
 
-  const charging = $derived(power.battery && power.charging);
+  const charging = $derived(power.charging);
+  let chargingHappy = $state(false);
+  $effect(() => {
+    if (!charging) {
+      chargingHappy = false;
+      return;
+    }
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const mood = () => {
+      if (stopped) return;
+      chargingHappy = Math.random() > 0.35;
+      timer = setTimeout(mood, 1600 + Math.random() * 4200);
+    };
+    mood();
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  });
   const timerActive = $derived(pomo.running || pomo.left < pomo.length());
   // The notch is showing its pages (not a held notification or screenshot peek).
   const paged = $derived(open && !clickable(peek));
@@ -269,7 +301,7 @@
             : peek.kind === "notification" || peek.kind === "meeting" || peek.kind === "download-done"
               ? "notify"
               : "peek"
-          : tucked
+          : tucked && !download
             ? "tucked"
             : running.length
               ? "island"
@@ -366,16 +398,39 @@
 
   // In the island the camera/mic dots sit at the end, so they get room of their own.
   const islandDots = $derived((inUse.camera.length > 0 ? 10 : 0) + (inUse.mic.length > 0 && !call ? 10 : 0));
+  const cameraTitle = $derived(
+    inUse.camera.length === 1 && inUse.camera[0] === "Kamera"
+      ? "Kamera sedang digunakan"
+      : `Kamera: ${inUse.camera.join(", ")}`
+  );
   const islandSize = $derived(
-    island.main ? { ...SIZES.island, w: islandWidth(island.main, island.side) + islandDots } : SIZES.island,
+    island.main
+      ? {
+          ...SIZES.island,
+          w: Math.min(
+            760,
+            Math.max(
+              islandWidth(island.main, island.side) + islandDots,
+              // 7px is closer to the actual average width of the 12px lyric font;
+              // the previous estimate left a visible empty tail after the visualizer.
+              island.main.kind === "music" && smallLine ? smallLine.length * 7 + 82 + islandDots : 0,
+            ),
+          ),
+        }
+      : SIZES.island,
   );
   // The closed notch's normal footprint, including a running island. Tucking only
   // removes height, so the line stays exactly as wide as the notch it replaces.
   const normalClosedSize = $derived(running.length ? islandSize : charging ? SIZES.charging : SIZES.rest);
   const size = $derived(
-    view === "tucked" ? { ...SIZES.tucked, w: normalClosedSize.w } : view === "island" ? islandSize : SIZES[view],
+    view === "tucked"
+      ? { ...SIZES.tucked, w: normalClosedSize.w }
+      : view === "island"
+        ? islandSize
+        : view === "clock" && smallLine
+          ? { ...SIZES.clock, w: Math.min(760, Math.max(SIZES.clock.w, smallLine.length * 8 + 100)) }
+          : SIZES[view],
   );
-  const closedView = $derived(view === "rest" || view === "island" || view === "charging");
 
   // The audio meter runs only while the equalizer is on screen.
   const metering = $derived(view === "island" && !!media?.playing && island.main !== null && [island.main, ...island.side].some((a) => a.kind === "music"));
@@ -417,6 +472,27 @@
     if (index === page) return;
     pageDir = index > page ? 1 : -1;
     page = index;
+  }
+
+  // Pages cross-fade while the old one slips away and the new one settles in
+  // from the direction of travel. The small lift and defocus keep the swap
+  // legible without the hard snap of a pure slide.
+  function pageSlide(
+    _node: HTMLElement,
+    { dir, leaving }: { dir: number; leaving: boolean },
+  ) {
+    return {
+      duration: leaving ? 220 : 360,
+      delay: leaving ? 0 : 20,
+      easing: cubicOut,
+      css: (t: number, u: number) => {
+        const shift = dir * 18 * u;
+        const lift = (leaving ? -3 : 5) * u;
+        const scale = 1 - 0.04 * u;
+        const pointer = leaving ? "pointer-events:none;" : "";
+        return `${pointer}opacity:${t};transform:translate3d(${shift}px, ${lift}px, 0) scale(${scale});filter:blur(${(1.8 * u).toFixed(3)}px);`;
+      },
+    };
   }
 
   let lastWheel = 0;
@@ -503,11 +579,9 @@
         page = pages.indexOf("shelf");
         dropTarget = zoneAt(e.payload.position);
       } else if (e.payload.type === "drop") {
-        const target = zoneAt(e.payload.position);
         dropping = false;
         dropTarget = null;
-        if (target === "share") invoke("share_files", { paths: e.payload.paths }).catch((err) => logJs(`share: ${err}`));
-        else shelf.add(e.payload.paths);
+        shelf.add(e.payload.paths);
       } else {
         dropping = false;
         dropTarget = null;
@@ -527,7 +601,7 @@
     shelf.load();
     // A quiet cursor steps the notch through: clock, awake eyes, then sleeping eyes.
     const IDLE_CLOCK_MS = 6_000;
-    const IDLE_SLEEP_MS = 18_000;
+    const IDLE_SLEEP_MS = 30_000;
     let idleTimer: ReturnType<typeof setTimeout>;
     let sleepTimer: ReturnType<typeof setTimeout>;
     let waveTimer: ReturnType<typeof setTimeout>;
@@ -581,7 +655,14 @@
     let gazeTimer: ReturnType<typeof setTimeout>;
     const glance = () => {
       if (idleStage === "awake") {
-        gaze = [-1, -0.55, 0, 0.55, 1][Math.floor(Math.random() * 5)];
+        const directions = [
+          [-1, -0.55], [-0.65, 0.65], [0, -0.7], [0, 0],
+          [0.65, 0.65], [1, -0.45], [-0.55, 0], [0.55, 0],
+        ];
+        const [x, y] = directions[Math.floor(Math.random() * directions.length)];
+        gaze = x;
+        gazeY = y;
+        gazeTilt = Math.abs(y) > 0.5 && Math.random() > 0.55 ? (x < 0 ? -1 : 1) : 0;
       }
       gazeTimer = setTimeout(glance, 1_700 + Math.random() * 1_800);
     };
@@ -626,8 +707,15 @@
       if (e.payload.kind === "screenshot") shelf.add([e.payload.path]);
     });
 
-    const unlistenPower = listen<Power>("power", (e) => (power = e.payload));
-    invoke<Power>("power_state").then((p) => (power = p));
+    const unlistenPower = listen<Power>("power", (e) => { power = e.payload; console.log('power event', e.payload); });
+    invoke<Power>("power_state").then((p) => { power = p; console.log('initial power', p); });
+    // Fallback polling in case Windows power notifications are not delivered reliably.
+    const powerPoll = setInterval(() => {
+        invoke<Power>("power_state").then((p) => (power = p));
+    }, 30000); // every 30 seconds
+    // Cleanup interval on unload
+    const cleanupPowerPoll = () => clearInterval(powerPoll);
+
     const unlistenInUse = listen<InUse>("in-use", (e) => (inUse = e.payload));
     invoke<InUse>("in_use_state").then((u) => (inUse = u));
     const unlistenMic = listen<boolean>("mic-muted", (e) => (micMuted = e.payload));
@@ -637,7 +725,6 @@
     type AllSettings = Settings & {
       weatherCity: { latitude: number; longitude: number } | null;
       smallLyrics: boolean;
-      shortcuts: Shortcut[];
     };
     let weatherTimer: ReturnType<typeof setTimeout>;
     const loadWeather = async (settings?: AllSettings) => {
@@ -650,7 +737,6 @@
     };
     const applySettings = (s: AllSettings) => {
       smallLyrics = s.smallLyrics;
-      shortcuts = s.shortcuts ?? [];
       waterEnabled = s.waterEnabled !== false;
       pomo.configure(s);
       water.configure(s);
@@ -672,6 +758,7 @@
     // Blink every few seconds. A one-shot class instead of an infinite CSS
     // animation, so nothing renders between blinks.
     let blinkTimer: ReturnType<typeof setTimeout>;
+    let winkTimer: ReturnType<typeof setTimeout>;
     const scheduleBlink = () => {
       blinkTimer = setTimeout(() => {
         blink = true;
@@ -680,6 +767,16 @@
       }, 3500 + Math.random() * 3000);
     };
     scheduleBlink();
+    const scheduleWink = () => {
+      winkTimer = setTimeout(() => {
+        if (idleStage === "awake" && !blink) {
+          wink = Math.random() > 0.5 ? "left" : "right";
+          setTimeout(() => (wink = null), 150);
+        }
+        scheduleWink();
+      }, 9000 + Math.random() * 7000);
+    };
+    scheduleWink();
 
     return () => {
       unlisten.then((f) => f());
@@ -708,6 +805,7 @@
       clearTimeout(closeTimer);
       clearTimeout(tick);
       clearTimeout(blinkTimer);
+      clearTimeout(winkTimer);
       clearTimeout(sleepTimer);
       clearTimeout(idleTimer);
       clearTimeout(waveTimer);
@@ -723,7 +821,7 @@
 <div
   class="notch"
   role="group"
-  aria-label="Notchy"
+  aria-label="Ghyna"
   data-idle={idleStage}
   class:open={paged}
   class:tucked={view === "tucked"}
@@ -740,15 +838,29 @@
   {#if pinned && paged && !mirror}<i class="pin" title="Terkunci terbuka · tekan lama untuk melepas"></i>{/if}
 
   <div class="layer rest" class:on={view === "rest"}>
-    {#if weather}<span class="weather">{weather.icon}<b>{weather.temp}°</b></span>{/if}
+    {#if weather && idleStage === "clock"}<span class="weather">{weather.icon}<b>{weather.temp}°</b></span>{/if}
     {#if idleStage !== "clock"}
       <div
         class="eyes"
         class:sleep={idleStage === "sleep"}
         class:blink={blink && idleStage === "awake"}
+        class:wink-left={wink === "left"}
+        class:wink-right={wink === "right"}
+        class:tilt-left={gazeTilt < 0}
+        class:tilt-right={gazeTilt > 0}
+        class:charge={eyeState === "charging"}
+        class:happy={eyeState === "charging" && chargingHappy}
+        class:angry={eyeState === "low15"}
         style:--lx={eyeX}
         style:--ly={eyeY}
         style:--near={look[2]}
+        style:--eye-grad={eyeState === "charging"
+          ? "linear-gradient(to bottom, #ffffff, #38bdf8)"
+          : eyeState === "low15"
+          ? "linear-gradient(to bottom, #ffffff, #ff4d4d)"
+          : eyeState === "low20"
+          ? "linear-gradient(to bottom, #ffffff, #ff9f00)"
+          : "linear-gradient(to bottom, #e3ffe6, #42c763)"}
         in:fade={{ duration: 400 }}
       >
         <i></i><i></i>
@@ -785,21 +897,30 @@
     </div>
   {/if}
 
-  <!-- While charging: a battery ring with a bolt, and the time. -->
+  <!-- While charging: percentage left, expressive eyes centered, charging cue right. -->
   <div class="layer charge" class:on={view === "charging"}>
-    <svg class="ring" viewBox="0 0 20 20">
-      <circle cx="10" cy="10" r="8" />
-      <circle cx="10" cy="10" r="8" class="fill" pathLength="100" stroke-dasharray="{power.percent} 100" />
-      <path d="M10.6 5.5 7.5 10.6h2.4l-.5 3.9 3.1-5.1h-2.4z" />
-    </svg>
+    <span class="charge-percent">{power.percent}%</span>
     {#if idleStage !== "clock"}
       <div
         class="eyes charge-eyes"
-        class:sleep={idleStage === "sleep"}
+        class:happy={eyeState === "charging" && chargingHappy}
+        class:angry={eyeState === "low15"}
+          class:sleep={idleStage === "sleep"}
         class:blink={blink && idleStage === "awake"}
+        class:wink-left={wink === "left"}
+        class:wink-right={wink === "right"}
+        class:tilt-left={gazeTilt < 0}
+        class:tilt-right={gazeTilt > 0}
         style:--lx={eyeX}
         style:--ly={eyeY}
         style:--near={look[2]}
+        style:--eye-grad={eyeState === "charging"
+          ? "linear-gradient(to bottom, #ffffff, #38bdf8)"
+          : eyeState === "low15"
+          ? "linear-gradient(to bottom, #ffffff, #ff4d4d)"
+          : eyeState === "low20"
+          ? "linear-gradient(to bottom, #ffffff, #ff9f00)"
+          : "linear-gradient(to bottom, #e3ffe6, #42c763)"}
         in:fade={{ duration: 300 }}
       >
         <i></i><i></i>
@@ -814,6 +935,7 @@
     {:else}
       <span class="charge-time">{time}</span>
     {/if}
+    <span class="charge-status" aria-label="Sedang mengisi daya">⚡︎</span>
   </div>
 
   <div class="layer clock" class:on={view === "clock"}>
@@ -848,10 +970,17 @@
     </div>
   {/if}
 
-  <!-- Camera/mic in use, and a muted mic: always visible while the notch shows anything. -->
-  {#if closedView && view !== "island" && (inUse.camera.length || inUse.mic.length || micMuted)}
-    <div class="dots" class:wide={view !== "rest"}>
-      {#if inUse.camera.length}<i class="cam" title="Kamera: {inUse.camera.join(', ')}"></i>{/if}
+  <!-- Camera/mic in use, and a muted mic: visible on every view that doesn't
+       already carry its own indicator (the island and the clock do). -->
+  {#if view !== "island" && view !== "clock" && view !== "peek" && view !== "shot" && view !== "notify" && !mirror && (inUse.camera.length || inUse.mic.length || micMuted)}
+    <div
+      class="dots"
+      class:wide={view === "charging"}
+      class:open={paged && !mirror}
+      class:tucked={view === "tucked"}
+      class:pinspace={pinned && paged && !mirror}
+    >
+      {#if inUse.camera.length}<i class="cam" title={cameraTitle}></i>{/if}
       {#if micMuted}
         <svg class="muted" viewBox="0 0 24 24"><path d="M9 9v3a3 3 0 0 0 5.1 2.1M15 9.3V6a3 3 0 0 0-5.7-1.3M19 11a7 7 0 0 1-1.2 3.9M5 11a7 7 0 0 0 10.6 6M12 18v3M3 3l18 18" /></svg>
       {:else if inUse.mic.length}<i class="mic" title="Mikrofon: {inUse.mic.join(', ')}"></i>{/if}
@@ -875,7 +1004,6 @@
           <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM19 11a7 7 0 0 1-14 0M12 18v3" />
         {/if}
       </svg>
-      {#if inUse.camera.length}<i class="cam"></i>{/if}
     </button>
     {#if output}
       <button
@@ -902,6 +1030,7 @@
       in:fade={{ duration: 200, delay: 200 }}
     >
       <svg viewBox="0 0 24 24"><path d="M15 10l5-3v10l-5-3zM3 7h12v10H3z" /></svg>
+      {#if inUse.camera.length}<i class="cam" title={cameraTitle}></i>{/if}
     </button>
   {/if}
 
@@ -923,8 +1052,8 @@
     {#key page}
       <div
         class="layer on page-layer"
-        in:fly={{ x: pageDir * 10, duration: 220, delay: 40, opacity: 0 }}
-        out:fly={{ x: pageDir * -6, duration: 130, opacity: 0 }}
+        in:pageSlide={{ dir: pageDir, leaving: false }}
+        out:pageSlide={{ dir: -pageDir, leaving: true }}
       >
         {#if pages[page] === "pomodoro"}
           <TimerPage {pomo} now={nowMs} />
@@ -934,10 +1063,8 @@
           <TodoPage {todo} onTyping={setTyping} />
         {:else if pages[page] === "clipboard"}
           <ClipboardPage items={clipItems} />
-        {:else if pages[page] === "shortcuts"}
-          <ShortcutsPage {shortcuts} onCamera={() => openMirror(nextEvent?.link ? nextEvent.title : "", nextEvent?.link ?? "")} />
         {:else}
-          <ShelfPage {shelf} {dropping} {dropTarget} />
+          <ShelfPage {shelf} {dropping} />
         {/if}
       </div>
     {/key}
@@ -964,6 +1091,15 @@
 </div>
 
 <style>
+  /* Register the ear radius so it can animate in step with the notch body.
+     Without this, --e snaps to its next value while the ear boxes are still
+     mid-transition, leaving detached black tabs at the top corners. */
+  @property --e {
+    syntax: "<length>";
+    inherits: true;
+    initial-value: 10px;
+  }
+
   :global(html, body) {
     margin: 0;
     background: transparent;
@@ -971,21 +1107,21 @@
     user-select: none;
     cursor: default;
     font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif;
-    color: #fff;
+    color: var(--text);
   }
 
   .notch {
-    --spring: cubic-bezier(0.34, 1.32, 0.5, 1);
-    /* Plain black, like the real Dynamic Island. A hairline edge keeps it
-       visible on a black wallpaper; color only appears to mean something. */
-    --edge: rgba(255, 255, 255, 0.16);
+    --spring: cubic-bezier(0.22, 1, 0.36, 1);
+    /* A green-black surface: green is the material, not a decoration. A
+       hairline edge keeps it visible on a dark wallpaper. */
+    --edge: var(--line);
     position: absolute;
     top: 0;
     left: 50%;
     width: var(--w);
     height: var(--h);
     transform: translateX(-50%);
-    background: #000;
+    background: var(--surface);
     border-radius: 0 0 var(--r) var(--r);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.07),
@@ -1007,9 +1143,6 @@
     top: 0;
     width: var(--e);
     height: var(--e);
-    transition:
-      width 0.45s,
-      height 0.45s;
   }
   /* The ears carry the hairline along their curve, covering the straight edge beside them. */
   .notch::before {
@@ -1019,7 +1152,7 @@
       transparent calc(var(--e) - 0.5px),
       var(--edge) calc(var(--e) - 0.5px),
       var(--edge) var(--e),
-      #000 calc(var(--e) + 0.3px)
+      var(--surface) calc(var(--e) + 0.3px)
     );
   }
   .notch::after {
@@ -1029,7 +1162,7 @@
       transparent calc(var(--e) - 0.5px),
       var(--edge) calc(var(--e) - 0.5px),
       var(--edge) var(--e),
-      #000 calc(var(--e) + 0.3px)
+      var(--surface) calc(var(--e) + 0.3px)
     );
   }
 
@@ -1037,6 +1170,7 @@
     transition:
       width 0.62s var(--spring),
       height 0.62s var(--spring),
+      --e 0.45s ease,
       border-radius 0.45s ease,
       box-shadow 0.45s ease;
   }
@@ -1076,35 +1210,17 @@
     font-size: 11px;
     font-weight: 600;
   }
-  /* The page content slides in from the direction you are travelling. */
+  /* The page content settles in from the direction you are travelling. */
   .page-layer {
-    will-change: transform, opacity;
+    will-change: transform, opacity, filter;
   }
 
   .charge {
-    flex-direction: row;
-    gap: 34px;
-  }
-  .ring {
-    width: 20px;
-    height: 20px;
-    transform: rotate(-90deg);
-  }
-  .ring circle {
-    fill: none;
-    stroke: rgba(255, 255, 255, 0.2);
-    stroke-width: 2.4;
-  }
-  .ring .fill {
-    stroke: #fff;
-    stroke-linecap: round;
-  }
-  .ring path {
-    fill: #000;
-    stroke: #fff;
-    stroke-width: 0.6;
-    transform: rotate(90deg);
-    transform-origin: center;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 0;
+    padding: 0 18px;
   }
   .charge-time {
     font-size: 15px;
@@ -1148,7 +1264,7 @@
     width: 16px;
     height: 16px;
     fill: none;
-    stroke: #fff;
+    stroke: var(--text);
     stroke-width: 1.9;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -1182,21 +1298,21 @@
     width: 4px;
     height: 4px;
     border-radius: 2px;
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--muted);
     transform: translate(-50%, -50%);
     transition:
       width 0.24s ease,
       background 0.2s;
   }
   .pager button:hover::after {
-    background: rgba(255, 255, 255, 0.65);
+    background: var(--muted-strong);
   }
   .pager button.on::after {
     width: 12px;
-    background: #fff;
+    background: var(--accent);
   }
 
-  /* Camera / mic indicators on the closed notch. */
+  /* Camera / mic indicators on the notch. */
   .dots {
     position: absolute;
     top: 0;
@@ -1205,9 +1321,26 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    z-index: 3;
   }
   .dots.wide {
     right: 38px;
+  }
+  /* The open notch: tuck the dots into the top-right padding, clear of the
+     pin and of the page controls. */
+  .dots.open {
+    top: 7px;
+    right: 24px;
+    height: 18px;
+  }
+  .dots.open.pinspace {
+    right: 34px;
+  }
+  /* Tucked, the notch is only 6px tall: a 4px dot is the whole indicator. */
+  .dots.tucked {
+    top: 1px;
+    right: 6px;
+    height: 6px;
   }
   .cam,
   .mic {
@@ -1216,12 +1349,35 @@
     border-radius: 50%;
   }
   .cam {
-    background: #34d399;
-    box-shadow: 0 0 6px #34d399;
+    background: var(--accent);
+    box-shadow: 0 0 6px var(--accent);
+    animation: cam-pulse 2.2s ease-in-out infinite;
   }
   .mic {
-    background: #fb923c;
-    box-shadow: 0 0 6px #fb923c;
+    background: var(--warning);
+    box-shadow: 0 0 6px var(--warning);
+  }
+  .dots.tucked .cam,
+  .dots.tucked .mic {
+    width: 4px;
+    height: 4px;
+  }
+  .dots.tucked .muted {
+    width: 6px;
+    height: 6px;
+  }
+  @keyframes cam-pulse {
+    0%,
+    100% {
+      box-shadow:
+        0 0 6px var(--accent),
+        0 0 0 0 var(--accent-line);
+    }
+    50% {
+      box-shadow:
+        0 0 6px var(--accent),
+        0 0 0 3px transparent;
+    }
   }
   .dots .muted {
     width: 13px;
@@ -1230,7 +1386,7 @@
   .muted,
   .mic-toggle svg {
     fill: none;
-    stroke: #f87171;
+    stroke: var(--danger);
     stroke-width: 2.2;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -1247,25 +1403,25 @@
     border-radius: 50%;
     display: grid;
     place-items: center;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(239, 250, 243, 0.08);
     cursor: pointer;
   }
   .mic-toggle:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(239, 250, 243, 0.14);
   }
   .mic-toggle svg {
     width: 14px;
     height: 14px;
-    stroke: #fff;
+    stroke: var(--text);
   }
   .mic-toggle.live svg {
-    stroke: #fb923c;
+    stroke: var(--warning);
   }
   .mic-toggle.muted {
-    background: rgba(248, 113, 113, 0.2);
+    background: rgba(240, 128, 128, 0.18);
   }
   .mic-toggle.muted svg {
-    stroke: #f87171;
+    stroke: var(--danger);
   }
   .mic-toggle.output {
     left: 50px;
@@ -1288,7 +1444,7 @@
   }
   .event-time {
     margin-right: 6px;
-    color: #fff;
+    color: var(--text);
     font-weight: 600;
     font-variant-numeric: tabular-nums;
   }
@@ -1309,7 +1465,7 @@
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--muted-strong);
     z-index: 2;
   }
 
@@ -1325,14 +1481,86 @@
     width: 8.4px;
     height: 12.4px;
     border-radius: 50%;
-    background: #fff;
+    background: var(--eye-grad, #fff);
     box-shadow:
       0 0 6px 1px rgba(255, 255, 255, 0.45),
       0 0 14px 4px rgba(255, 255, 255, 0.12);
     transition: transform 0.09s ease;
   }
+  .eyes.charge i {
+    animation: pulse-blue 1.25s infinite ease-in-out;
+  }
+  .charge-percent {
+    min-width: 31px;
+    color: #38bdf8;
+    font-size: 12px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    text-align: left;
+    justify-self: start;
+  }
+  .charge-status {
+    margin-left: 0;
+    color: #38bdf8;
+    font-size: 13px;
+    line-height: 1;
+    filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.65));
+    animation: charging-spark 1.4s ease-in-out infinite;
+    justify-self: end;
+  }
+  @keyframes charging-spark {
+    0%, 100% { opacity: 0.5; transform: scale(0.9); }
+    50% { opacity: 1; transform: scale(1.12); }
+  }
+  .eyes.happy i {
+    height: 8px;
+    border-radius: 10px 10px 3px 3px;
+    transform: translateY(2px) rotate(0deg);
+  }
+  .eyes.happy i:first-child {
+    transform: translateY(2px) rotate(-8deg);
+  }
+  .eyes.happy i:last-child {
+    transform: translateY(2px) rotate(8deg);
+  }
+  /* Critical battery: narrowed eyes with an inward brow angle. */
+  .eyes.angry i {
+    height: 9.5px;
+    border-radius: 3px 3px 50% 50%;
+    transform: translateY(2px) rotate(12deg);
+  }
+  .eyes.angry i:first-child {
+    transform: translateY(2px) rotate(20deg);
+  }
+  .eyes.angry i:last-child {
+    transform: translateY(2px) rotate(-20deg);
+  }
+  @keyframes pulse-blue {
+    0%, 100% {
+      box-shadow:
+        0 0 8px 2px rgba(56, 189, 248, 0.6),
+        0 0 16px 5px rgba(56, 189, 248, 0.25);
+      filter: brightness(1);
+    }
+    50% {
+      box-shadow:
+        0 0 14px 4px rgba(56, 189, 248, 0.95),
+        0 0 24px 8px rgba(56, 189, 248, 0.45);
+      filter: brightness(1.35);
+    }
+  }
   .eyes.blink i {
     transform: scaleY(0.1);
+  }
+  .eyes.wink-left i:first-child,
+  .eyes.wink-right i:last-child {
+    transform: scaleY(0.1);
+  }
+  .eyes.tilt-left {
+    transform: translate(calc(var(--lx, 0) * 9px), calc(var(--ly, 0) * 4px)) rotate(-6deg) scale(calc(1 + var(--near, 0) * 0.25));
+  }
+  .eyes.tilt-right {
+    transform: translate(calc(var(--lx, 0) * 9px), calc(var(--ly, 0) * 4px)) rotate(6deg) scale(calc(1 + var(--near, 0) * 0.25));
   }
   .eyes.sleep {
     transform: none;
@@ -1406,7 +1634,8 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .wave,
-    .eyes.sleep {
+    .eyes.sleep,
+    .cam {
       animation: none;
     }
     .eyes,
@@ -1438,7 +1667,7 @@
     color: rgba(255, 255, 255, 0.6);
   }
   .clock-lyric {
-    max-width: 320px;
+    max-width: none;
     margin-top: 5px;
     padding: 2px 9px;
     border-radius: 999px;
@@ -1447,7 +1676,7 @@
     font-weight: 600;
     color: rgba(255, 255, 255, 0.8);
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
   }
 </style>
