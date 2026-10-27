@@ -15,9 +15,9 @@ Ghyna dianggap berhasil kalau:
 - Saat diam (tidak ada animasi), CPU-nya ~0% di Task Manager. *Kenyataan terukur: ~1% satu core saat diam (sebagian besar WebView2), ~4% saat musik diputar dengan animasi piringan/equalizer. v0.2.0 (22 Okt 2026, semua proses Ghyna + WebView2): diam 1,7%; musik dengan equalizer asli 4,8% vs v0.1.5 4,4% diukur bergantian dalam kondisi sama.*
 - Semua fitur di bagian 5 berjalan.
 
-**Pengguna:** saya sendiri dan beberapa teman. Kode masih di repo publik `RamantyaDS/Notchy`; repo `RamantyaDS/Ghyna` belum dibuat. Installer Ghyna dibagikan manual.
+**Pengguna:** saya sendiri dan beberapa teman. Kode Ghyna ada di fork publik `nandarjr660/Ghyna`, fork dari repo asli `RamantyaDS/Notchy`; atribusi ke repo asli tetap dicantumkan di README. Installer dibagikan lewat GitHub Releases.
 
-**Status:** v1.1.0 (27 Oktober 2026). Rebrand dari Notchy ke Ghyna: nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, dan log `ghyna.log`. Updater dimatikan di build kustom ini. Installer: `Ghyna_1.1.0_x64-setup.exe`.
+**Status:** v1.1.1 (27 Oktober 2026). Rebrand dari Notchy ke Ghyna: nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, dan log `ghyna.log`. Updater otomatis aktif sejak rilis ini. Installer: `Ghyna_1.1.1_x64-setup.exe`.
 
 ---
 
@@ -54,12 +54,12 @@ Ghyna dianggap berhasil kalau:
 | Deteksi full-screen | `SHQueryUserNotificationState` **atau** jendela aktif menutupi seluruh monitor, dicek setiap 1 detik | Shell Windows tidak mendeteksi semua jendela full-screen (misalnya browser F11) |
 | Penyimpanan data | File JSON di `%APPDATA%\Ghyna\` | Tanpa akun, tanpa server, data tetap di laptop |
 | Penjaga (watchdog) | Task Scheduler **"Ghyna Watchdog"** (hanya di laptop pengguna, belum ikut installer): saat login + tiap 2 menit menjalankan `ghyna.exe --watchdog`, tanpa batas waktu, tetap jalan di baterai, `MultipleInstances IgnoreNew`. Kalau Ghyna hidup, salinan baru langsung keluar (single-instance); kalau mati, salinan itu yang mengambil alih (log: `start (restarted by watchdog)`). Exit dari tray menulis `%APPDATA%\Ghyna\exited-by-user`, sehingga penjaga membiarkannya mati; dibuka normal (atau autostart) menghapus penanda itu. | Ghyna sempat hilang tanpa jejak. Autostart (Run key) hanya berlaku saat login; Ghyna bertahan melewati sleep. |
-| Update otomatis (disiapkan, belum aktif) | Endpoint `tauri-plugin-updater` diarahkan ke `https://github.com/RamantyaDS/Ghyna/releases/latest/download/latest.json`, tetapi build 1.1.0 memakai `CUSTOM_BUILD = true` di `src-tauri/src/update.rs`, sehingga pengecekan update berhenti sebelum menghubungi GitHub. Menu tray "Cek update" hanya menampilkan versi terpasang dan versi terbaru. Repo `RamantyaDS/Ghyna` belum dibuat (GitHub 404), jadi endpoint itu belum bisa dipakai. Alur lama (cek saat menyala, tiap jam, 30 detik setelah bangun dari sleep; installer NSIS passive; kunci `%USERPROFILE%\.tauri\notchy.key`) tetap ada di kode tetapi tidak dijalankan. | Updater dimatikan sampai repo dan rilis Ghyna siap; installer 1.1.0 dibagikan manual tanpa signature |
+| Update otomatis (aktif sejak v1.1.1) | Endpoint `tauri-plugin-updater` diarahkan ke `https://github.com/nandarjr660/Ghyna/releases/latest/download/latest.json`; `CUSTOM_BUILD = false` di `src-tauri/src/update.rs`. Build resmi memakai kunci `%USERPROFILE%\.tauri\ghyna.key` (pubkey tertanam di `tauri.conf.json`) dan menghasilkan `.sig` + `latest.json`. Alur: cek saat menyala, tiap jam, dan 30 detik setelah bangun dari sleep; installer NSIS passive. Repo harus tetap publik. | Rilis 1.1.1 adalah rilis pertama yang bisa memperbarui diri; versi 1.1.0 harus dipasang manual sekali karena updater-nya dimatikan |
 | Kesehatan tampilan | Halaman notch mengirim detak jantung tiap 5 detik dari `requestAnimationFrame` (hanya jalan kalau halaman hidup **dan** menggambar). Kalau jendela sedang tampil dan 30 detik tanpa detak: halaman dimuat ulang; 60 detik kemudian masih diam: Ghyna restart sendiri. Penghitung direset saat jendela tersembunyi, layar terkunci, atau baru bangun dari sleep. Error JS dan promise yang gagal ditulis ke `ghyna.log` ("page error"). Tray punya "Muat ulang notch". Teruji dengan membekukan renderer: pulih dalam ~1,5 menit. | 20 Okt 2026 Ghyna "hilang" padahal prosesnya hidup dan jendelanya tampil, hanya tidak menggambar apa pun; penjaga dan log tidak menangkapnya |
 | Halaman GitHub | `README.md` berbahasa Inggris (plus ringkasan Bahasa Indonesia) dengan banner, GIF demo, dan potongan panel di `docs/`. Sumbernya di `D:\Projects\notchy-promo\readme` (`banner.html` dirender oleh `shot.mjs`; GIF dan potongan dari video promo lewat ffmpeg). Deskripsi repo + 14 topik diisi lewat `gh repo edit`. Gambar social preview harus diunggah manual (Settings → General → Social preview, pakai `docs/banner.png`). Tidak menyebut Nusa. | Permintaan pengguna: repo menarik dilihat orang |
 | Tetap paling atas | Tiap detik (di loop watcher) dicek apakah ada jendela biasa yang terlihat di atas notch dalam urutan z; kalau ada, `SetWindowPos(HWND_TOPMOST, SWP_NOMOVE/NOSIZE/NOACTIVATE)` dan dicatat di log (paling sering sekali per 10 menit). Teruji: didorong ke bawah 18 jendela, kembali ke atas < 2 detik. | 21 Okt 2026: notch "hilang" saat Outlook di depan; jendelanya masih bertanda topmost tapi posisinya di bawah jendela biasa (urutan ke-74). Kemungkinan ini juga penyebab "hilang" 20 Okt dan muat ulang otomatis malamnya: WebView2 berhenti menggambar saat tertutup |
 | Log "kotak hitam" | `%APPDATA%\Ghyna\ghyna.log`: `start vX`, `exit (normal)`, dan `PANIC …` (thread, file:baris, pesan). Release memakai `panic = "unwind"`, sehingga panic di thread latar hanya mematikan thread itu. | Ghyna dua kali "hilang" tanpa jejak crash (19 Okt 2026). Ada baris PANIC berarti bug kode; tidak ada baris sama sekali berarti dimatikan dari luar (curiga: Trend Micro Apex One, karena Ghyna memakai keyboard hook). |
-| Distribusi | Installer Ghyna bawaan Tauri (NSIS, per-user, tanpa admin), dipasang manual. Update otomatis belum aktif di v1.1.0, jadi versi baru juga dipasang manual. Data tetap saat update. Cara membuat rilis: bagian 9. | Hanya untuk diri sendiri dan teman. Tanpa code signing. Windows akan menampilkan peringatan SmartScreen; teman cukup klik "Run anyway". |
+| Distribusi | Installer Ghyna bawaan Tauri (NSIS, per-user, tanpa admin), dipasang manual untuk pertama kali. Sejak v1.1.1 update otomatis aktif lewat GitHub Releases; data tetap saat update. Cara membuat rilis: bagian 9. | Hanya untuk diri sendiri dan teman. Tanpa code signing. Windows akan menampilkan peringatan SmartScreen; teman cukup klik "Run anyway". |
 
 ---
 
@@ -242,6 +242,10 @@ Semua fitur di atas masuk v1. Urutan ini ada karena sebagian fitur bergantung pa
    - Rebrand Notchy → Ghyna (nama, identifier, path data, log, watchdog) + migrasi data lama; meter persen unduhan di sudut kanan tanpa shimmer; transisi halaman `pageSlide`; halaman Pintasan dihapus; mata tidur setelah 30 detik.
    - Verifikasi: `npm run check` 0 error/0 warning; `npm test` 11/11; `npm run build` sukses; CDP mengukur mata terbuka → tidur **30,2 detik**; tab tepat 6; installer `Ghyna_1.1.0_x64-setup.exe` (4.007.317 byte, SHA-256 `2C4E4994F9C39F8A596F36623DCA3E5DF71FA2C6600FBAFE4EA7E1B9B7777FE1`).
 
+9. **v1.1.1 (bagian 2, updater): updater otomatis aktif.** ✅ Rilis 27 Okt 2026.
+   - Fork publik `nandarjr660/Ghyna`; kunci `ghyna.key`; endpoint `latest.json`; `CUSTOM_BUILD = false`; installer bertanda tangan dan GitHub Release berisi installer, `.sig`, serta `latest.json`.
+   - Verifikasi: `npm run check` 0 error/0 warning; `npm test` 11/11; build rilis sukses; endpoint publik `latest.json` HTTP 200; installer `Ghyna_1.1.1_x64-setup.exe` (4.020.640 byte, SHA-256 `2D85935BFE0D64C7B0F0E307CB0B94FE68DDCB53E99737EDF29073CD547730F4`).
+
 Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 
 ---
@@ -280,15 +284,17 @@ Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 | v0.2.1 | 22 Okt 2026 | Sakelar "Pakai fitur minum air" di Settings; cek update tiap jam dan setelah bangun dari sleep. (Pemicu: teman di v0.1.2 tidak kunjung ter-update karena aplikasinya tidak dibuka ulang.) |
 | v0.2.2 | 23 Okt 2026 | Sisa unduhan yang gagal/dibatalkan (`.crdownload`/`.part` yang tidak bertambah) tidak lagi tampil terus sebagai "Mengunduh…". Hanya tes otomatis; uji langsung dilewati. |
 | v1.1.0 | 27 Okt 2026 | Rebrand Notchy → Ghyna (nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, log `ghyna.log`, watchdog, migrasi data lama); meter persen unduhan 48×3 di sudut kanan tanpa shimmer; transisi halaman baru; halaman Pintasan dihapus; mata tidur setelah 30 detik. Installer: `Ghyna_1.1.0_x64-setup.exe` (4.007.317 byte, SHA-256 `2C4E4994F9C39F8A596F36623DCA3E5DF71FA2C6600FBAFE4EA7E1B9B7777FE1`). |
+| v1.1.1 | 27 Okt 2026 | Updater otomatis aktif: fork publik `nandarjr660/Ghyna`, kunci `ghyna.key`, `latest.json` bertanda tangan, cek saat menyala/tiap jam/setelah bangun. Rilis pertama yang bisa memperbarui sendiri. Installer: `Ghyna_1.1.1_x64-setup.exe` (4.020.640 byte, SHA-256 `2D85935BFE0D64C7B0F0E307CB0B94FE68DDCB53E99737EDF29073CD547730F4`). |
 
-**Cara membuat rilis baru (v1.1.0, manual)**
-1. Jalankan `npm run check`, `npm test`, dan `npm run build` di `_research\Notchy`.
-2. Jalankan `npm run tauri build` (butuh Node, Rust, dan MSVC). Installer ada di `src-tauri\target\release\bundle\nsis\Ghyna_<versi>_x64-setup.exe`.
-3. Salin installer ke folder distribusi, lalu catat ukuran dan SHA-256. Untuk 1.1.0: `Ghyna_1.1.0_x64-setup.exe` (4.007.317 byte, SHA-256 `2C4E4994F9C39F8A596F36623DCA3E5DF71FA2C6600FBAFE4EA7E1B9B7777FE1`).
-4. Update otomatis belum dipakai: repo `RamantyaDS/Ghyna` belum ada (404) dan `CUSTOM_BUILD = true` di `src-tauri/src/update.rs`. Jadi belum ada `latest.json` atau GitHub Release Ghyna; installer dibagikan manual.
+**Cara membuat rilis baru (otomatis, sejak v1.1.1)**
+1. Pastikan working tree bersih, berada di branch `main`, dan `origin` menunjuk ke `nandarjr660/Ghyna`.
+2. Jalankan `.\scripts\release.ps1 <versi> "catatan rilis"` dari `_research\Notchy`.
+3. Skrip menaikkan versi di `package.json`, `package-lock.json`, `tauri.conf.json`, `Cargo.toml`, dan `Cargo.lock`; membangun installer bertanda tangan; menulis `latest.json`; lalu commit, tag, push, dan membuat GitHub Release berisi installer, `.sig`, dan `latest.json`.
+4. Kunci penandatangan ada di `%USERPROFILE%\.tauri\ghyna.key` dan tidak boleh di-commit. Kehilangan kunci berarti update berikutnya tidak bisa ditandatangani.
+5. Setelah rilis, catat ukuran dan SHA-256 installer di tabel bagian 9.
 
-**Cara lama (Notchy, legacy, jangan dipakai untuk Ghyna)**: `scripts/release.ps1 <versi> "catatan rilis"` masih menunjuk `Notchy Watchdog`, `notchy.exe`, repo `RamantyaDS/Notchy`, dan kunci `%USERPROFILE%\.tauri\notchy.key`; skrip ini belum disesuaikan untuk Ghyna. Dulu skrip itu menaikkan versi di `package.json`, `src-tauri/tauri.conf.json`, dan `src-tauri/Cargo.toml`, membangun installer bertanda tangan, menulis `latest.json`, commit/tag/push, lalu membuat GitHub Release.
+**Catatan:** alur `release.ps1` lama untuk Notchy (`Notchy Watchdog`, `notchy.exe`, repo `RamantyaDS/Notchy`, `notchy.key`) sudah tidak dipakai.
 
-Kalau nanti updater diaktifkan, peringatan "__TAURI_BUNDLE_TYPE variable not found in binary" saat pengemasan diulang aman selama `ghyna.exe` **di dalam installer** memuat `__TAURI_BUNDLE_TYPE_VAR_NSS`; tanpa penanda itu updater tidak tahu jenis installernya. Cek dengan 7-Zip: `7z x Ghyna_<versi>_x64-setup.exe ghyna.exe -r`, lalu cari teks itu. Exe di `target\release` bisa tetap `VAR_UNK` (Tauri menandai salinan yang dikemas); itu normal. v0.1.3–v0.1.5 (dulu Notchy) sudah dicek: `NSS`.
+Updater sudah aktif sejak v1.1.1. Peringatan "__TAURI_BUNDLE_TYPE variable not found in binary" saat pengemasan diulang aman selama `ghyna.exe` **di dalam installer** memuat `__TAURI_BUNDLE_TYPE_VAR_NSS`; tanpa penanda itu updater tidak tahu jenis installernya. Cek dengan 7-Zip: `7z x Ghyna_<versi>_x64-setup.exe ghyna.exe -r`, lalu cari teks itu. Exe di `target\release` bisa tetap `VAR_UNK` (Tauri menandai salinan yang dikemas); itu normal. v0.1.3–v0.1.5 (dulu Notchy) sudah dicek: `NSS`.
 
 **Video promo** (bukan bagian repo ini): `D:\Projects\notchy-promo` – Reels 9:16, 27 detik, konsep "Satu garis, semuanya"; render lewat `render-par.mjs` (batas segmen dikunci ke frame), musik `music.html`, campur VO `mix.mjs`.
