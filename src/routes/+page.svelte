@@ -111,12 +111,12 @@ const eyeState = $derived(
 // expression feel like one object instead of a green frame around blue eyes.
 const eyeGlow = $derived(
   eyeState === "charging"
-    ? "rgba(56, 189, 248, 0.6)"
+    ? "rgba(56, 189, 248, 0.8)"
     : eyeState === "low15"
-    ? "rgba(255, 77, 77, 0.6)"
+    ? "rgba(255, 77, 77, 0.8)"
     : eyeState === "low20"
-    ? "rgba(255, 159, 0, 0.58)"
-    : "rgba(66, 199, 99, 0.6)"
+    ? "rgba(255, 159, 0, 0.78)"
+    : "rgba(66, 199, 99, 0.8)"
 );
   let inUse = $state<InUse>({ camera: [], mic: [] });
   let micMuted = $state(false);
@@ -836,6 +836,7 @@ const eyeGlow = $derived(
   data-idle={idleStage}
   class:open={paged}
   class:tucked={view === "tucked"}
+  class:idle={view === "rest"}
   style:--w="{size.w}px"
   style:--h="{size.h}px"
   style:--r="{size.r}px"
@@ -847,8 +848,7 @@ const eyeGlow = $derived(
   onpointerup={pressUp}
   onpointerleave={pressUp}
 >
-  <span class="edge-glow left" aria-hidden="true"></span>
-  <span class="edge-glow right" aria-hidden="true"></span>
+  <span class="eye-wash" aria-hidden="true"></span>
   {#if pinned && paged && !mirror}<i class="pin" title="Terkunci terbuka · tekan lama untuk melepas"></i>{/if}
 
   <div class="layer rest" class:on={view === "rest"}>
@@ -1149,27 +1149,24 @@ const eyeGlow = $derived(
       0 16px 36px -18px rgba(0, 0, 0, 0.98);
   }
 
-  /* Two soft light leaks at the lower corners, tinted by the eyes. */
-  .edge-glow {
+  /* Light washes that sit inside the notch, tinted by the eyes. The colour
+     fades toward the middle so the black surface still carries the content. */
+  .eye-wash {
     position: absolute;
-    bottom: calc(clamp(62px, calc(var(--h) * 1), 108px) * -0.5);
-    width: clamp(34px, calc(var(--w) * 0.16), 62px);
-    height: clamp(62px, calc(var(--h) * 1), 108px);
-    border-radius: 50%;
-    background: radial-gradient(ellipse at center, var(--eye-glow) 0%, transparent 70%);
-    filter: blur(7px);
+    inset: 0;
+    border-radius: inherit;
+    background:
+      radial-gradient(ellipse 85% 120% at 0% 100%, var(--eye-glow), transparent 70%) left bottom / 36% 100% no-repeat,
+      radial-gradient(ellipse 85% 120% at 100% 100%, var(--eye-glow), transparent 70%) right bottom / 36% 100% no-repeat;
     pointer-events: none;
     z-index: 0;
-    opacity: 0.95;
+    opacity: 0;
     transition: opacity 0.3s ease;
   }
-  .edge-glow.left {
-    left: calc(var(--w) * -0.08);
+  .notch.idle .eye-wash {
+    opacity: 1;
   }
-  .edge-glow.right {
-    right: calc(var(--w) * -0.08);
-  }
-  .notch.tucked .edge-glow {
+  .notch.tucked .eye-wash {
     opacity: 0;
   }
 
