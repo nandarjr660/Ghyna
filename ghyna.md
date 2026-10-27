@@ -17,7 +17,7 @@ Ghyna dianggap berhasil kalau:
 
 **Pengguna:** saya sendiri dan beberapa teman. Kode Ghyna ada di fork publik `nandarjr660/Ghyna`, fork dari repo asli `RamantyaDS/Notchy`; atribusi ke repo asli tetap dicantumkan di README. Installer dibagikan lewat GitHub Releases.
 
-**Status:** v1.1.1 (27 Oktober 2026). Rebrand dari Notchy ke Ghyna: nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, dan log `ghyna.log`. Updater otomatis aktif sejak rilis ini. Installer: `Ghyna_1.1.1_x64-setup.exe`.
+**Status:** v1.1.2 (27 Oktober 2026). Rebrand dari Notchy ke Ghyna: nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, dan log `ghyna.log`. Updater otomatis aktif sejak v1.1.1. Installer: `Ghyna_1.1.2_x64-setup.exe`.
 
 ---
 
@@ -204,6 +204,10 @@ Dikerjakan sebagai **satu tahap besar**, dirilis sekali setelah lolos pengujian 
 5. **Mata tidur 30 detik**: jam 6 detik → mata terbuka → tidur setelah 30 detik tanpa aktivitas.
    DoD: `npm run check` 0 error/0 warning; `npm test` 11/11; `npm run build` sukses; CDP mengukur mata terbuka → tidur 30,2 detik; tab tepat 6; installer `Ghyna_1.1.0_x64-setup.exe` terbentuk dan hash dicatat.
 
+### H. v1.1.2: glow warna mata
+1. **Glow sisi notch**: dua gradient lembut di kiri dan kanan bawah notch. Warnanya mengikuti warna mata: hijau saat normal, biru saat mengisi daya, merah saat baterai ≤15%, dan oranye saat 16–20%. Ukuran glow mengikuti ukuran notch dan disembunyikan saat notch tucked.
+   DoD: `npm run check` 0 error/0 warning; `npm test` 11/11; build rilis sukses; glow terlihat di kedua sisi pada latar terang; installer `Ghyna_1.1.2_x64-setup.exe` (4.023.007 byte, SHA-256 `6E14D952CAEE780DC6F1A4EBC2AA6FF5CF24FB505492BDDD72728069B48B84EB`).
+
 ---
 
 ## 6. Urutan pengerjaan
@@ -246,6 +250,10 @@ Semua fitur di atas masuk v1. Urutan ini ada karena sebagian fitur bergantung pa
    - Fork publik `nandarjr660/Ghyna`; kunci `ghyna.key`; endpoint `latest.json`; `CUSTOM_BUILD = false`; installer bertanda tangan dan GitHub Release berisi installer, `.sig`, serta `latest.json`.
    - Verifikasi: `npm run check` 0 error/0 warning; `npm test` 11/11; build rilis sukses; endpoint publik `latest.json` HTTP 200; installer `Ghyna_1.1.1_x64-setup.exe` (4.020.640 byte, SHA-256 `2D85935BFE0D64C7B0F0E307CB0B94FE68DDCB53E99737EDF29073CD547730F4`).
 
+10. **v1.1.2 (bagian 5H): glow warna mata.** ✅ Rilis 27 Okt 2026.
+   - Dua gradient di sisi kiri/kanan notch, warnanya mengikuti mata: hijau normal, biru saat mengisi daya, merah saat baterai ≤15%, oranye saat 16–20%. Ukuran mengikuti notch dan hilang saat tucked.
+   - Verifikasi: `npm run check` 0 error/0 warning; `npm test` 11/11; build rilis sukses; glow dicek di latar terang; installer `Ghyna_1.1.2_x64-setup.exe` (4.023.007 byte, SHA-256 `6E14D952CAEE780DC6F1A4EBC2AA6FF5CF24FB505492BDDD72728069B48B84EB`).
+
 Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 
 ---
@@ -285,6 +293,7 @@ Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 | v0.2.2 | 23 Okt 2026 | Sisa unduhan yang gagal/dibatalkan (`.crdownload`/`.part` yang tidak bertambah) tidak lagi tampil terus sebagai "Mengunduh…". Hanya tes otomatis; uji langsung dilewati. |
 | v1.1.0 | 27 Okt 2026 | Rebrand Notchy → Ghyna (nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, log `ghyna.log`, watchdog, migrasi data lama); meter persen unduhan 48×3 di sudut kanan tanpa shimmer; transisi halaman baru; halaman Pintasan dihapus; mata tidur setelah 30 detik. Installer: `Ghyna_1.1.0_x64-setup.exe` (4.007.317 byte, SHA-256 `2C4E4994F9C39F8A596F36623DCA3E5DF71FA2C6600FBAFE4EA7E1B9B7777FE1`). |
 | v1.1.1 | 27 Okt 2026 | Updater otomatis aktif: fork publik `nandarjr660/Ghyna`, kunci `ghyna.key`, `latest.json` bertanda tangan, cek saat menyala/tiap jam/setelah bangun. Rilis pertama yang bisa memperbarui sendiri. Installer: `Ghyna_1.1.1_x64-setup.exe` (4.020.640 byte, SHA-256 `2D85935BFE0D64C7B0F0E307CB0B94FE68DDCB53E99737EDF29073CD547730F4`). |
+| v1.1.2 | 27 Okt 2026 | Glow warna mata di kedua sisi notch: hijau normal, biru saat mengisi daya, merah saat baterai ≤15%, oranye saat 16–20%; ukuran mengikuti notch dan hilang saat tucked. Installer: `Ghyna_1.1.2_x64-setup.exe` (4.023.007 byte, SHA-256 `6E14D952CAEE780DC6F1A4EBC2AA6FF5CF24FB505492BDDD72728069B48B84EB`). |
 
 **Cara membuat rilis baru (otomatis, sejak v1.1.1)**
 1. Pastikan working tree bersih, berada di branch `main`, dan `origin` menunjuk ke `nandarjr660/Ghyna`.
