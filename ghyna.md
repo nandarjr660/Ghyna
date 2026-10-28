@@ -17,7 +17,7 @@ Ghyna dianggap berhasil kalau:
 
 **Pengguna:** saya sendiri dan beberapa teman. Kode Ghyna ada di fork publik `nandarjr660/Ghyna`, fork dari repo asli `RamantyaDS/Notchy`; atribusi ke repo asli tetap dicantumkan di README. Installer dibagikan lewat GitHub Releases.
 
-**Status:** v1.1.4 (27 Oktober 2026). Rebrand dari Notchy ke Ghyna: nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, dan log `ghyna.log`. Updater otomatis aktif sejak v1.1.1. Installer: `Ghyna_1.1.4_x64-setup.exe`.
+**Status:** v1.1.5 (28 Oktober 2026). Rebrand dari Notchy ke Ghyna: nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, dan log `ghyna.log`. Updater otomatis aktif sejak v1.1.1. Installer: `Ghyna_1.1.5_x64-setup.exe`.
 
 ---
 
@@ -218,6 +218,11 @@ Dikerjakan sebagai **satu tahap besar**, dirilis sekali setelah lolos pengujian 
 2. **Warna dan visibilitas**: warna mengikuti mata (hijau normal, biru saat mengisi daya, merah saat baterai ≤15%, oranye saat 16–20%); tetap hanya tampil saat idle (`view === "rest"`) dan hilang saat halaman terbuka, player, charging, peek, atau tucked.
    DoD: `npm run check` 0 error/0 warning; `npm test` 11/11; build rilis sukses; screenshot idle di latar terang menunjukkan rim tipis + bloom sudut; installer `Ghyna_1.1.4_x64-setup.exe` (4.022.490 byte, SHA-256 `CA86BE8A3BE9B40353A7C5EDA3A80D8731007D145D3D3E831F3C4457C9D016FB`).
 
+### K. v1.1.5: hairline glass
+1. **Hairline glass**: glow idle diganti garis tipis 1px di tepi dalam kiri, kanan, dan bawah notch; tanpa bloom; bagian tengah tetap hitam agar mata dan jam tetap fokus.
+2. **Warna dan visibilitas**: warna mengikuti mata (hijau normal, biru saat mengisi daya, merah saat baterai ≤15%, oranye saat 16–20%); hanya tampil saat idle (`view === "rest"`) dan hilang saat halaman terbuka, player, charging, peek, atau tucked.
+   DoD: `npm run check` 0 error/0 warning; `npm test` 11/11; build rilis sukses; screenshot idle di latar terang; installer `Ghyna_1.1.5_x64-setup.exe` (4.023.873 byte, SHA-256 `780097A01FB30745BD9C2AA59DB01BA7C5CDD0AB659A3B5DF8EC41552D1A03C9`).
+
 ---
 
 ## 6. Urutan pengerjaan
@@ -272,6 +277,10 @@ Semua fitur di atas masuk v1. Urutan ini ada karena sebagian fitur bergantung pa
    - Glow idle dirapikan menjadi inner rim tipis di tepi dalam kiri/kanan/bawah plus bloom lembut di sudut; warna mengikuti mata; tetap hanya tampil saat idle.
    - Verifikasi: `npm run check` 0 error/0 warning; `npm test` 11/11; build rilis sukses; screenshot idle di latar terang; installer `Ghyna_1.1.4_x64-setup.exe` (4.022.490 byte, SHA-256 `CA86BE8A3BE9B40353A7C5EDA3A80D8731007D145D3D3E831F3C4457C9D016FB`).
 
+13. **v1.1.5 (bagian 5K): hairline glass.** ✅ Rilis 28 Okt 2026.
+   - Glow idle diganti garis tipis 1px di tepi dalam kiri/kanan/bawah, tanpa bloom; warna mengikuti mata; tetap hanya tampil saat idle.
+   - Verifikasi: `npm run check` 0 error/0 warning; `npm test` 11/11; build rilis sukses; screenshot idle di latar terang; installer `Ghyna_1.1.5_x64-setup.exe` (4.023.873 byte, SHA-256 `780097A01FB30745BD9C2AA59DB01BA7C5CDD0AB659A3B5DF8EC41552D1A03C9`).
+
 Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 
 ---
@@ -314,6 +323,7 @@ Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 | v1.1.2 | 27 Okt 2026 | Glow warna mata di kedua sisi notch: hijau normal, biru saat mengisi daya, merah saat baterai ≤15%, oranye saat 16–20%; ukuran mengikuti notch dan hilang saat tucked. Installer: `Ghyna_1.1.2_x64-setup.exe` (4.023.007 byte, SHA-256 `6E14D952CAEE780DC6F1A4EBC2AA6FF5CF24FB505492BDDD72728069B48B84EB`). |
 | v1.1.3 | 27 Okt 2026 | Glow warna mata dipindah ke dalam sisi kiri/kanan notch dan hanya tampil saat idle; hilang saat halaman terbuka, player, charging, peek, atau tucked. Installer: `Ghyna_1.1.3_x64-setup.exe` (4.025.233 byte, SHA-256 `E13C7F880646FE23A1CAEB1ACEB59A81AFA0213310508D25232605D57293CD58`). |
 | v1.1.4 | 27 Okt 2026 | Glow idle dirapikan menjadi inner rim tipis di tepi dalam kiri/kanan/bawah plus bloom lembut di sudut; warna mengikuti mata; hanya tampil saat idle. Installer: `Ghyna_1.1.4_x64-setup.exe` (4.022.490 byte, SHA-256 `CA86BE8A3BE9B40353A7C5EDA3A80D8731007D145D3D3E831F3C4457C9D016FB`). |
+| v1.1.5 | 28 Okt 2026 | Glow idle diganti hairline glass: garis tipis 1px di tepi dalam kiri/kanan/bawah notch, mengikuti warna mata, tanpa bloom, hanya saat idle. Installer: `Ghyna_1.1.5_x64-setup.exe` (4.023.873 byte, SHA-256 `780097A01FB30745BD9C2AA59DB01BA7C5CDD0AB659A3B5DF8EC41552D1A03C9`). |
 
 **Cara membuat rilis baru (otomatis, sejak v1.1.1)**
 1. Pastikan working tree bersih, berada di branch `main`, dan `origin` menunjuk ke `nandarjr660/Ghyna`.
