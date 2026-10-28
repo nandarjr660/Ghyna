@@ -1149,19 +1149,17 @@ const eyeGlow = $derived(
       0 16px 36px -18px rgba(0, 0, 0, 0.98);
   }
 
-  /* A thin light leak along the inside edge, tinted by the eyes. The rim
-     fades in below the top edge; the small bloom stays close to the corners. */
+  /* A hairline glass reflection: one pixel of eye-tinted light along the
+     inside edge, with no bloom or haze. */
   .eye-wash {
     position: absolute;
     inset: 0;
     border-radius: inherit;
     overflow: hidden;
     background:
-      linear-gradient(90deg, var(--eye-glow), transparent) left top / 2px 100% no-repeat,
-      linear-gradient(270deg, var(--eye-glow), transparent) right top / 2px 100% no-repeat,
-      linear-gradient(0deg, var(--eye-glow), transparent) center bottom / 100% 2px no-repeat,
-      radial-gradient(ellipse 70% 100% at 0% 100%, var(--eye-glow), transparent 70%) left bottom / 24% 100% no-repeat,
-      radial-gradient(ellipse 70% 100% at 100% 100%, var(--eye-glow), transparent 70%) right bottom / 24% 100% no-repeat;
+      linear-gradient(var(--eye-glow), var(--eye-glow)) left top / 1px 100% no-repeat,
+      linear-gradient(var(--eye-glow), var(--eye-glow)) right top / 1px 100% no-repeat,
+      linear-gradient(var(--eye-glow), var(--eye-glow)) center bottom / 100% 1px no-repeat;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 35%);
     mask-image: linear-gradient(to bottom, transparent 0%, #000 35%);
     pointer-events: none;
@@ -1170,7 +1168,7 @@ const eyeGlow = $derived(
     transition: opacity 0.3s ease;
   }
   .notch.idle .eye-wash {
-    opacity: 1;
+    opacity: 0.7;
   }
   .notch.tucked .eye-wash {
     opacity: 0;
