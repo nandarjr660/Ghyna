@@ -955,6 +955,7 @@ const eyeGlow = $derived(
   <div class="layer clock" class:on={view === "clock"}>
     <div class="time">{time}</div>
     <div class="date">{date}{#if weather} · {weather.icon} {weather.temp}°{/if}</div>
+    <a href="/weather" class="weather-link">Cuaca</a>
     {#if smallLyrics && media?.playing && lyrics?.synced && smallLine}
       <div class="clock-lyric" in:fade={{ duration: 300 }}>{smallLine}</div>
     {/if}
