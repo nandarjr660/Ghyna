@@ -17,7 +17,7 @@ Ghyna dianggap berhasil kalau:
 
 **Pengguna:** saya sendiri dan beberapa teman. Kode Ghyna ada di fork publik `nandarjr660/Ghyna`, fork dari repo asli `RamantyaDS/Notchy`; atribusi ke repo asli tetap dicantumkan di README. Installer dibagikan lewat GitHub Releases.
 
-**Status:** v1.1.5 (28 Oktober 2026). Rebrand dari Notchy ke Ghyna: nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, dan log `ghyna.log`. Updater otomatis aktif sejak v1.1.1. Installer: `Ghyna_1.1.5_x64-setup.exe`.
+**Status:** v1.1.7 (30 Oktober 2026). Rebrand dari Notchy ke Ghyna: nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, dan log `ghyna.log`. Updater otomatis aktif sejak v1.1.1. Installer: `Ghyna_1.1.7_x64-setup.exe`.
 
 ---
 
@@ -31,8 +31,8 @@ Ghyna dianggap berhasil kalau:
 | Sumber musik | API media Windows (`GlobalSystemMediaTransportControlsSessionManager`) | Bisa membaca player apa pun: Spotify, YouTube di browser, Apple Music, dll. |
 | Sumber lirik | **LRCLIB** (lrclib.net) | Gratis, tanpa login, ada lirik tersinkron. Lirik **tidak** diambil dari Spotify karena tidak ada API resminya dan endpoint internalnya melanggar ToS. |
 | Frontend | **Svelte 5** | Ringan, dan ada `spring`/`transition` bawaan untuk animasi notch. Satu komponen per mode. |
-| Cuaca | Open-Meteo | Gratis, tanpa API key |
-| Lokasi cuaca | Lokasi Windows (GPS/Wi-Fi) kalau diizinkan; kalau tidak, kota yang diisi manual di Settings (dicari lewat geocoding Open-Meteo) | Tidak memakai lokasi berbasis IP: meleset dan alamat IP terkirim ke pihak ketiga |
+| Cuaca | **BMKG** | Data cuaca terkini dan prakiraan resmi Indonesia, tanpa API key |
+| Lokasi cuaca | Lokasi Windows (GPS/Wi-Fi) kalau diizinkan; kalau tidak, kota yang diisi manual di Settings. Koordinat dipetakan BMKG ke wilayah administrasi terdekat | Tidak memakai lokasi berbasis IP: meleset dan alamat IP terkirim ke pihak ketiga |
 | Jendela | **Ukuran tetap dan transparan**; yang berubah ukuran hanya elemen notch di dalamnya (CSS) | Resize jendela Windows setiap animasi akan patah-patah dan berkedip |
 | Deteksi hover | Low-level mouse hook di Rust (`WH_MOUSE_LL`). Jendela click-through kecuali saat kursor berada di area notch, yang ukurannya dilaporkan frontend lewat `set_notch_size`. | Jendela yang click-through tidak menerima event mouse, jadi hover harus dideteksi dari luar; hook berbasis event, tanpa polling. Batas atas area notch sengaja tidak dicek, karena hook melihat posisi kursor sebelum dibatasi tepi layar (y bisa negatif saat mouse didorong ke atas). |
 | Mengubah click-through | `set_ignore_cursor_events(true)` hanya sekali saat start; setelah itu hanya `WS_EX_TRANSPARENT` yang diubah langsung lewat `SetWindowLongPtrW` dari thread pekerja (bukan dari callback hook) | API Tauri ikut melepas/memasang `WS_EX_LAYERED`, yang membuat WebView2 menyusun ulang permukaan jendela (lag, tampilan macet). Callback hook harus cepat, kalau tidak Windows mencabut hook-nya diam-diam. |
@@ -163,7 +163,7 @@ Setiap fitur baru dianggap selesai kalau memenuhi **Definition of Done (DoD)**-n
    Sumber data: registry `CapabilityAccessManager\ConsentStore\{webcam,microphone}`.
 2. **Mute mic global**: satu klik di notch untuk mute/unmute mic default, dengan status yang selalu terlihat.
 3. **Preview screenshot**: setelah Win+Shift+S, thumbnail muncul di notch, bisa di-drag atau disimpan, dan otomatis masuk Shelf.
-4. **Cuaca**: suhu dan ikon di mode istirahat, dari Open-Meteo.
+4. **Cuaca**: suhu dan ikon di mode istirahat, dari BMKG.
 5. **Ganti output audio** (speaker ↔ headphone) dari notch.
    ⚠️ Memakai API Windows yang tidak resmi (`IPolicyConfig`).
 6. **Mirror notifikasi Windows**, misalnya pesan WhatsApp Desktop tampil di notch, bisa diklik untuk membuka aplikasinya. Dengan Do Not Disturb Windows aktif, notifikasi hanya muncul di notch (tidak double).
@@ -221,7 +221,17 @@ Dikerjakan sebagai **satu tahap besar**, dirilis sekali setelah lolos pengujian 
 ### K. v1.1.5: hairline glass
 1. **Hairline glass**: glow idle diganti garis tipis 1px di tepi dalam kiri, kanan, dan bawah notch; tanpa bloom; bagian tengah tetap hitam agar mata dan jam tetap fokus.
 2. **Warna dan visibilitas**: warna mengikuti mata (hijau normal, biru saat mengisi daya, merah saat baterai ≤15%, oranye saat 16–20%); hanya tampil saat idle (`view === "rest"`) dan hilang saat halaman terbuka, player, charging, peek, atau tucked.
-   DoD: `npm run check` 0 error/0 warning; `npm test` 11/11; build rilis sukses; screenshot idle di latar terang; installer `Ghyna_1.1.5_x64-setup.exe` (4.023.873 byte, SHA-256 `780097A01FB30745BD9C2AA59DB01BA7C5CDD0AB659A3B5DF8EC41552D1A03C9`).
+    DoD: `npm run check` 0 error/0 warning; `npm test` 11/11; build rilis sukses; screenshot idle di latar terang; installer `Ghyna_1.1.5_x64-setup.exe` (4.023.873 byte, SHA-256 `780097A01FB30745BD9C2AA59DB01BA7C5CDD0AB659A3B5DF8EC41552D1A03C9`).
+
+### L. v1.1.6: halaman cuaca
+1. **Halaman mandiri**: menambahkan halaman `/weather` setelah halaman jam melalui tautan Cuaca.
+2. **Informasi cuaca**: menampilkan lokasi, kondisi, ikon, suhu, kelembapan, angin, dan prakiraan per jam dalam tampilan glass yang responsif.
+   DoD: `npm run check` 0 error/0 warning; `npm test` 11/11; `npm run build` sukses; installer `Ghyna_1.1.6_x64-setup.exe` (4.023.788 byte, SHA-256 `082CDDAC63A5A8392451ACB22E6576D3421DEEF7B1E6EDC54BD05E2C28A54375`).
+
+### M. v1.1.7: data BMKG
+1. **Sumber resmi**: cuaca terkini diambil dari endpoint BMKG berbasis koordinat, lalu prakiraan resmi 3 hari diambil memakai kode wilayah `adm4` yang dikembalikan BMKG.
+2. **Tanpa API key**: menggunakan endpoint publik BMKG dengan atribusi BMKG; data mencakup suhu, kelembapan, angin, kondisi, dan prakiraan 3-jam.
+   DoD: `npm run check` 0 error/0 warning; `npm test` 11/11; `npm run build` sukses; verifikasi live endpoint BMKG; installer `Ghyna_1.1.7_x64-setup.exe` (4.024.995 byte, SHA-256 `F1871358435DAC9C63E35AB10921DD7AFDFA101DC31B6488D82A4CE3FA8CE433`).
 
 ---
 
@@ -281,6 +291,14 @@ Semua fitur di atas masuk v1. Urutan ini ada karena sebagian fitur bergantung pa
    - Glow idle diganti garis tipis 1px di tepi dalam kiri/kanan/bawah, tanpa bloom; warna mengikuti mata; tetap hanya tampil saat idle.
    - Verifikasi: `npm run check` 0 error/0 warning; `npm test` 11/11; build rilis sukses; screenshot idle di latar terang; installer `Ghyna_1.1.5_x64-setup.exe` (4.023.873 byte, SHA-256 `780097A01FB30745BD9C2AA59DB01BA7C5CDD0AB659A3B5DF8EC41552D1A03C9`).
 
+14. **v1.1.6 (bagian 5L): halaman cuaca.** ✅ Rilis 29 Okt 2026.
+   - Halaman `/weather` mandiri dengan lokasi, kondisi, suhu, kelembapan, angin, dan prakiraan per jam.
+   - Verifikasi: `npm run check` 0 error/0 warning; `npm test` 11/11; `npm run build` sukses; installer `Ghyna_1.1.6_x64-setup.exe` (4.023.788 byte, SHA-256 `082CDDAC63A5A8392451ACB22E6576D3421DEEF7B1E6EDC54BD05E2C28A54375`).
+
+15. **v1.1.7 (bagian 5M): data BMKG.** ✅ Rilis 30 Okt 2026.
+   - Sumber diganti ke BMKG untuk cuaca terkini dan prakiraan resmi 3 hari tanpa API key.
+   - Verifikasi: `npm run check` 0 error/0 warning; `npm test` 11/11; `npm run build` sukses; verifikasi endpoint BMKG; installer `Ghyna_1.1.7_x64-setup.exe` (4.024.995 byte, SHA-256 `F1871358435DAC9C63E35AB10921DD7AFDFA101DC31B6488D82A4CE3FA8CE433`).
+
 Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 
 ---
@@ -324,6 +342,8 @@ Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 | v1.1.3 | 27 Okt 2026 | Glow warna mata dipindah ke dalam sisi kiri/kanan notch dan hanya tampil saat idle; hilang saat halaman terbuka, player, charging, peek, atau tucked. Installer: `Ghyna_1.1.3_x64-setup.exe` (4.025.233 byte, SHA-256 `E13C7F880646FE23A1CAEB1ACEB59A81AFA0213310508D25232605D57293CD58`). |
 | v1.1.4 | 27 Okt 2026 | Glow idle dirapikan menjadi inner rim tipis di tepi dalam kiri/kanan/bawah plus bloom lembut di sudut; warna mengikuti mata; hanya tampil saat idle. Installer: `Ghyna_1.1.4_x64-setup.exe` (4.022.490 byte, SHA-256 `CA86BE8A3BE9B40353A7C5EDA3A80D8731007D145D3D3E831F3C4457C9D016FB`). |
 | v1.1.5 | 28 Okt 2026 | Glow idle diganti hairline glass: garis tipis 1px di tepi dalam kiri/kanan/bawah notch, mengikuti warna mata, tanpa bloom, hanya saat idle. Installer: `Ghyna_1.1.5_x64-setup.exe` (4.023.873 byte, SHA-256 `780097A01FB30745BD9C2AA59DB01BA7C5CDD0AB659A3B5DF8EC41552D1A03C9`). |
+| v1.1.6 | 29 Okt 2026 | Halaman Cuaca mandiri setelah halaman jam dengan lokasi, kondisi, suhu, kelembapan, angin, dan prakiraan per jam. Installer: `Ghyna_1.1.6_x64-setup.exe` (4.023.788 byte, SHA-256 `082CDDAC63A5A8392451ACB22E6576D3421DEEF7B1E6EDC54BD05E2C28A54375`). |
+| v1.1.7 | 30 Okt 2026 | Sumber cuaca diganti ke BMKG: data terkini berbasis koordinat dan prakiraan resmi 3 hari tanpa API key. Installer: `Ghyna_1.1.7_x64-setup.exe` (4.024.995 byte, SHA-256 `F1871358435DAC9C63E35AB10921DD7AFDFA101DC31B6488D82A4CE3FA8CE433`). |
 
 **Cara membuat rilis baru (otomatis, sejak v1.1.1)**
 1. Pastikan working tree bersih, berada di branch `main`, dan `origin` menunjuk ke `nandarjr660/Ghyna`.
