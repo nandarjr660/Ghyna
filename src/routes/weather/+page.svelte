@@ -51,7 +51,7 @@
       <div><span>Angin</span><strong>{weather.wind} km/j</strong></div>
     </section>
     <section class="forecast"><h2>Beberapa jam ke depan</h2><div class="forecast-row">{#each weather.forecast as item}<div><span>{item.time}</span><b>{item.icon}</b><strong>{item.temp}°</strong></div>{/each}</div></section>
-    <p class="updated">Data dari Open-Meteo · diperbarui saat halaman dibuka</p>
+    <p class="updated">Data dari BMKG · diperbarui saat halaman dibuka</p>
   </main>
 {/if}
 
