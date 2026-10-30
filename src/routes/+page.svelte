@@ -30,9 +30,6 @@ import { listen } from "@tauri-apps/api/event";
   // page still runs and draws (sent from an animation frame, which only comes while
   // the page renders). Without beats for a while, Rust reloads the page.
   const logJs = (msg: string) => invoke("log_js", { msg }).catch(() => {});
-  window.addEventListener("error", (e) => logJs(`${e.message} (${String(e.filename).split("/").pop()}:${e.lineno})`));
-  window.addEventListener("unhandledrejection", (e) => logJs(`unhandled: ${e.reason?.stack ?? e.reason}`));
-  setInterval(() => requestAnimationFrame(() => invoke("heartbeat").catch(() => {})), 5000);
 
   // Sizes from ghyna.md §4 (logical px).
   const SIZES = {
@@ -561,6 +558,11 @@ const eyeGlow = $derived(
   }
 
   onMount(() => {
+    const onError = (e: ErrorEvent) => logJs(`${e.message} (${String(e.filename).split("/").pop()}:${e.lineno})`);
+    const onUnhandledRejection = (e: PromiseRejectionEvent) => logJs(`unhandled: ${e.reason?.stack ?? e.reason}`);
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onUnhandledRejection);
+    const heartbeat = setInterval(() => requestAnimationFrame(() => invoke("heartbeat").catch(() => {})), 5000);
     const unlisten = listen<boolean>("notch-hover", (e) => {
       hovered = e.payload;
       clearTimeout(closeTimer);
@@ -726,8 +728,6 @@ const eyeGlow = $derived(
     const powerPoll = setInterval(() => {
         invoke<Power>("power_state").then((p) => (power = p));
     }, 30000); // every 30 seconds
-    // Cleanup interval on unload
-    const cleanupPowerPoll = () => clearInterval(powerPoll);
 
     const unlistenInUse = listen<InUse>("in-use", (e) => (inUse = e.payload));
     invoke<InUse>("in_use_state").then((u) => (inUse = u));
@@ -772,10 +772,12 @@ const eyeGlow = $derived(
     // animation, so nothing renders between blinks.
     let blinkTimer: ReturnType<typeof setTimeout>;
     let winkTimer: ReturnType<typeof setTimeout>;
+    let blinkEndTimer: ReturnType<typeof setTimeout>;
+    let winkEndTimer: ReturnType<typeof setTimeout>;
     const scheduleBlink = () => {
       blinkTimer = setTimeout(() => {
         blink = true;
-        setTimeout(() => (blink = false), 180);
+        blinkEndTimer = setTimeout(() => (blink = false), 180);
         scheduleBlink();
       }, 3500 + Math.random() * 3000);
     };
@@ -784,7 +786,7 @@ const eyeGlow = $derived(
       winkTimer = setTimeout(() => {
         if (idleStage === "awake" && !blink) {
           wink = Math.random() > 0.5 ? "left" : "right";
-          setTimeout(() => (wink = null), 150);
+          winkEndTimer = setTimeout(() => (wink = null), 150);
         }
         scheduleWink();
       }, 9000 + Math.random() * 7000);
@@ -792,6 +794,9 @@ const eyeGlow = $derived(
     scheduleWink();
 
     return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onUnhandledRejection);
+      clearInterval(heartbeat);
       unlisten.then((f) => f());
       unlistenLook.then((f) => f());
       unlistenTuck.then((f) => f());
@@ -819,11 +824,14 @@ const eyeGlow = $derived(
       clearTimeout(tick);
       clearTimeout(blinkTimer);
       clearTimeout(winkTimer);
+      clearTimeout(blinkEndTimer);
+      clearTimeout(winkEndTimer);
       clearTimeout(sleepTimer);
       clearTimeout(idleTimer);
       clearTimeout(waveTimer);
       clearTimeout(gazeTimer);
       clearInterval(idlePoll);
+      clearInterval(powerPoll);
     };
   });
 
