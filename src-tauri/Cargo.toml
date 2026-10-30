@@ -1,6 +1,6 @@
 [package]
 name = "ghyna"
-version = "1.1.8"
+version = "1.1.9"
 description = "Dynamic Island-style notch for Windows"
 authors = ["nandarjr660"]
 edition = "2024"
