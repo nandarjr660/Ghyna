@@ -19,6 +19,7 @@ import { listen } from "@tauri-apps/api/event";
   import TimerPage from "$lib/TimerPage.svelte";
   import TodoPage from "$lib/TodoPage.svelte";
   import WaterPage from "$lib/WaterPage.svelte";
+  import WeatherPage from "$lib/WeatherPage.svelte";
   import { positionAt, type NowPlaying } from "$lib/media";
   import { cleanTrack, currentLine, findLyrics, type Lyrics } from "$lib/lyrics";
   import { Pomodoro, Shelf, Todo, Water, type Settings } from "$lib/productivity.svelte";
@@ -52,11 +53,12 @@ import { listen } from "@tauri-apps/api/event";
     todo: { w: 400, h: 132, r: 30, e: 21 },
     shelf: { w: 400, h: 132, r: 30, e: 21 },
     clipboard: { w: 400, h: 132, r: 30, e: 21 },
+    weather: { w: 400, h: 132, r: 30, e: 21 },
     mirror: { w: 400, h: 132, r: 30, e: 21 },
   };
 
   // Pages of the open notch, switched with the dots or the mouse wheel.
-  const ALL_PAGES = ["now", "pomodoro", "water", "todo", "shelf", "clipboard"] as const;
+  const ALL_PAGES = ["now", "weather", "pomodoro", "water", "todo", "shelf", "clipboard"] as const;
   type PageName = (typeof ALL_PAGES)[number];
   // The water reminder can be paused; the Air page stays available for logging.
   let waterEnabled = $state(true);
@@ -955,7 +957,6 @@ const eyeGlow = $derived(
   <div class="layer clock" class:on={view === "clock"}>
     <div class="time">{time}</div>
     <div class="date">{date}{#if weather} · {weather.icon} {weather.temp}°{/if}</div>
-    <a href="/weather" class="weather-link">Cuaca</a>
     {#if smallLyrics && media?.playing && lyrics?.synced && smallLine}
       <div class="clock-lyric" in:fade={{ duration: 300 }}>{smallLine}</div>
     {/if}
@@ -1070,7 +1071,9 @@ const eyeGlow = $derived(
         in:pageSlide={{ dir: pageDir, leaving: false }}
         out:pageSlide={{ dir: -pageDir, leaving: true }}
       >
-        {#if pages[page] === "pomodoro"}
+        {#if pages[page] === "weather"}
+          <WeatherPage weather={weather} />
+        {:else if pages[page] === "pomodoro"}
           <TimerPage {pomo} now={nowMs} />
         {:else if pages[page] === "water"}
           <WaterPage {water} enabled={waterEnabled} onToggle={toggleWater} />
