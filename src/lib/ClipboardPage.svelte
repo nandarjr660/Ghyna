@@ -6,6 +6,8 @@
 
   let { items }: { items: ClipEntry[] } = $props();
   let copied = $state<number | null>(null);
+  let clearing = $state(false);
+  let clearTimer: ReturnType<typeof setTimeout> | undefined;
 
   async function copy(item: ClipEntry) {
     if (await invoke<boolean>("clipboard_copy", { id: item.id })) {
@@ -13,15 +15,25 @@
       setTimeout(() => (copied = null), 1200);
     }
   }
+
+  function clearClipboard() {
+    if (clearing || !items.length) return;
+    clearing = true;
+    clearTimer = setTimeout(() => {
+      invoke("clipboard_clear");
+      clearing = false;
+      clearTimer = undefined;
+    }, 230);
+  }
 </script>
 
-<div class="page">
+<div class="page" class:clearing>
   <div class="header">
     <span class="title">Clipboard</span>
     <span class="count">{items.length ? `${items.length} terakhir` : "kosong"}</span>
     <span class="hint">klik untuk salin</span>
     {#if items.length}
-      <button class="clear" onclick={() => invoke("clipboard_clear")} aria-label="Hapus semua dari Clipboard" title="Hapus semua">
+      <button class="clear" onclick={clearClipboard} aria-label="Hapus semua dari Clipboard" title="Hapus semua">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 4h4l1 3H9l1-3Z" /><path d="m7 7 1 13h8l1-13M10 10v7M14 10v7" /></svg>
       </button>
     {/if}
@@ -34,8 +46,8 @@
     </div>
   {:else}
     <div class="list scroll">
-      {#each items as item (item.id)}
-        <button class="item" class:done={copied === item.id} onclick={() => copy(item)} title={item.kind === "text" ? item.preview : "Gambar"}>
+      {#each items as item, index (item.id)}
+        <button class="item" class:done={copied === item.id} style={`--fly-delay:${Math.min(index, 8) * 16}ms`} onclick={() => copy(item)} title={item.kind === "text" ? item.preview : "Gambar"}>
           <span class="kind" aria-hidden="true">
             {#if item.kind === "image"}
               <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="m4 18 5-5 4 4 3-3 4 4" /></svg>
@@ -196,6 +208,7 @@
     background: rgba(255, 255, 255, 0.025);
     text-align: left;
     transition: background 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+    animation: clipboard-attach 240ms cubic-bezier(.23, 1, .32, 1) both;
   }
   .item:hover {
     border-color: rgba(255, 255, 255, 0.14);
@@ -277,6 +290,18 @@
     opacity: 1;
   }
 
+  .clearing .item {
+    pointer-events: none;
+    animation: clipboard-fly 230ms cubic-bezier(.23, 1, .32, 1) var(--fly-delay) both;
+  }
+  @keyframes clipboard-attach {
+    from { opacity: 0; transform: translateY(-5px) scale(.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes clipboard-fly {
+    to { opacity: 0; transform: translate(126px, -42px) scale(.35) rotate(4deg); }
+  }
+
   button:focus-visible {
     outline: 1.5px solid var(--accent);
     outline-offset: 2px;
@@ -287,6 +312,7 @@
     .action {
       transition: none;
       transform: none !important;
+      animation: none !important;
     }
   }
 </style>

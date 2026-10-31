@@ -32,3 +32,18 @@
   --surface-raised: #0c1710;
   --line: rgba(190, 240, 210, 0.14);
 }
+
+/* Shared pointer-down feedback for every interactive notch control. */
+.notch button:active,
+.notch [role="button"]:active {
+  transform: scale(0.975);
+  opacity: 0.88;
+  transition: transform var(--motion-fast) var(--ease-out), opacity var(--motion-fast) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notch button:active,
+  .notch [role="button"]:active {
+    transform: none;
+  }
+}
