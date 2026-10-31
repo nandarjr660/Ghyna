@@ -64,7 +64,12 @@ function addFiles() {
     if (!pressed || Math.hypot(e.clientX - pressed.x, e.clientY - pressed.y) < 6) return;
     const { item } = pressed;
     pressed = null;
-    startDrag({ item: [item.path], icon: dragIcon(item) }).then(() => shelf.remove(item.path)).catch(() => {});
+    // The drag resolves for both "Dropped" and "Cancelled". Only remove the
+    // file when it was actually dropped somewhere else; a cancelled drag
+    // (released outside any target) keeps it on the Shelf.
+    startDrag({ item: [item.path], icon: dragIcon(item) }, ({ result }) => {
+      if (result === "Dropped") shelf.remove(item.path);
+    }).catch((err) => console.error("Failed to start drag:", err));
   }
   function up() {
   if (pressed) invoke("open_path", { path: pressed.item.path });
