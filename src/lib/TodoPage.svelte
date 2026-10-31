@@ -145,9 +145,10 @@
     font-size: 11px;
     font-weight: 500;
     transition:
-      border-color 0.18s,
-      color 0.18s,
-      background 0.18s;
+      border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+      color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+      background 160ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .add svg {
     width: 10px;
@@ -162,9 +163,11 @@
     background: rgba(255, 255, 255, 0.07);
     color: #fff;
   }
+  .add:active, .save:active, .check:active, .remove:active { transform: scale(.97); }
 
   .progress i {
     background: var(--accent);
+    transition: width 220ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .progress {
     flex: none;
@@ -181,6 +184,7 @@
     gap: 6px;
     height: 28px;
     margin-top: 9px;
+    animation: form-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both;
   }
   .form input {
     min-width: 0;
@@ -215,7 +219,7 @@
     border-radius: 7px;
     background: var(--accent);
     color: var(--accent-ink);
-    transition: background 0.18s;
+    transition: background 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .save:hover {
     background: var(--accent-strong);
@@ -260,8 +264,9 @@
     border: 1.5px solid rgba(255, 255, 255, 0.35);
     border-radius: 50%;
     transition:
-      background 0.18s,
-      border-color 0.18s;
+      background 160ms cubic-bezier(0.23, 1, 0.32, 1),
+      border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .check:hover {
     border-color: rgba(255, 255, 255, 0.78);
@@ -288,6 +293,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     color: rgba(255, 255, 255, 0.88);
+    transition: color 160ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .label:hover {
     color: #fff;
@@ -323,9 +329,10 @@
     color: rgba(255, 255, 255, 0.36);
     opacity: 0;
     transition:
-      opacity 0.15s,
-      color 0.15s,
-      background 0.15s;
+      opacity 150ms cubic-bezier(0.23, 1, 0.32, 1),
+      color 150ms cubic-bezier(0.23, 1, 0.32, 1),
+      background 150ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .remove svg {
     width: 9px;
@@ -363,6 +370,10 @@
     outline: 1.5px solid rgba(255, 255, 255, 0.8);
     outline-offset: 2px;
   }
+  @keyframes form-in {
+    from { opacity: 0; transform: translateY(-3px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .add,
     .progress i,
@@ -370,6 +381,8 @@
     .check,
     .remove {
       transition: none;
+      animation: none;
+      transform: none !important;
     }
   }
 </style>

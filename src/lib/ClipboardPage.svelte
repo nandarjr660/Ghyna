@@ -121,8 +121,9 @@
     margin-left: 2px;
     color: rgba(255, 255, 255, 0.5);
     transition:
-      background 0.15s,
-      color 0.15s;
+      background 150ms cubic-bezier(0.23, 1, 0.32, 1),
+      color 150ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .clear svg {
     width: 15px;
@@ -193,7 +194,7 @@
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.025);
     text-align: left;
-    transition: background 0.15s;
+    transition: background 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .item:hover {
     border-color: rgba(255, 255, 255, 0.14);
@@ -253,8 +254,9 @@
     justify-content: center;
     opacity: 0.7;
     transition:
-      color 0.15s,
-      opacity 0.15s;
+      color 150ms cubic-bezier(0.23, 1, 0.32, 1),
+      opacity 150ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .action svg {
     width: 10px;

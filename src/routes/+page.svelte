@@ -492,7 +492,7 @@ const eyeGlow = $derived(
     { dir, leaving }: { dir: number; leaving: boolean },
   ) {
     return {
-      duration: leaving ? 220 : 360,
+      duration: leaving ? 190 : 260,
       delay: leaving ? 0 : 20,
       easing: cubicOut,
       css: (t: number, u: number) => {
@@ -500,7 +500,7 @@ const eyeGlow = $derived(
         const lift = (leaving ? -3 : 5) * u;
         const scale = 1 - 0.04 * u;
         const pointer = leaving ? "pointer-events:none;" : "";
-        return `${pointer}opacity:${t};transform:translate3d(${shift}px, ${lift}px, 0) scale(${scale});filter:blur(${(1.8 * u).toFixed(3)}px);`;
+        return `${pointer}opacity:${t};transform:translate3d(${shift}px, ${lift}px, 0) scale(${scale});`;
       },
     };
   }
@@ -1238,12 +1238,12 @@ const eyeGlow = $derived(
     justify-content: center;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.12s;
+    transition: opacity 140ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .layer.on {
     opacity: 1;
     pointer-events: auto;
-    transition: opacity 0.3s 0.15s;
+    transition: opacity 220ms 20ms cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .rest-time {
@@ -1265,7 +1265,7 @@ const eyeGlow = $derived(
   }
   /* The page content settles in from the direction you are travelling. */
   .page-layer {
-    will-change: transform, opacity, filter;
+    will-change: transform, opacity;
   }
 
   .charge {
@@ -1298,9 +1298,9 @@ const eyeGlow = $derived(
     cursor: pointer;
     opacity: 0.52;
     transition:
-      opacity 0.18s,
-      background 0.18s,
-      transform 0.18s;
+      opacity 160ms cubic-bezier(0.23, 1, 0.32, 1),
+      background 160ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .arrow.next {
     left: auto;
@@ -1354,8 +1354,8 @@ const eyeGlow = $derived(
     background: var(--muted);
     transform: translate(-50%, -50%);
     transition:
-      width 0.24s ease,
-      background 0.2s;
+      width 220ms cubic-bezier(0.23, 1, 0.32, 1),
+      background 160ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .pager button:hover::after {
     background: var(--muted-strong);

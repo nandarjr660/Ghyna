@@ -318,8 +318,9 @@ function handleDrop(e: DragEvent) {
     background: rgba(255, 255, 255, 0.025);
     cursor: grab;
     transition:
-      background 0.15s,
-      border-color 0.15s;
+      background 160ms cubic-bezier(0.23, 1, 0.32, 1),
+      border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .item:hover {
     border-color: rgba(255, 255, 255, 0.18);
@@ -420,8 +421,9 @@ function handleDrop(e: DragEvent) {
     color: rgba(255, 255, 255, 0.6);
     opacity: 0;
     transition:
-      opacity 0.15s,
-      color 0.15s;
+      opacity 150ms cubic-bezier(0.23, 1, 0.32, 1),
+      color 150ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .remove svg {
     width: 9px;
