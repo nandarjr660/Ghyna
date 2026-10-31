@@ -16,6 +16,11 @@ function addFiles() {
   import type { Shelf, ShelfItem } from "./productivity.svelte";
 
   let { shelf, dropping }: { shelf: Shelf; dropping: boolean } = $props();
+  let pageEl = $state<HTMLElement>();
+  let dragX = $state(50);
+  let dragY = $state(50);
+  let clearing = $state(false);
+  let clearTimer: ReturnType<typeof setTimeout> | undefined;
 
   const IMAGE = /\.(png|jpe?g|gif|webp|bmp)$/i;
   const ext = (name: string) => (name.includes(".") ? name.split(".").pop()!.slice(0, 4).toUpperCase() : "");
@@ -66,15 +71,33 @@ function addFiles() {
   pressed = null;
 }
 
-function handleDrop(e: DragEvent) {
+  function handleDrop(e: DragEvent) {
   e.preventDefault();
   const dt = e.dataTransfer;
   if (!dt) return;
   const files = Array.from(dt.files);
   // Tauri's file objects expose a `path` property
   const paths = files.map((f:any) => (f as any).path).filter(Boolean);
-  if (paths.length) shelf.add(paths);
-}
+    if (paths.length) shelf.add(paths);
+  }
+
+  function handleDragOver(e: DragEvent) {
+    e.preventDefault();
+    const rect = pageEl?.getBoundingClientRect();
+    if (!rect) return;
+    dragX = Math.max(16, Math.min(rect.width - 16, e.clientX - rect.left));
+    dragY = Math.max(16, Math.min(rect.height - 16, e.clientY - rect.top));
+  }
+
+  function clearShelf() {
+    if (clearing || !shelf.items.length) return;
+    clearing = true;
+    clearTimer = setTimeout(() => {
+      shelf.clear();
+      clearing = false;
+      clearTimer = undefined;
+    }, 230);
+  }
 
 
   const size = (bytes: number) =>
@@ -83,13 +106,13 @@ function handleDrop(e: DragEvent) {
 
 <svelte:window onpointermove={move} onpointerup={() => (pressed = null)} />
 
-<div class="page" class:dropping data-drop="shelf" ondragover={e => e.preventDefault()} ondrop={handleDrop} role="region" aria-label="Shelf drop zone">
+<div bind:this={pageEl} class="page" class:dropping class:clearing data-drop="shelf" style={`--drag-x:${dragX}px;--drag-y:${dragY}px`} ondragover={handleDragOver} ondrop={handleDrop} role="region" aria-label="Shelf drop zone">
   <div class="header">
         <span class="title">Shelf</span>
     <span class="count">{shelf.items.length}</span>
     <span class="hint">tarik keluar · klik buka</span>
     {#if shelf.items.length}
-      <button class="clear" onclick={() => shelf.clear()} aria-label="Hapus semua dari Shelf" title="Hapus semua">
+      <button class="clear" onclick={clearShelf} aria-label="Hapus semua dari Shelf" title="Hapus semua">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4 7h16M10 4h4l1 3H9l1-3Z" />
           <path d="m7 7 1 13h8l1-13M10 10v7M14 10v7" />
@@ -112,9 +135,10 @@ function handleDrop(e: DragEvent) {
       <span class="empty-copy">Tarik file ke sini<small>Simpan sementara, lalu tarik keluar kapan saja.</small></span>
     </div>
   {:else}
-    <div class="items scroll">
-      {#each shelf.items as item (item.path)}
+      <div class="items scroll">
+      {#each shelf.items as item, index (item.path)}
         <div class="item" role="button" tabindex="-1" title={item.name}
+          style={`--fly-delay:${Math.min(index, 8) * 16}ms`}
           onpointerdown={(e) => down(e, item)} onpointerup={up}>
           <span class="thumb">
             {#if IMAGE.test(item.name)}
@@ -153,7 +177,29 @@ function handleDrop(e: DragEvent) {
     overflow: hidden;
     font-family: var(--font-ui);
   }
+  .page::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    width: 84px;
+    height: 84px;
+    left: calc(var(--drag-x) - 42px);
+    top: calc(var(--drag-y) - 42px);
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    background: radial-gradient(circle, rgba(130, 255, 183, .22), rgba(130, 255, 183, 0) 68%);
+    transform: scale(.7);
+    transition: opacity 180ms cubic-bezier(.23, 1, .32, 1), transform 220ms cubic-bezier(.23, 1, .32, 1);
+  }
+  .page.dropping::after {
+    opacity: 1;
+    transform: scale(1);
+    animation: shelf-magnet 1.3s ease-in-out infinite;
+  }
   .header {
+    position: relative;
+    z-index: 1;
     flex: none;
     display: flex;
     align-items: center;
@@ -250,6 +296,8 @@ function handleDrop(e: DragEvent) {
   }
 
   .zones {
+    position: relative;
+    z-index: 1;
     flex: 1;
     min-height: 0;
     display: flex;
@@ -274,6 +322,7 @@ function handleDrop(e: DragEvent) {
     border-color: rgba(255, 255, 255, 0.55);
     background: rgba(255, 255, 255, 0.05);
     color: #fff;
+    animation: shelf-zone-pulse 1.4s ease-in-out infinite;
   }
   .zone > svg {
     width: 20px;
@@ -296,6 +345,8 @@ function handleDrop(e: DragEvent) {
   }
 
   .items {
+    position: relative;
+    z-index: 1;
     flex: 1;
     min-height: 0;
     display: flex;
@@ -322,6 +373,7 @@ function handleDrop(e: DragEvent) {
       background 160ms cubic-bezier(0.23, 1, 0.32, 1),
       border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
       transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+    animation: shelf-attach 260ms cubic-bezier(.23, 1, .32, 1) both;
   }
   .item:hover {
     border-color: rgba(255, 255, 255, 0.18);
@@ -447,6 +499,27 @@ function handleDrop(e: DragEvent) {
   .item:active {
     transform: scale(0.97);
   }
+  .clearing .item {
+    pointer-events: none;
+    animation: shelf-fly 230ms cubic-bezier(.23, 1, .32, 1) var(--fly-delay) both;
+  }
+
+  @keyframes shelf-magnet {
+    0%, 100% { opacity: .7; transform: scale(.92); }
+    50% { opacity: 1; transform: scale(1.08); }
+  }
+  @keyframes shelf-zone-pulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(130, 255, 183, 0); }
+    50% { box-shadow: 0 0 22px rgba(130, 255, 183, .12); }
+  }
+  @keyframes shelf-attach {
+    from { opacity: 0; transform: translateY(-8px) scale(.94); }
+    70% { transform: translateY(1px) scale(1.015); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes shelf-fly {
+    to { opacity: 0; transform: translate(145px, -42px) scale(.35) rotate(5deg); }
+  }
 
   button:focus-visible,
   .item:focus-visible {
@@ -460,6 +533,7 @@ function handleDrop(e: DragEvent) {
     .clear {
       transition: none;
       transform: none !important;
+      animation: none !important;
     }
   }
 </style>
