@@ -21,8 +21,8 @@
     <span class="count">{items.length ? `${items.length} terakhir` : "kosong"}</span>
     <span class="hint">klik untuk salin</span>
     {#if items.length}
-      <button class="clear" onclick={() => invoke("clipboard_clear")} aria-label="Bersihkan clipboard">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      <button class="clear" onclick={() => invoke("clipboard_clear")} aria-label="Hapus semua dari Clipboard" title="Hapus semua">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 4h4l1 3H9l1-3Z" /><path d="m7 7 1 13h8l1-13M10 10v7M14 10v7" /></svg>
       </button>
     {/if}
   </div>
@@ -133,6 +133,11 @@
     background: rgba(255, 255, 255, 0.07);
     color: #fff;
   }
+  .clear:active,
+  .item:active,
+  .action:active {
+    transform: scale(0.97);
+  }
 
   .empty {
     flex: 1;
@@ -190,13 +195,15 @@
     flex: none;
     display: grid;
     place-items: center;
-    width: 14px;
-    height: 14px;
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.06);
     color: rgba(255, 255, 255, 0.4);
   }
   .kind svg {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.6;
@@ -213,8 +220,8 @@
   }
   .body img {
     flex: none;
-    width: 18px;
-    height: 18px;
+    width: 22px;
+    height: 22px;
     border-radius: 3px;
     object-fit: cover;
   }
@@ -266,6 +273,7 @@
     .item,
     .action {
       transition: none;
+      transform: none !important;
     }
   }
 </style>

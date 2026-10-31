@@ -19,6 +19,17 @@ function addFiles() {
 
   const IMAGE = /\.(png|jpe?g|gif|webp|bmp)$/i;
   const ext = (name: string) => (name.includes(".") ? name.split(".").pop()!.slice(0, 4).toUpperCase() : "");
+  const fileKind = (name: string) => {
+    const value = name.split(".").pop()?.toLowerCase() ?? "";
+    if (/^(doc|docx|odt|rtf)$/.test(value)) return "document";
+    if (/^(pdf)$/.test(value)) return "pdf";
+    if (/^(xls|xlsx|csv|ods)$/.test(value)) return "spreadsheet";
+    if (/^(ppt|pptx|odp)$/.test(value)) return "presentation";
+    if (/^(zip|rar|7z|tar|gz)$/.test(value)) return "archive";
+    if (/^(txt|md|json|xml|html?|css|js|ts|py|rs)$/.test(value)) return "text";
+    return "file";
+  };
+  const fileLabel = (name: string) => ext(name) || "FILE";
 
   /** A small file badge to show under the cursor while dragging out. */
   function dragIcon(item: ShelfItem): string {
@@ -111,7 +122,10 @@ function handleDrop(e: DragEvent) {
             {:else if item.dir}
               <svg viewBox="0 0 24 24" class="folder" aria-hidden="true"><path d="M3 7h7l2 2h9v11H3z" /></svg>
             {:else}
-              <span class="ext">{ext(item.name) || "FILE"}</span>
+              <span class="file-icon {fileKind(item.name)}" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6zM14 3v5h5" /><path d="M9 13h6M9 17h5" /></svg>
+                <b>{fileLabel(item.name)}</b>
+              </span>
             {/if}
           </span>
           <span class="name">{item.name}</span>
@@ -338,6 +352,40 @@ function handleDrop(e: DragEvent) {
     letter-spacing: 0.03em;
     color: rgba(255, 255, 255, 0.68);
   }
+  .file-icon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 28px;
+    color: rgba(255, 255, 255, 0.62);
+  }
+  .file-icon svg {
+    width: 24px;
+    height: 28px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+    stroke-linejoin: round;
+  }
+  .file-icon b {
+    position: absolute;
+    top: 14px;
+    max-width: 20px;
+    overflow: hidden;
+    font-size: 5px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .file-icon.document { color: #78b7ff; }
+  .file-icon.pdf { color: #ff8278; }
+  .file-icon.spreadsheet { color: #79d39a; }
+  .file-icon.presentation { color: #ffb36b; }
+  .file-icon.archive { color: #c4a7ff; }
+  .file-icon.text { color: #aeb8c8; }
   .name {
     width: 100%;
     margin-top: 2px;
@@ -385,6 +433,12 @@ function handleDrop(e: DragEvent) {
   .remove:hover {
     color: #fff;
   }
+  .clear:active,
+  .remove:active,
+  .copy:active,
+  .item:active {
+    transform: scale(0.97);
+  }
 
   button:focus-visible,
   .item:focus-visible {
@@ -397,6 +451,7 @@ function handleDrop(e: DragEvent) {
     .remove,
     .clear {
       transition: none;
+      transform: none !important;
     }
   }
 </style>
