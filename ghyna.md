@@ -17,7 +17,7 @@ Ghyna dianggap berhasil kalau:
 
 **Pengguna:** saya sendiri dan beberapa teman. Kode Ghyna ada di fork publik `nandarjr660/Ghyna`, fork dari repo asli `RamantyaDS/Notchy`; atribusi ke repo asli tetap dicantumkan di README. Installer dibagikan lewat GitHub Releases.
 
-**Status:** v1.1.9 (31 Oktober 2026). Rebrand dari Notchy ke Ghyna: nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, dan log `ghyna.log`. Updater otomatis aktif sejak v1.1.1. Installer: `Ghyna_1.1.9_x64-setup.exe`.
+**Status:** v1.1.10 (31 Oktober 2026). Rebrand dari Notchy ke Ghyna: nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, dan log `ghyna.log`. Updater otomatis aktif sejak v1.1.1. Installer: `Ghyna_1.1.10_x64-setup.exe`.
 
 ---
 
@@ -236,7 +236,11 @@ Dikerjakan sebagai **satu tahap besar**, dirilis sekali setelah lolos pengujian 
 ### N. v1.1.8–v1.1.9: penyempurnaan cuaca dan optimasi
 1. **v1.1.8**: memperbaiki lifecycle timer dan listener frontend agar dibersihkan saat unmount, mengurangi risiko listener/heartbeat ganda dan polling yang tertinggal. Installer `Ghyna_1.1.8_x64-setup.exe` (4.028.369 byte, SHA-256 `EA1074EF633FD00A3D29363FA1F57C86AB4AF825294ED4BC948BDC9348684C9B`).
 2. **v1.1.9**: halaman cuaca dipadatkan menjadi kondisi saat ini, suhu, lokasi, dan ikon dengan animasi ringan yang menyesuaikan kondisi cuaca; informasi sekunder dihapus agar layout notch aman.
-   DoD: `npm run check` 0 error/0 warning; `npm test` 11/11; `npm run build` sukses; installer `Ghyna_1.1.9_x64-setup.exe` (4.027.953 byte, SHA-256 `C127CCBAEF56A9FC9AB46CD4A86C0D211C67C434203BDDE37025DFC7A4DA304F`).
+    DoD: `npm run check` 0 error/0 warning; `npm test` 11/11; `npm run build` sukses; installer `Ghyna_1.1.9_x64-setup.exe` (4.027.953 byte, SHA-256 `C127CCBAEF56A9FC9AB46CD4A86C0D211C67C434203BDDE37025DFC7A4DA304F`).
+
+### O. v1.1.10: fallback cuaca
+1. **Fallback lokasi**: jika lokasi Windows tidak tersedia atau izin lokasi ditolak, Ghyna memakai koordinat Jakarta sebagai fallback sehingga halaman cuaca tidak berhenti di status memuat.
+   DoD: `npm run check` 0 error/0 warning; `npm test` 11/11; `npm run build` sukses; installer `Ghyna_1.1.10_x64-setup.exe` (4.029.323 byte, SHA-256 `BD34481F932ABD6E2C569CBE63DF9AEF8DC1C64806D9C28535FB40BEA603DCAD`).
 
 ---
 
@@ -308,6 +312,10 @@ Semua fitur di atas masuk v1. Urutan ini ada karena sebagian fitur bergantung pa
    - v1.1.8 merapikan lifecycle timer/listener; v1.1.9 menyederhanakan halaman cuaca dan menambahkan animasi ringan sesuai kondisi.
    - Verifikasi: `npm run check` 0 error/0 warning; `npm test` 11/11; `npm run build` sukses; installer v1.1.9 `Ghyna_1.1.9_x64-setup.exe` (4.027.953 byte, SHA-256 `C127CCBAEF56A9FC9AB46CD4A86C0D211C67C434203BDDE37025DFC7A4DA304F`).
 
+17. **v1.1.10 (bagian 5O): fallback lokasi cuaca.** ✅ Rilis 31 Okt 2026.
+   - Jika lokasi Windows tidak tersedia, cuaca memakai fallback Jakarta agar tidak terus menampilkan “Memuat data cuaca”.
+   - Verifikasi: `npm run check` 0 error/0 warning; `npm test` 11/11; `npm run build` sukses; installer `Ghyna_1.1.10_x64-setup.exe` (4.029.323 byte, SHA-256 `BD34481F932ABD6E2C569CBE63DF9AEF8DC1C64806D9C28535FB40BEA603DCAD`).
+
 Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 
 ---
@@ -355,6 +363,7 @@ Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 | v1.1.7 | 30 Okt 2026 | Sumber cuaca diganti ke BMKG: data terkini berbasis koordinat dan prakiraan resmi 3 hari tanpa API key. Installer: `Ghyna_1.1.7_x64-setup.exe` (4.024.995 byte, SHA-256 `F1871358435DAC9C63E35AB10921DD7AFDFA101DC31B6488D82A4CE3FA8CE433`). |
 | v1.1.8 | 30 Okt 2026 | Optimasi lifecycle frontend: timer, heartbeat, polling, listener, dan timer animasi dibersihkan saat unmount untuk mengurangi risiko penggunaan RAM/baterai yang tidak perlu. Installer: `Ghyna_1.1.8_x64-setup.exe` (4.028.369 byte, SHA-256 `EA1074EF633FD00A3D29363FA1F57C86AB4AF825294ED4BC948BDC9348684C9B`). |
 | v1.1.9 | 31 Okt 2026 | Halaman cuaca diringkas menjadi kondisi, suhu, lokasi, dan ikon dengan animasi ringan sesuai cuaca; layout notch dibuat aman dari clipping. Installer: `Ghyna_1.1.9_x64-setup.exe` (4.027.953 byte, SHA-256 `C127CCBAEF56A9FC9AB46CD4A86C0D211C67C434203BDDE37025DFC7A4DA304F`). |
+| v1.1.10 | 31 Okt 2026 | Perbaikan halaman cuaca: memakai fallback koordinat Jakarta jika lokasi Windows tidak tersedia agar tidak berhenti di “Memuat data cuaca”. Installer: `Ghyna_1.1.10_x64-setup.exe` (4.029.323 byte, SHA-256 `BD34481F932ABD6E2C569CBE63DF9AEF8DC1C64806D9C28535FB40BEA603DCAD`). |
 
 **Cara membuat rilis baru (otomatis, sejak v1.1.1)**
 1. Pastikan working tree bersih, berada di branch `main`, dan `origin` menunjuk ke `nandarjr660/Ghyna`.
