@@ -229,7 +229,7 @@
     align-items: center;
     gap: 12px;
     padding: 0 22px 0 16px;
-    font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    font-family: var(--font-ui);
   }
   .icon {
     flex: none;

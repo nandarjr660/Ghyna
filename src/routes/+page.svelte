@@ -1136,12 +1136,12 @@ const eyeGlow = $derived(
     overflow: hidden;
     user-select: none;
     cursor: default;
-    font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+     font-family: var(--font-ui);
     color: var(--text);
   }
 
   .notch {
-    --spring: cubic-bezier(0.22, 1, 0.36, 1);
+     --spring: var(--ease-out);
     --resize-spring: cubic-bezier(0.2, 1.18, 0.35, 1);
     /* A green-black surface: green is the material, not a decoration. A
        hairline edge keeps it visible on a dark wallpaper. */

@@ -107,6 +107,7 @@
     flex-direction: column;
     padding: 10px 42px 19px;
     overflow: hidden;
+    font-family: var(--font-ui);
   }
   .header {
     flex: none;

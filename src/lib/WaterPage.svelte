@@ -65,6 +65,7 @@
     flex-direction: column;
     padding: 9px 42px 18px;
     overflow: hidden;
+    font-family: var(--font-ui);
   }
   .header {
     flex: none;
@@ -150,7 +151,7 @@
     gap: 6px;
   }
   .amount {
-    font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;
+    font-family: var(--font-display);
     font-size: 35px;
     font-weight: 600;
     line-height: 1;
@@ -216,15 +217,14 @@
     height: 28px;
     padding: 0 14px;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: var(--accent);
     color: var(--accent-ink);
     font-size: 11px;
     font-weight: 600;
     white-space: nowrap;
     transition:
-      background 0.18s,
-      transform 0.15s;
+      background var(--motion-ui) var(--ease-out), transform var(--motion-fast) var(--ease-out);
   }
   .drink svg {
     width: 11px;

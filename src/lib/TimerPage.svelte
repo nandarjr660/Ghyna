@@ -56,6 +56,7 @@
     gap: 24px;
     padding: 9px 42px 18px;
     overflow: hidden;
+    font-family: var(--font-ui);
   }
   .main {
     flex: 1;
@@ -67,7 +68,7 @@
     gap: 8px;
   }
   .time {
-    font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;
+    font-family: var(--font-display);
     font-size: 42px;
     font-weight: 600;
     line-height: 1;
@@ -161,14 +162,12 @@
   .main-button {
     height: 29px;
     padding: 0 12px;
-    border-radius: 7px;
+    border-radius: var(--radius-md);
     background: #fff;
     color: #000;
     font-size: 10px;
     font-weight: 600;
-    transition:
-      background 0.18s,
-      transform 0.15s;
+    transition: background var(--motion-ui) var(--ease-out), transform var(--motion-fast) var(--ease-out);
   }
   .main-button .play {
     fill: currentColor;
@@ -185,7 +184,7 @@
     height: 29px;
     padding: 0;
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 7px;
+    border-radius: var(--radius-md);
     background: transparent;
     color: rgba(255, 255, 255, 0.58);
     transition:

@@ -33,7 +33,7 @@
 {/if}
 
 <style>
-  .weather-page { width: 100%; height: 100%; box-sizing: border-box; overflow: hidden; padding: 12px 20px 8px; color: #f7f5f1; }
+  .weather-page { width: 100%; height: 100%; box-sizing: border-box; overflow: hidden; padding: 12px 20px 8px; color: #f7f5f1; font-family: var(--font-ui); }
   .weather-layout { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 96px; align-items: center; gap: 12px; }
   .weather-copy { display: grid; align-content: center; min-width: 0; }
   .eyebrow, .weather-main span { color: #aaa6ae; font-size: 10px; letter-spacing: .08em; }
