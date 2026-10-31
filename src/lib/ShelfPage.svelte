@@ -149,29 +149,32 @@ function handleDrop(e: DragEvent) {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    padding: 10px 42px 19px;
+    padding: 9px 40px 18px;
     overflow: hidden;
   }
   .header {
     flex: none;
     display: flex;
     align-items: center;
-    gap: 8px;
-    height: 22px;
+    gap: 7px;
+    height: 24px;
   }
   .title {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--accent);
   }
   .count {
-    font-size: 11.5px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.38);
     font-variant-numeric: tabular-nums;
   }
   .hint {
     flex: 1;
-    font-size: 10.5px;
+    font-size: 9px;
     color: rgba(255, 255, 255, 0.28);
     text-align: right;
     white-space: nowrap;
@@ -192,7 +195,8 @@ function handleDrop(e: DragEvent) {
     height: 24px;
     padding: 0;
     border-radius: 6px;
-    color: rgba(255, 255, 255, 0.3);
+    margin-left: 2px;
+    color: rgba(255, 255, 255, 0.5);
     transition:
       background 0.15s,
       color 0.15s;
@@ -294,31 +298,32 @@ function handleDrop(e: DragEvent) {
     flex: 1;
     min-height: 0;
     display: flex;
-    gap: 4px;
-    margin-top: 7px;
-    padding-bottom: 2px;
+    gap: 6px;
+    margin-top: 5px;
+    padding: 2px 1px 2px 0;
     overflow-x: auto;
     scrollbar-width: none;
   }
   .item {
     position: relative;
     flex: none;
-    width: 66px;
+    width: 76px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     padding: 5px 5px 4px;
-    border: 1px solid transparent;
-    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.025);
     cursor: grab;
     transition:
       background 0.15s,
       border-color 0.15s;
   }
   .item:hover {
-    border-color: rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.07);
   }
   .item:active {
     cursor: grabbing;
@@ -326,10 +331,10 @@ function handleDrop(e: DragEvent) {
   .thumb {
     display: grid;
     place-items: center;
-    width: 40px;
-    height: 40px;
+    width: 46px;
+    height: 42px;
     overflow: hidden;
-    border-radius: 6px;
+    border-radius: 8px;
     background: var(--surface-raised);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   }
@@ -356,13 +361,13 @@ function handleDrop(e: DragEvent) {
     position: relative;
     display: grid;
     place-items: center;
-    width: 24px;
-    height: 28px;
+    width: 30px;
+    height: 34px;
     color: rgba(255, 255, 255, 0.62);
   }
   .file-icon svg {
-    width: 24px;
-    height: 28px;
+    width: 30px;
+    height: 34px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.4;
@@ -370,10 +375,10 @@ function handleDrop(e: DragEvent) {
   }
   .file-icon b {
     position: absolute;
-    top: 14px;
-    max-width: 20px;
+    top: 17px;
+    max-width: 25px;
     overflow: hidden;
-    font-size: 5px;
+    font-size: 6px;
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1;
@@ -390,14 +395,14 @@ function handleDrop(e: DragEvent) {
     width: 100%;
     margin-top: 2px;
     text-align: center;
-    font-size: 10px;
+    font-size: 10.5px;
     color: rgba(255, 255, 255, 0.9);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .size {
-    font-size: 9px;
+    font-size: 9.5px;
     color: rgba(255, 255, 255, 0.38);
     font-variant-numeric: tabular-nums;
   }

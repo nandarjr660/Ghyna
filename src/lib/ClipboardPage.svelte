@@ -72,29 +72,32 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    padding: 10px 42px 19px;
+    padding: 9px 40px 18px;
     overflow: hidden;
   }
   .header {
     flex: none;
     display: flex;
     align-items: center;
-    gap: 8px;
-    height: 18px;
+    gap: 7px;
+    height: 22px;
   }
   .title {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--accent);
   }
   .count {
-    font-size: 9.5px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    font-size: 9px;
     color: rgba(255, 255, 255, 0.38);
     font-variant-numeric: tabular-nums;
   }
   .hint {
     flex: 1;
-    font-size: 8.5px;
+    font-size: 8px;
     color: rgba(255, 255, 255, 0.28);
     text-align: right;
     white-space: nowrap;
@@ -115,7 +118,8 @@
     height: 24px;
     padding: 0;
     border-radius: 6px;
-    color: rgba(255, 255, 255, 0.3);
+    margin-left: 2px;
+    color: rgba(255, 255, 255, 0.5);
     transition:
       background 0.15s,
       color 0.15s;
@@ -169,8 +173,9 @@
   .list {
     flex: 1;
     min-height: 0;
-    margin-top: 6px;
-    padding-bottom: 2px;
+    margin-top: 5px;
+    padding: 2px 1px 2px 0;
+    gap: 4px;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
@@ -182,23 +187,26 @@
     align-items: center;
     gap: 8px;
     width: 100%;
-    min-height: 24px;
-    padding: 0 2px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+    min-height: 29px;
+    padding: 2px 6px 2px 4px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.025);
     text-align: left;
     transition: background 0.15s;
   }
   .item:hover {
-    background: rgba(255, 255, 255, 0.03);
+    border-color: rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
   }
   .kind {
     flex: none;
     display: grid;
     place-items: center;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border-radius: 5px;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.08);
     color: rgba(255, 255, 255, 0.4);
   }
   .kind svg {
@@ -220,16 +228,16 @@
   }
   .body img {
     flex: none;
-    width: 22px;
-    height: 22px;
+    width: 23px;
+    height: 23px;
     border-radius: 3px;
     object-fit: cover;
   }
   .text {
     flex: 1;
     min-width: 0;
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.74);
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.82);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -241,7 +249,9 @@
     gap: 3px;
     font-size: 8.5px;
     color: rgba(255, 255, 255, 0.28);
-    opacity: 0.6;
+    min-width: 18px;
+    justify-content: center;
+    opacity: 0.7;
     transition:
       color 0.15s,
       opacity 0.15s;
