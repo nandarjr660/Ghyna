@@ -744,7 +744,9 @@ const eyeGlow = $derived(
       clearTimeout(weatherTimer);
       settings ??= await invoke<AllSettings>("get_settings");
       const city = settings.weatherCity;
-      const at = city ? [city.latitude, city.longitude] : await invoke<[number, number] | null>("locate");
+      const at = city
+        ? [city.latitude, city.longitude]
+        : (await invoke<[number, number] | null>("locate")) ?? [-6.2088, 106.8456];
       weather = at ? await fetchWeather(at[0], at[1]) : null;
       weatherTimer = setTimeout(loadWeather, 30 * 60_000);
     };
