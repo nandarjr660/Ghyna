@@ -174,18 +174,18 @@ function handleDrop(e: DragEvent) {
   .clear {
     display: grid;
     place-items: center;
-    width: 16px;
-    height: 16px;
+    width: 24px;
+    height: 24px;
     padding: 0;
-    border-radius: 4px;
+    border-radius: 6px;
     color: rgba(255, 255, 255, 0.3);
     transition:
       background 0.15s,
       color 0.15s;
   }
   .clear svg {
-    width: 11px;
-    height: 11px;
+    width: 15px;
+    height: 15px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.7;

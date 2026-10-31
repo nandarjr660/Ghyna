@@ -111,22 +111,23 @@
   .clear {
     display: grid;
     place-items: center;
-    width: 16px;
-    height: 16px;
+    width: 24px;
+    height: 24px;
     padding: 0;
-    border-radius: 4px;
+    border-radius: 6px;
     color: rgba(255, 255, 255, 0.3);
     transition:
       background 0.15s,
       color 0.15s;
   }
   .clear svg {
-    width: 8px;
-    height: 8px;
+    width: 15px;
+    height: 15px;
     fill: none;
     stroke: currentColor;
-    stroke-width: 2;
+    stroke-width: 1.7;
     stroke-linecap: round;
+    stroke-linejoin: round;
   }
   .clear:hover {
     background: rgba(255, 255, 255, 0.07);
