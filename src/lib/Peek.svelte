@@ -36,6 +36,8 @@
     sync: "M20 11a8 8 0 0 0-14.9-3M4 13a8 8 0 0 0 14.9 3M4 4v4h4M20 20v-4h-4",
     alert: "M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z",
     code: "M8 9l-3 3 3 3M16 9l3 3-3 3M13 6l-2 12",
+    cloud: "M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z",
+    wind: "M12.8 19.6A2 2 0 1 0 14 16H2m10.6-4.4A2 2 0 1 0 15 8H2m7.6 11.6A2 2 0 1 1 10 16H2",
   };
 
   type View = { icon: string; tone?: string; title: string; detail?: string; value?: string; level?: number; battery?: number; charging?: boolean };
@@ -104,6 +106,8 @@
         const at = new Date(p.start).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":");
         return { icon: "calendar", tone: "#f0b66e", title: p.title, detail: p.before ? `Mulai ${p.before} menit lagi · ${at}` : `Dimulai sekarang · ${at}` };
       }
+      case "weather-tip":
+        return { icon: p.icon ?? "sun", tone: p.tone, title: p.title, detail: p.detail };
       default:
         return null;
     }

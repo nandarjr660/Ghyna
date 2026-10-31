@@ -20,11 +20,13 @@
         <span class="eyebrow">CUACA SEKARANG</span>
         <strong>{weather.description}</strong>
         <small>{weather.location}</small>
-        <div class="weather-main"><b>{weather.temp}°</b><span>Celsius</span></div>
       </div>
-      <div class="weather-art" aria-hidden="true">
-        <span class="weather-marks"></span>
-        <span class="icon">{weather.icon}</span>
+      <div class="weather-right">
+        <div class="weather-main"><b>{weather.temp}°</b><span>Celsius</span></div>
+        <div class="weather-art" aria-hidden="true">
+          <span class="weather-marks"></span>
+          <span class="icon">{weather.icon}</span>
+        </div>
       </div>
     </div>
   </section>
@@ -34,14 +36,15 @@
 
 <style>
   .weather-page { width: 100%; height: 100%; box-sizing: border-box; overflow: hidden; padding: 12px 20px 8px; color: #f7f5f1; font-family: var(--font-ui); }
-  .weather-layout { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 96px; align-items: center; gap: 12px; }
+  .weather-layout { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px; }
   .weather-copy { display: grid; align-content: center; min-width: 0; }
+  .weather-right { display: flex; align-items: center; gap: 14px; }
   .eyebrow, .weather-main span { color: #aaa6ae; font-size: 10px; letter-spacing: .08em; }
   .weather-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 15px; line-height: 1.2; }
   .weather-copy small { color: #aaa6ae; letter-spacing: 0; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .weather-art { position: relative; display: grid; place-items: center; width: 96px; height: 88px; }
+  .weather-art { position: relative; display: grid; place-items: center; width: 80px; height: 84px; }
   .icon { position: relative; z-index: 1; font-size: 38px; line-height: 1; animation: weather-float 3.5s ease-in-out infinite; }
-  .weather-main { display: flex; align-items: baseline; gap: 7px; margin-top: 9px; }
+  .weather-main { display: flex; align-items: baseline; gap: 7px; }
   .weather-main b { font-size: 37px; line-height: .95; letter-spacing: -.04em; }
   .weather-main span { letter-spacing: 0; font-size: 9px; }
   .weather-rain .icon { animation: weather-rain 1.8s ease-in-out infinite; }

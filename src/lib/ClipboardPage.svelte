@@ -23,7 +23,7 @@
       invoke("clipboard_clear");
       clearing = false;
       clearTimer = undefined;
-    }, 230);
+    }, 740);
   }
 </script>
 
@@ -47,7 +47,7 @@
   {:else}
     <div class="list scroll">
       {#each items as item, index (item.id)}
-        <button class="item" class:done={copied === item.id} style={`--fly-delay:${Math.min(index, 8) * 16}ms`} onclick={() => copy(item)} title={item.kind === "text" ? item.preview : "Gambar"}>
+        <button class="item" class:done={copied === item.id} style={`--fly-delay:${Math.min(index, 8) * 36}ms`} onclick={() => copy(item)} title={item.kind === "text" ? item.preview : "Gambar"}>
           <span class="kind" aria-hidden="true">
             {#if item.kind === "image"}
               <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" /><circle cx="8.5" cy="9" r="1.5" /><path d="m4 18 5-5 4 4 3-3 4 4" /></svg>
@@ -292,13 +292,14 @@
 
   .clearing .item {
     pointer-events: none;
-    animation: clipboard-fly 230ms cubic-bezier(.23, 1, .32, 1) var(--fly-delay) both;
+    animation: clipboard-fly 420ms cubic-bezier(.23, 1, .32, 1) var(--fly-delay) both;
   }
   @keyframes clipboard-attach {
     from { opacity: 0; transform: translateY(-5px) scale(.97); }
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
   @keyframes clipboard-fly {
+    30% { opacity: 1; transform: translate(30px, -16px) scale(.95) rotate(2deg); }
     to { opacity: 0; transform: translate(126px, -42px) scale(.35) rotate(4deg); }
   }
 

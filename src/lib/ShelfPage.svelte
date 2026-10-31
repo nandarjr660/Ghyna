@@ -101,7 +101,7 @@ function addFiles() {
       shelf.clear();
       clearing = false;
       clearTimer = undefined;
-    }, 230);
+    }, 740);
   }
 
 
@@ -143,7 +143,7 @@ function addFiles() {
       <div class="items scroll">
       {#each shelf.items as item, index (item.path)}
         <div class="item" role="button" tabindex="-1" title={item.name}
-          style={`--fly-delay:${Math.min(index, 8) * 16}ms`}
+          style={`--fly-delay:${Math.min(index, 8) * 36}ms`}
           onpointerdown={(e) => down(e, item)} onpointerup={up}>
           <span class="thumb">
             {#if IMAGE.test(item.name)}
@@ -178,7 +178,7 @@ function addFiles() {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    padding: 9px 40px 18px;
+    padding: 9px 40px 14px;
     overflow: hidden;
     font-family: var(--font-ui);
   }
@@ -368,8 +368,8 @@ function addFiles() {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 5px 5px 4px;
+    gap: 3px;
+    padding: 4px 5px 3px;
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.025);
@@ -388,10 +388,11 @@ function addFiles() {
     cursor: grabbing;
   }
   .thumb {
+    flex: none;
     display: grid;
     place-items: center;
     width: 46px;
-    height: 42px;
+    height: 38px;
     overflow: hidden;
     border-radius: 8px;
     background: var(--surface-raised);
@@ -420,13 +421,13 @@ function addFiles() {
     position: relative;
     display: grid;
     place-items: center;
-    width: 30px;
-    height: 34px;
+    width: 28px;
+    height: 30px;
     color: rgba(255, 255, 255, 0.62);
   }
   .file-icon svg {
-    width: 30px;
-    height: 34px;
+    width: 28px;
+    height: 30px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.4;
@@ -434,8 +435,8 @@ function addFiles() {
   }
   .file-icon b {
     position: absolute;
-    top: 17px;
-    max-width: 25px;
+    top: 15px;
+    max-width: 23px;
     overflow: hidden;
     font-size: 6px;
     font-weight: 700;
@@ -451,19 +452,56 @@ function addFiles() {
   .file-icon.archive { color: #c4a7ff; }
   .file-icon.text { color: #aeb8c8; }
   .name {
+    flex: none;
     width: 100%;
-    margin-top: 2px;
     text-align: center;
     font-size: 10.5px;
+    line-height: 1.15;
     color: rgba(255, 255, 255, 0.9);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .size {
+    flex: none;
     font-size: 9.5px;
+    line-height: 1.15;
     color: rgba(255, 255, 255, 0.38);
     font-variant-numeric: tabular-nums;
+  }
+  .copy {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.6);
+    color: rgba(255, 255, 255, 0.6);
+    opacity: 0;
+    transition:
+      opacity 150ms cubic-bezier(0.23, 1, 0.32, 1),
+      color 150ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .copy svg {
+    width: 10px;
+    height: 10px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .item:hover .copy,
+  .copy:focus-visible {
+    opacity: 1;
+  }
+  .copy:hover {
+    color: #fff;
   }
   .remove {
     position: absolute;
@@ -506,7 +544,7 @@ function addFiles() {
   }
   .clearing .item {
     pointer-events: none;
-    animation: shelf-fly 230ms cubic-bezier(.23, 1, .32, 1) var(--fly-delay) both;
+    animation: shelf-fly 420ms cubic-bezier(.23, 1, .32, 1) var(--fly-delay) both;
   }
 
   @keyframes shelf-magnet {
@@ -523,6 +561,7 @@ function addFiles() {
     to { opacity: 1; transform: translateY(0) scale(1); }
   }
   @keyframes shelf-fly {
+    30% { opacity: 1; transform: translate(36px, -16px) scale(.94) rotate(3deg); }
     to { opacity: 0; transform: translate(145px, -42px) scale(.35) rotate(5deg); }
   }
 
@@ -535,6 +574,7 @@ function addFiles() {
     .zone,
     .item,
     .remove,
+    .copy,
     .clear {
       transition: none;
       transform: none !important;

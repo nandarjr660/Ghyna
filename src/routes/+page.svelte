@@ -120,6 +120,33 @@ const eyeGlow = $derived(
   let inUse = $state<InUse>({ camera: [], mic: [] });
   let micMuted = $state(false);
   let weather = $state<Weather | null>(null);
+  // Friendly tip shown when weather data arrives, and whenever the day's
+  // condition changes on the 30-minute refresh (same tip never repeats).
+  let lastWeatherTip = "";
+  function weatherTip(w: Weather | null) {
+    if (!w) return;
+    const text = w.description.toLowerCase();
+    const storm = text.includes("petir") || text.includes("badai");
+    const rain = text.includes("hujan") || text.includes("gerimis");
+    const fog = text.includes("kabut");
+    const cloudy = text.includes("berawan") || text.includes("mendung");
+    const tip = storm
+      ? { key: "storm", icon: "alert", tone: "#f08080", title: "Badai dan petir", detail: "Sebisa mungkin tetap di dalam rumah ya" }
+      : rain
+        ? { key: "rain", icon: "drop", tone: "#8fd8c4", title: "Hari ini akan hujan", detail: "Hari bakal hujan, sedia payung sebelum keluar ya" }
+        : fog
+          ? { key: "fog", icon: "cloud", tone: "#aaa6ae", title: "Kabut cukup tebal", detail: "Hati-hati di jalan, nyalakan lampu kendaraan" }
+          : cloudy
+            ? { key: "cloudy", icon: "cloud", tone: "#aaa6ae", title: "Hari ini mendung", detail: "Bawa jaket tipis sebelum keluar ya" }
+            : w.temp >= 33
+              ? { key: "hot", icon: "sun", tone: "#f0b66e", title: "Panas yang berlebihan", detail: "Hari panas banget, minum air yg banyak ya" }
+              : w.temp <= 21
+                ? { key: "cold", icon: "wind", tone: "#8fd8c4", title: "Hari cukup dingin", detail: "Pakai jaket biar tidak kedinginan ya" }
+                : { key: "clear", icon: "sun", tone: "#8fe6b4", title: "Cerah seharian", detail: "Jangan lupa sunscreen sebelum keluar ya" };
+    if (tip.key === lastWeatherTip) return;
+    lastWeatherTip = tip.key;
+    showPeek({ kind: "weather-tip", ...tip });
+  }
   let page = $state(0);
   // -1 = moving left, 1 = moving right; drives the page slide direction.
   let pageDir = $state(1);
@@ -161,7 +188,7 @@ const eyeGlow = $derived(
           ? peekQueue.length
             ? 3200
             : 4500
-          : ["todo", "calendar", "update-info", "earbuds-low"].includes(p.kind)
+          : ["todo", "calendar", "update-info", "earbuds-low", "weather-tip"].includes(p.kind)
             ? 5000
             : 2200;
   function showPeek(data: PeekData) {
@@ -748,6 +775,7 @@ const eyeGlow = $derived(
         ? [city.latitude, city.longitude]
         : (await invoke<[number, number] | null>("locate")) ?? [-6.2088, 106.8456];
       weather = at ? await fetchWeather(at[0], at[1]) : null;
+      weatherTip(weather);
       weatherTimer = setTimeout(loadWeather, 30 * 60_000);
     };
     const applySettings = (s: AllSettings) => {
