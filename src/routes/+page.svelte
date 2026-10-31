@@ -1698,7 +1698,7 @@ const eyeGlow = $derived(
   }
 
   .clock {
-    transform: translateY(-6px) scale(0.96);
+    transform: translateY(-4px) scale(0.97);
   }
   .clock.on {
     transform: none;
@@ -1709,14 +1709,14 @@ const eyeGlow = $derived(
 
   .time {
     font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;
-    font-size: 42px;
+    font-size: 44px;
     font-weight: 700;
     letter-spacing: -0.03em;
     font-variant-numeric: tabular-nums;
   }
   .date {
-    margin-top: 2px;
-    font-size: 13px;
+    margin-top: 3px;
+    font-size: 12px;
     color: rgba(255, 255, 255, 0.6);
   }
   .clock-lyric {

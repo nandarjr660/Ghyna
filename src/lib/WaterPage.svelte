@@ -63,7 +63,7 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    padding: 10px 42px 19px;
+    padding: 9px 42px 18px;
     overflow: hidden;
   }
   .header {
@@ -71,7 +71,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    height: 24px;
+    height: 22px;
   }
   .title {
     font-size: 16px;
@@ -137,8 +137,8 @@
     min-height: 0;
     display: flex;
     align-items: center;
-    gap: 24px;
-    margin-top: 12px;
+    gap: 18px;
+    margin-top: 8px;
   }
   .main {
     flex: 1;
@@ -151,7 +151,7 @@
   }
   .amount {
     font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;
-    font-size: 32px;
+    font-size: 35px;
     font-weight: 600;
     line-height: 1;
     letter-spacing: -0.04em;
@@ -169,7 +169,7 @@
   }
   .progress {
     height: 2.5px;
-    margin-top: 12px;
+    margin-top: 10px;
     overflow: hidden;
     border-radius: 1px;
     background: rgba(255, 255, 255, 0.12);
@@ -190,7 +190,7 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-top: 10px;
+    margin-top: 8px;
   }
   .status {
     flex: 1;
@@ -246,8 +246,8 @@
 
   .chart {
     flex: none;
-    width: 80px;
-    height: 60px;
+    width: 74px;
+    height: 56px;
     display: flex;
     flex-direction: column;
   }
@@ -266,6 +266,12 @@
   .bars i.now {
     background: rgba(255, 255, 255, 0.72);
   }
+  .bars i {
+    transform-origin: bottom center;
+    animation: water-bar 2.8s ease-in-out infinite alternate;
+  }
+  .bars i:nth-child(3n) { animation-delay: -0.8s; }
+  .bars i:nth-child(4n) { animation-delay: -1.6s; }
   .labels {
     display: flex;
     justify-content: space-between;
@@ -282,5 +288,7 @@
     .drink {
       transition: none;
     }
+    .bars i { animation: none; }
   }
+  @keyframes water-bar { from { transform: scaleY(.96); } to { transform: scaleY(1); } }
 </style>

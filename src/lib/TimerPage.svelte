@@ -53,8 +53,8 @@
     box-sizing: border-box;
     display: flex;
     align-items: center;
-    gap: 20px;
-    padding: 10px 42px 18px;
+    gap: 24px;
+    padding: 9px 42px 18px;
     overflow: hidden;
   }
   .main {
@@ -68,7 +68,7 @@
   }
   .time {
     font-family: "Segoe UI Variable Display", "Segoe UI", sans-serif;
-    font-size: 40px;
+    font-size: 42px;
     font-weight: 600;
     line-height: 1;
     letter-spacing: -0.045em;
@@ -85,7 +85,7 @@
   }
   .progress {
     height: 2.5px;
-    margin-top: 12px;
+    margin-top: 10px;
     overflow: hidden;
     border-radius: 1px;
     background: var(--accent-soft);
@@ -116,12 +116,12 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 14px;
+    gap: 11px;
   }
   .phases {
     display: flex;
-    gap: 14px;
-    font-size: 11px;
+    gap: 12px;
+    font-size: 10.5px;
     color: rgba(255, 255, 255, 0.38);
   }
   .phases span {
