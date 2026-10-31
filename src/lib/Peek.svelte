@@ -23,6 +23,7 @@
     battery: "M3 8h15v8H3zM21 11v2M6 11v2",
     wifi: "M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M2 9a15 15 0 0 1 20 0M12 19.5h.01",
     wifiOff: "M2 2l20 20M8.5 16a5 5 0 0 1 7 0M5 12.5a10 10 0 0 1 4.3-2.6M19 12.5a10 10 0 0 0-2.9-2M2 9a15 15 0 0 1 4.6-3M22 9a15 15 0 0 0-11-4M12 19.5h.01",
+    bluetooth: "M12 3v18l6-6-12-6 12-6-6-6v18",
     headphones: "M3 14v-2a9 9 0 0 1 18 0v2M3 14h4v6H3zM17 14h4v6h-4z",
     speaker: "M6 3h12v18H6zM12 14a2.5 2.5 0 1 0 0 .01M12 7h.01",
     camera: "M15 10l5-3v10l-5-3zM3 7h12v10H3z",
@@ -228,14 +229,16 @@
     align-items: center;
     gap: 12px;
     padding: 0 22px 0 16px;
+    font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
   }
   .icon {
     flex: none;
-    width: 34px;
-    height: 34px;
-    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
     display: grid;
     place-items: center;
+    transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1), background 180ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   svg {
     width: 18px;
@@ -245,6 +248,7 @@
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
+    transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1), opacity 180ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .text {
     flex: 1;
@@ -277,7 +281,7 @@
     border-radius: 3px;
     background: var(--accent);
     transform-origin: left center;
-    transition: transform 0.15s ease-out;
+    transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .level.short {
     width: 56px;
@@ -314,10 +318,13 @@
     text-align: left;
     cursor: pointer;
     border-radius: inherit;
+    font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    transition: background 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .note:hover {
     background: rgba(239, 250, 243, 0.04);
   }
+  .note:active, .actions button:active { transform: scale(.98); }
   .app-icon {
     flex: none;
     width: 38px;
@@ -412,5 +419,11 @@
   }
   .actions button:hover {
     background: rgba(239, 250, 243, 0.16);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .row:hover .icon { transform: translateY(-1px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .icon, svg, .level span, .note, .actions button { transition: none; transform: none !important; }
   }
 </style>

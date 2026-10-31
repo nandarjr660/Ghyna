@@ -961,7 +961,9 @@ const eyeGlow = $derived(
     {:else}
       <span class="charge-time">{time}</span>
     {/if}
-    <span class="charge-status" aria-label="Sedang mengisi daya">⚡︎</span>
+    <span class="charge-status" aria-label="Sedang mengisi daya">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 5 13h6l-1 9 8-11h-6z" /></svg>
+    </span>
   </div>
 
   <div class="layer clock" class:on={view === "clock"}>
@@ -1556,11 +1558,19 @@ const eyeGlow = $derived(
   .charge-status {
     margin-left: 0;
     color: #38bdf8;
-    font-size: 13px;
     line-height: 1;
-    filter: drop-shadow(0 0 5px rgba(56, 189, 248, 0.65));
     animation: charging-spark 1.4s ease-in-out infinite;
     justify-self: end;
+  }
+  .charge-status svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
   @keyframes charging-spark {
     0%, 100% { opacity: 0.5; transform: scale(0.9); }
@@ -1691,6 +1701,7 @@ const eyeGlow = $derived(
       transition: none;
     }
     .wave,
+    .charge-status,
     .eyes.sleep,
     .cam {
       animation: none;
