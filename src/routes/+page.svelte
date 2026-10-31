@@ -1140,6 +1140,7 @@ const eyeGlow = $derived(
 
   .notch {
     --spring: cubic-bezier(0.22, 1, 0.36, 1);
+    --resize-spring: cubic-bezier(0.2, 1.18, 0.35, 1);
     /* A green-black surface: green is the material, not a decoration. A
        hairline edge keeps it visible on a dark wallpaper. */
     --edge: var(--line);
@@ -1221,11 +1222,11 @@ const eyeGlow = $derived(
 
   .notch {
     transition:
-      width 0.62s var(--spring),
-      height 0.62s var(--spring),
-      --e 0.45s ease,
-      border-radius 0.45s ease,
-      box-shadow 0.45s ease;
+      width 0.56s var(--resize-spring),
+      height 0.56s var(--resize-spring),
+      --e 0.42s var(--spring),
+      border-radius 0.42s var(--spring),
+      box-shadow 0.42s var(--spring);
   }
 
   /* One layer per view; only the current one is visible. */
@@ -1686,6 +1687,9 @@ const eyeGlow = $derived(
     }
   }
   @media (prefers-reduced-motion: reduce) {
+    .notch {
+      transition: none;
+    }
     .wave,
     .eyes.sleep,
     .cam {
