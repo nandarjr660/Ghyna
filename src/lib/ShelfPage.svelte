@@ -78,8 +78,11 @@ function handleDrop(e: DragEvent) {
     <span class="count">{shelf.items.length}</span>
     <span class="hint">tarik keluar · klik buka</span>
     {#if shelf.items.length}
-      <button class="clear" onclick={() => shelf.clear()} aria-label="Bersihkan shelf">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+      <button class="clear" onclick={() => shelf.clear()} aria-label="Hapus semua dari Shelf" title="Hapus semua">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 7h16M10 4h4l1 3H9l1-3Z" />
+          <path d="m7 7 1 13h8l1-13M10 10v7M14 10v7" />
+        </svg>
       </button>
     {/if}
   </div>
@@ -181,12 +184,13 @@ function handleDrop(e: DragEvent) {
       color 0.15s;
   }
   .clear svg {
-    width: 8px;
-    height: 8px;
+    width: 11px;
+    height: 11px;
     fill: none;
     stroke: currentColor;
-    stroke-width: 2;
+    stroke-width: 1.7;
     stroke-linecap: round;
+    stroke-linejoin: round;
   }
   .clear:hover {
     background: rgba(255, 255, 255, 0.07);
