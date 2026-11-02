@@ -345,8 +345,9 @@ Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 ### Draft (sudah dikerjakan, belum di-commit)
 
 - [x] **Charging: posisi lambaian tangan.** Tangan dipindah dari tepi kanan (menimpa ikon petir dan persentase) ke samping kanan mata: `left: calc(50% + 22px)`, `bottom: 0`, poros `34% 92%`, dicerminkan `scaleX(-1)`, dengan `@keyframes charge-wave` yang memberi kemiringan dasar sekitar -7 derajat (rentang -22 sampai +4 derajat) supaya tidak sejajar dengan mata dan sedikit di bawah garis mata. Ikon petir tetap di kanan.
-- [x] **Halaman lirik aktif: cahaya biru gradien.** Referensi gambar hanya diambil efek cahayanya; layout lain tidak diubah. `src/lib/Player.svelte` (mode split/lyrics) mendapat lapisan `::before` berisi dua radial-gradient biru/ungu dengan `blur(14px)`, sehingga muncul bloom halus di seluruh kartu lirik. Disetujui pengguna ("acc yg ini"), belum di-commit.
+- [x] **Halaman lirik aktif: cahaya biru gradien.** Referensi gambar hanya diambil efek cahayanya; layout lain tidak diubah. `src/lib/Player.svelte` (mode split/lyrics) mendapat lapisan `::before` berisi dua radial-gradient biru/ungu dengan `blur(14px)`, sehingga muncul bloom halus di seluruh kartu lirik. Disetujui pengguna ("acc yg ini"); masuk commit `27a91ae`.
 - [x] **Spring resize notch terlalu tipis.** `--resize-spring` di `src/routes/+page.svelte` diganti dari `cubic-bezier(0.2, 1.18, 0.35, 1)` menjadi `cubic-bezier(0.2, 1.6, 0.3, 1)`. Overshoot aktual naik dari ~1% (praktis tak terlihat) ke ~11% (puncak ~210 ms dari durasi 0.56 s), berlaku untuk semua perubahan ukuran notch: lirik, notifikasi, expand, minimize.
+- [x] **Mode fokus: notifikasi dibisukan.** Saat Timer Fokus berjalan pada fase fokus, notifikasi aplikasi yang dicerminkan dari Windows dilewati (tidak diantre, tetap ada di Notification Center). Peek penting milik Ghyna sendiri tetap tampil: baterai lemah, Wi-Fi terhubung, timer, air, todo, unduhan, dan baris lirik di notch kecil. Logika di `src/routes/+page.svelte` pada listener `peek`: `if (e.payload.kind === "notification" && pomo.running && pomo.phase === "focus") return;`.
 
 ---
 

@@ -744,6 +744,9 @@ const eyeGlow = $derived(
     invoke<Omit<NowPlaying, "receivedAt"> | null>("media_now").then(setMedia);
 
     const unlistenPeek = listen<PeekData>("peek", (e) => {
+      // A focus session keeps app notifications quiet. Ghyna's own status peeks
+      // (battery, network, timers and so on) still come through.
+      if (e.payload.kind === "notification" && pomo.running && pomo.phase === "focus") return;
       showPeek(e.payload);
       // New screenshots also land on the shelf.
       if (e.payload.kind === "screenshot") shelf.add([e.payload.path]);
