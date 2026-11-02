@@ -338,6 +338,16 @@ Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 - Kalau ada keputusan baru, catat di bagian 2 atau 3, jangan hanya disebut di chat.
 - Kalau ada fitur yang mau ditambah atau dibuang, ubah bagian 5 dan 7 dulu, baru kerjakan kodenya.
 
+### Perbaikan tertunda (belum dikerjakan)
+
+- [ ] **Shelf: file tidak bisa di-drag keluar lagi.** Setelah file di-drop ke Shelf, item tidak bisa ditarik keluar ke aplikasi atau Explorer. Diduga hanya drag *masuk* (drop zone) yang ditangani, sementara drag *keluar* (startDrag / drag-out) belum ada atau terhalang handler pointer. Reproduksi: buka Shelf, drop satu file, lalu coba tarik file itu keluar - tidak terjadi apa-apa. Prioritas tinggi (dilaporkan pengguna sebagai bug parah).
+
+### Draft (sudah dikerjakan, belum di-commit)
+
+- [x] **Charging: posisi lambaian tangan.** Tangan dipindah dari tepi kanan (menimpa ikon petir dan persentase) ke samping kanan mata: `left: calc(50% + 22px)`, `bottom: 0`, poros `34% 92%`, dicerminkan `scaleX(-1)`, dengan `@keyframes charge-wave` yang memberi kemiringan dasar sekitar -7 derajat (rentang -22 sampai +4 derajat) supaya tidak sejajar dengan mata dan sedikit di bawah garis mata. Ikon petir tetap di kanan.
+- [x] **Halaman lirik aktif: cahaya biru gradien.** Referensi gambar hanya diambil efek cahayanya; layout lain tidak diubah. `src/lib/Player.svelte` (mode split/lyrics) mendapat lapisan `::before` berisi dua radial-gradient biru/ungu dengan `blur(14px)`, sehingga muncul bloom halus di seluruh kartu lirik. Disetujui pengguna ("acc yg ini"), belum di-commit.
+- [x] **Spring resize notch terlalu tipis.** `--resize-spring` di `src/routes/+page.svelte` diganti dari `cubic-bezier(0.2, 1.18, 0.35, 1)` menjadi `cubic-bezier(0.2, 1.6, 0.3, 1)`. Overshoot aktual naik dari ~1% (praktis tak terlihat) ke ~11% (puncak ~210 ms dari durasi 0.56 s), berlaku untuk semua perubahan ukuran notch: lirik, notifikasi, expand, minimize.
+
 ---
 
 ## 9. Rilis

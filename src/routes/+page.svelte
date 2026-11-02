@@ -1170,7 +1170,8 @@ const eyeGlow = $derived(
 
   .notch {
      --spring: var(--ease-out);
-    --resize-spring: cubic-bezier(0.2, 1.18, 0.35, 1);
+    /* Overshoot 11% supaya pantulan jelas terasa (sebelumnya 1%, tak terlihat). */
+    --resize-spring: cubic-bezier(0.2, 1.6, 0.3, 1);
     /* A green-black surface: green is the material, not a decoration. A
        hairline edge keeps it visible on a dark wallpaper. */
     --edge: var(--line);
@@ -1690,8 +1691,12 @@ const eyeGlow = $derived(
     stroke-linejoin: round;
   }
   .charge-wave {
-    right: 9px;
-    bottom: 5px;
+    /* Di samping mata, sedikit di bawah garis mata, tidak sejajar. */
+    left: calc(50% + 22px);
+    right: auto;
+    bottom: 0;
+    transform-origin: 34% 92%;
+    animation-name: charge-wave;
   }
   .clock-wave {
     right: 20px;
@@ -1711,6 +1716,21 @@ const eyeGlow = $derived(
     }
     70% {
       transform: rotate(12deg) translateY(0);
+    }
+  }
+  @keyframes charge-wave {
+    0%,
+    100% {
+      transform: scaleX(-1) rotate(-22deg) translateY(2px);
+    }
+    22% {
+      transform: scaleX(-1) rotate(4deg) translateY(0);
+    }
+    46% {
+      transform: scaleX(-1) rotate(-26deg) translateY(1px);
+    }
+    70% {
+      transform: scaleX(-1) rotate(-1deg) translateY(0);
     }
   }
   @keyframes sleep-breathe {

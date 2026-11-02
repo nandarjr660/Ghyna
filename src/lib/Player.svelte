@@ -133,6 +133,20 @@
     justify-content: center;
     gap: 6px;
   }
+  /* Ambient blue gradient light on the lyrics page, like the reference. */
+  .player.split::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(62% 95% at 10% 0%, rgba(96, 150, 255, 0.55), transparent 72%),
+      radial-gradient(58% 85% at 94% 100%, rgba(142, 108, 255, 0.32), transparent 74%);
+    filter: blur(14px);
+    pointer-events: none;
+  }
+  .player.split > * {
+    position: relative;
+  }
 
   .top {
     display: flex;
