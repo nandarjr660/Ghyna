@@ -17,7 +17,7 @@ Ghyna dianggap berhasil kalau:
 
 **Pengguna:** saya sendiri dan beberapa teman. Kode Ghyna ada di fork publik `nandarjr660/Ghyna`, fork dari repo asli `RamantyaDS/Notchy`; atribusi ke repo asli tetap dicantumkan di README. Installer dibagikan lewat GitHub Releases.
 
-**Status:** v1.1.13 (5 November 2026). Redesign penuh "Frost" di seluruh UI, bridge unduhan browser, dan lokalisasi. Rebrand dari Notchy ke Ghyna: nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, dan log `ghyna.log`. Updater otomatis aktif sejak v1.1.1. Installer: `Ghyna_1.1.13_x64-setup.exe`.
+**Status:** v1.1.14 (5 November 2026). Riwayat notifikasi di notch, glow kaca satu warna dari cover, notch tanpa garis tepi, dan pencarian lokasi cuaca yang lebih akurat. Redesign "Frost" dan bridge unduhan browser sejak v1.1.13. Rebrand dari Notchy ke Ghyna: nama, identifier `com.ghyna.app`, path data `%APPDATA%\Ghyna`, dan log `ghyna.log`. Updater otomatis aktif sejak v1.1.1. Installer: `Ghyna_1.1.14_x64-setup.exe`.
 
 ---
 
@@ -387,6 +387,8 @@ Setiap langkah selesai = DoD-nya terpenuhi + dites sendiri di laptop.
 | v1.1.11 | 31 Okt 2026 | Redesain Apple UI di seluruh halaman: font, radius, warna, dan motion seragam lewat token di `app.css`; animasi magnet dan attach di Shelf; clear terbang ke tempat sampah di Shelf dan Clipboard; press feedback di semua tombol termasuk kontrol musik; file Shelf tetap ada saat drag dibatalkan (hapus hanya saat drop berhasil). Installer: `Ghyna_1.1.11_x64-setup.exe` (4.028.645 byte, SHA-256 `07EF4FA7D0036EC4CB65033A69D02EEF178A886876F744FB7A291630EF82E0A3`). |
 | v1.1.12 | 31 Okt 2026 | Perbaikan tampilan: layout halaman cuaca seimbang (suhu dan ikon dikelompokkan di kanan); animasi hapus semua di Shelf dan Clipboard lebih lambat dan halus dengan jalur melengkung sebelum data dihapus; ikon file di Shelf tidak lagi tertutup teks ukuran; notifikasi tips cuaca muncul saat data diperbarui (mis. hujan, panas, mendung). Installer: `Ghyna_1.1.12_x64-setup.exe` (4.032.557 byte, SHA-256 `410049DD415B4DC0CC8DEC86D47E6EB1EA01A1A493672D97A65A59DE853C5238`). |
 | v1.1.13 | 5 Nov 2026 | Redesign penuh "Frost": seluruh notch dan halaman memakai kaca translusen dengan grain, rim spekular bawah, dan blur cover album; tipografi Bahnschrift + Cascadia Mono, aksen hijau, dan state fokus yang konsisten. Bridge unduhan browser lewat loopback 47823 dengan persen nyata dan status dijeda. Lokalisasi Pengaturan dan cuaca; perbaikan Shelf dan Clipboard. Installer: `Ghyna_1.1.13_x64-setup.exe` (4.120.223 byte, SHA-256 `C6E1D6DCED3BC38F153D773780C299060669EE4FF5D4B6D3B25DAC5A9E7EA531`). |
+
+| v1.1.14 | 5 Nov 2026 | Halaman riwayat notifikasi di notch: notifikasi aplikasi (WhatsApp, Telegram, Chrome) tersimpan 60 detik lalu hilang sendiri, notifikasi sistem dikecualikan, dan halaman hanya muncul selama ada isinya. Glow kaca memakai satu warna dari cover album di seluruh state, garis tepi notch dihapus, tombol lirik jadi ikon saja, persentase baterai muncul di notch kecil, dan pencarian kota cuaca kini menampilkan kota/kabupaten agar lokasi bernama sama tidak tertukar. Installer: `Ghyna_1.1.14_x64-setup.exe` (4.128.352 byte, SHA-256 `B37D446067604518A5DCE51D18AB33773496EB36CE9E82A8D265E8E4949EC3CA`). |
 
 **Cara membuat rilis baru (otomatis, sejak v1.1.1)**
 1. Pastikan working tree bersih, berada di branch `main`, dan `origin` menunjuk ke `nandarjr660/Ghyna`.
