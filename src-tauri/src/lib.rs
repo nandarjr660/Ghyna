@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 
 use tauri::menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem};
 use tauri::tray::TrayIconBuilder;
+use tauri::window::{Color, Effect, EffectsBuilder};
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition, WebviewWindow};
 use tauri_plugin_autostart::{MacosLauncher, ManagerExt};
 use windows::Win32::Foundation::{HWND, LPARAM, LRESULT, RECT, WPARAM};
@@ -57,6 +58,7 @@ pub(crate) fn peek(app: &AppHandle, kind: &str, mut data: serde_json::Value) {
 
 static APP: OnceLock<AppHandle> = OnceLock::new();
 static NOTCH_HWND: AtomicIsize = AtomicIsize::new(0);
+static ACRYLIC: AtomicBool = AtomicBool::new(false);
 static HOVER_TX: OnceLock<mpsc::Sender<bool>> = OnceLock::new();
 static EYES_TX: OnceLock<mpsc::Sender<()>> = OnceLock::new();
 static EYES_PENDING: AtomicBool = AtomicBool::new(false);
@@ -92,9 +94,44 @@ fn hwnd(window: &WebviewWindow) -> HWND {
 /// The frontend reports the notch size whenever it changes; the notch is
 /// always centered at the top of the window.
 #[tauri::command]
-fn set_notch_size(w: f64, h: f64) {
+fn set_notch_size(w: f64, h: f64, r: f64) {
     HIT.lock().unwrap().size = (w, h);
     update_hit_rect();
+    apply_notch_region(w, h, r);
+}
+
+/// Whether OS acrylic was applied at startup. The frontend lowers the notch
+/// surface opacity only when the real frost is there to show through.
+#[tauri::command]
+fn acrylic_enabled() -> bool {
+    ACRYLIC.load(Ordering::Relaxed)
+}
+
+/// OS acrylic frosts the whole client rectangle, so the window is clipped to
+/// the pill. Hover is driven by the global mouse hook, not by webview hit
+/// testing, so the region does not affect expanding or click-through.
+fn apply_notch_region(w: f64, h: f64, r: f64) {
+    let Some(window) = main_window() else { return };
+    let Ok(size) = window.outer_size() else { return };
+    let scale = window.scale_factor().unwrap_or(1.0);
+    let wp = (w * scale).round().max(1.0) as i32;
+    let hp = (h * scale).round().max(1.0) as i32;
+    let rp = (r * scale).round().max(0.0) as i32;
+    let left = (size.width as i32 - wp) / 2;
+    unsafe {
+        // Right/bottom are exclusive, hence the +1.
+        let rgn = windows::Win32::Graphics::Gdi::CreateRoundRectRgn(
+            left,
+            0,
+            left + wp + 1,
+            hp + 1,
+            rp * 2,
+            rp * 2,
+        );
+        if !rgn.0.is_null() {
+            let _ = windows::Win32::Graphics::Gdi::SetWindowRgn(hwnd(&window), Some(rgn), true);
+        }
+    }
 }
 
 fn update_hit_rect() {
@@ -604,6 +641,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             set_notch_size,
+            acrylic_enabled,
             is_tucked,
             media::media_now,
             media::media_toggle,
@@ -665,6 +703,18 @@ pub fn run() {
             window.set_ignore_cursor_events(true)?;
             NOTCH_HWND.store(hwnd(&window).0 as isize, Ordering::Relaxed);
             place_window(&window);
+
+            // Real frost: Windows acrylic behind the notch, tinted to the
+            // surface. The window region above keeps it inside the pill.
+            let effects = EffectsBuilder::new()
+                .effect(Effect::Acrylic)
+                .color(Color(12, 16, 18, 180))
+                .build();
+            if let Err(e) = window.set_effects(effects) {
+                log_line(&format!("acrylic unavailable: {e}"));
+            } else {
+                ACRYLIC.store(true, Ordering::Relaxed);
+            }
 
             build_tray(app.handle())?;
             start_hover_emitter();

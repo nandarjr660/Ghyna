@@ -80,11 +80,11 @@
     border: 1px solid var(--line);
     border-radius: var(--radius-xl);
     background:
-      radial-gradient(90% 70% at 12% -10%, rgba(255, 138, 107, 0.09), transparent 62%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012)),
+      radial-gradient(90% 70% at 12% 110%, rgba(143, 230, 180, 0.1), transparent 62%),
+      linear-gradient(0deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.012)),
       var(--surface-raised);
     box-shadow:
-      inset 0 1px 0 var(--edge-top),
+      inset 0 -1px 0 var(--edge-lit),
       0 24px 70px -34px #000,
       0 2px 6px rgba(0, 0, 0, 0.35);
   }
@@ -164,7 +164,7 @@
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
     background: rgba(255, 255, 255, 0.035);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.07);
   }
   .details span,
   .forecast span {

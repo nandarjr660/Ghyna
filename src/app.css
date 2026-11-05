@@ -25,11 +25,11 @@
   --motion-page: 260ms;
 
   /* Coral. The single warm note against the cold glass. */
-  --accent: #ff8a6b;
-  --accent-strong: #ff6a4a;
-  --accent-ink: #1c0a05;
-  --accent-soft: rgba(255, 138, 107, 0.14);
-  --accent-line: rgba(255, 138, 107, 0.36);
+  --accent: #8fe6b4;
+  --accent-strong: #55d98d;
+  --accent-ink: #04130a;
+  --accent-soft: rgba(143, 230, 180, 0.14);
+  --accent-line: rgba(143, 230, 180, 0.36);
 
   --info: #8fd0e8;
   --warning: #f0c070;
@@ -41,16 +41,21 @@
 
   /* Glass layers. The surface stays translucent so the frost underneath reads
      through; text always sits on the inner, clearer pane. */
-  --surface: rgba(10, 14, 16, 0.68);
-  --surface-solid: #0b1012;
+  --surface: rgba(10, 14, 16, 0.68);  --surface-solid: #0b1012;
   --surface-raised: rgba(26, 34, 38, 0.56);
   --line: rgba(196, 220, 230, 0.14);
-  --edge-top: rgba(255, 255, 255, 0.24);
+  /* The light sits below the glass: highlights ride the bottom edge. */
+  --edge-lit: rgba(255, 255, 255, 0.24);
   --glass-hi: rgba(255, 255, 255, 0.06);
   --scrim: rgba(6, 9, 11, 0.5);
 
   /* A 3% grain: the difference between "frosted" and "semi-transparent box". */
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Windows acrylic supplies the blur; drop the painted scrim so it shows. */
+:root.acrylic {
+  --surface: rgba(10, 14, 16, 0.5);
 }
 
 /* Shared pointer-down feedback for every interactive notch control. */

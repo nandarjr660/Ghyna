@@ -1,5 +1,6 @@
 <script lang="ts">
   import Bars from "./Bars.svelte";
+  import { sampleGlow } from "./cover-glow";
   import { cleanTrack, currentLine, type Lyrics } from "./lyrics";
   import { formatTime, next, positionAt, prev, seek, toggle, type NowPlaying } from "./media";
 
@@ -28,9 +29,9 @@
 
   const lineIndex = $derived(lyrics?.synced ? currentLine(lyrics.synced, pos) : -1);
 
-  // Ambient light follows the cover: sample one colourful average per artwork and
-  // use it for the lyrics glow. Monochrome art, or remote art the canvas cannot
-  // read, falls back to the blue default.
+  // Ambient light follows the cover: one hue sampled from the artwork, kept
+  // faint so the panel still reads as smoked glass. Monochrome art, or remote
+  // art the canvas cannot read, falls back to the green default.
   let glow = $state<string | null>(null);
   let glowSoft = $state<string | null>(null);
   let sampled = "";
@@ -50,68 +51,10 @@
     glowSoft = null;
     void sampleGlow(art).then((rgb) => {
       if (sampled !== art || !rgb) return;
-      glow = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.6)`;
-      glowSoft = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.34)`;
+      glow = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.3)`;
+      glowSoft = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.14)`;
     });
   });
-
-  function sampleGlow(src: string): Promise<[number, number, number] | null> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        try {
-          const size = 32;
-          const canvas = document.createElement("canvas");
-          canvas.width = size;
-          canvas.height = size;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return resolve(null);
-          ctx.drawImage(img, 0, 0, size, size);
-          const data = ctx.getImageData(0, 0, size, size).data;
-          let r = 0;
-          let g = 0;
-          let b = 0;
-          let weight = 0;
-          for (let i = 0; i < data.length; i += 4) {
-            const pr = data[i];
-            const pg = data[i + 1];
-            const pb = data[i + 2];
-            const max = Math.max(pr, pg, pb);
-            const min = Math.min(pr, pg, pb);
-            const saturation = max ? (max - min) / max : 0;
-            const luminance = (max + min) / 510;
-            // Greys and near-black/near-white pixels only dull the glow.
-            const w =
-              Math.max(0, saturation - 0.12) *
-              Math.max(0, 1 - Math.abs(luminance - 0.45) * 1.6);
-            if (w <= 0) continue;
-            r += pr * w;
-            g += pg * w;
-            b += pb * w;
-            weight += w;
-          }
-          if (!weight) return resolve(null);
-          r /= weight;
-          g /= weight;
-          b /= weight;
-          // Dark covers give a glow too faint to see; lift the colour until it reads.
-          const peak = Math.max(r, g, b);
-          const lift = peak > 0 ? Math.min(2.4, 150 / peak) : 1;
-          resolve([
-            Math.min(255, Math.round(r * lift)),
-            Math.min(255, Math.round(g * lift)),
-            Math.min(255, Math.round(b * lift)),
-          ]);
-        } catch {
-          // Tainted canvas (remote art without CORS headers).
-          resolve(null);
-        }
-      };
-      img.onerror = () => resolve(null);
-      img.src = src;
-    });
-  }
 
   // Keep the current line in the middle of the panel.
   let panel = $state<HTMLElement>();
@@ -162,9 +105,15 @@
     </div>
 
     <div class="controls">
-      <button class="lyrics-chip" class:on={withLyrics} onclick={onLyrics} title={withLyrics ? "Sembunyikan lirik" : "Tampilkan lirik"} aria-label="Lirik">
-        <svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z" /><path d="M8 9h8M8 12h5" /></svg>
-        <span>Lirik</span>
+      <button class="lyrics-chip" class:on={withLyrics} onclick={onLyrics} title={withLyrics ? "Sembunyikan lirik" : "Tampilkan lirik"} aria-label="Lirik" aria-pressed={withLyrics}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <g fill="none">
+            <path fill="currentColor" fill-rule="evenodd" opacity="0.2" d="M18.32 17.43c.9 0 1.36 0 1.73-.1a3 3 0 0 0 2.15-2.14c.1-.37.1-.82.1-1.73V9.72c0-2.83 0-4.24-.88-5.12s-2.3-.88-5.12-.88H7.7c-2.82 0-4.24 0-5.12.88S1.7 6.9 1.7 9.72v3.74c0 .9 0 1.36.1 1.73a3 3 0 0 0 2.15 2.15c.37.1.82.1 1.73.1h.56a3 3 0 0 1 1.12.34c.12.06.24.14.48.3l.9.58c1.58 1.02 2.37 1.53 3.26 1.53s1.68-.5 3.26-1.53l.9-.59l.48-.3a3 3 0 0 1 1.12-.32c.13-.02.28-.02.56-.02M15.34 7.28a2.14 2.14 0 1 1 0 4.28a2.14 2.14 0 0 1 0-4.28M10.6 9.42a2.14 2.14 0 1 0-4.28 0a2.14 2.14 0 0 0 4.28 0" clip-rule="evenodd" />
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.88 17.43c1.32 0 1.98 0 2.5-.2a3 3 0 0 0 1.71-1.71c.2-.53.2-1.18.2-2.5v-3.3c0-2.83 0-4.24-.87-5.12c-.88-.88-2.3-.88-5.12-.88H7.7c-2.82 0-4.24 0-5.12.88S1.7 6.9 1.7 9.72v3.25c0 1.36 0 2.05.22 2.59a3 3 0 0 0 1.66 1.66c.54.21 1.22.21 2.59.21c.63 0 .94 0 1.24.06a3 3 0 0 1 1.16.51c.24.18.46.41.88.87l.15.16c.88.96 1.32 1.44 1.85 1.6a2 2 0 0 0 1.12 0c.53-.14.97-.62 1.87-1.56l.24-.26c.41-.43.62-.65.85-.82a3 3 0 0 1 1.18-.5c.28-.06.58-.06 1.17-.06" />
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.6 9.42a2.13 2.13 0 0 0-2.14-2.14a2.14 2.14 0 1 0 2.14 2.14m6.87 0a2.13 2.13 0 0 0-2.14-2.14a2.14 2.14 0 1 0 2.14 2.14" />
+            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.6 9.45c.04.55.15 1.97-.35 2.88c-.59 1.09-1.4 1.69-2.47 1.7m9.69-4.58c.05.55.15 1.97-.34 2.87c-.6 1.08-1.4 1.68-2.48 1.7" />
+          </g>
+        </svg>
       </button>
       <button class="icon" onclick={prev} aria-label="Sebelumnya">
         <svg viewBox="0 0 24 24" class="solid"><path d="M6 6h2v12H6zM9.5 12 18 18V6z" /></svg>
@@ -223,18 +172,19 @@
     justify-content: center;
     gap: 6px;
   }
-  /* Ambient light on the lyrics page, tinted by the cover art. */
-  .player.split::before {
+  /* Ambient light on the player page (plain and lyrics), tinted by the cover. */
+  .player::before {
     content: "";
     position: absolute;
     inset: 0;
+    /* Ambient light rises from below the page and is tinted by the cover. */
     background:
-      radial-gradient(62% 95% at 10% 0%, var(--lyric-glow, rgba(96, 150, 255, 0.55)), transparent 72%),
-      radial-gradient(58% 85% at 94% 100%, var(--lyric-glow-soft, rgba(142, 108, 255, 0.32)), transparent 74%);
+      radial-gradient(72% 94% at 50% 106%, var(--lyric-glow, rgba(143, 230, 180, 0.34)), transparent 72%),
+      radial-gradient(56% 78% at 92% 2%, var(--lyric-glow-soft, rgba(143, 208, 232, 0.18)), transparent 74%);
     filter: blur(14px);
     pointer-events: none;
   }
-  .player.split > * {
+  .player > * {
     position: relative;
   }
 
@@ -404,30 +354,22 @@
     left: 0;
     display: flex;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    width: 20px;
     height: 20px;
-    padding: 0 7px;
+    padding: 0;
     border: 0;
     border-radius: var(--radius-xs);
     background: rgba(255, 255, 255, 0.07);
     box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
     color: var(--muted);
-    font-family: var(--font-mono);
-    font-size: 8.5px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
     cursor: pointer;
     transition: color 0.18s var(--ease-out), background 0.18s var(--ease-out);
   }
   .lyrics-chip svg {
-    width: 11px;
-    height: 11px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.9;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    display: block;
+    width: 13px;
+    height: 13px;
   }
   .lyrics-chip:hover {
     color: var(--text);

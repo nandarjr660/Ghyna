@@ -138,10 +138,13 @@ export async function searchCity(name: string): Promise<Place[]> {
   const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${q}`);
   if (!res.ok) return [];
   const { results = [] } = await res.json();
+  // Open-Meteo only returns the province, which left several "Pengasinan" rows
+  // indistinguishable (Depok, Bekasi, Bogor). Lead with the regency/city so the
+  // right one can be picked, and keep the village/district when present.
   return results.map((r: any) => ({
     name: r.name,
     latitude: r.latitude,
     longitude: r.longitude,
-    detail: [r.admin1, r.country].filter(Boolean).join(", "),
+    detail: [r.admin4 ?? r.admin3, r.admin2, r.admin1].filter(Boolean).join(", "),
   }));
 }

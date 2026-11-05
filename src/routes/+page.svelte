@@ -9,8 +9,10 @@ import { listen } from "@tauri-apps/api/event";
   import { cubicOut } from "svelte/easing";
   import { fade } from "svelte/transition";
   import ClipboardPage, { type ClipEntry } from "$lib/ClipboardPage.svelte";
+import { sampleGlow } from "$lib/cover-glow";
   import Island from "$lib/Island.svelte";
   import Mirror from "$lib/Mirror.svelte";
+import NotifPage, { type NotifEntry } from "$lib/NotifPage.svelte";
   import Peek, { type PeekData } from "$lib/Peek.svelte";
   import Player from "$lib/Player.svelte";
   import ShelfPage from "$lib/ShelfPage.svelte";
@@ -50,15 +52,18 @@ import { listen } from "@tauri-apps/api/event";
     shelf: { w: 400, h: 132, r: 30, e: 21 },
     clipboard: { w: 400, h: 132, r: 30, e: 21 },
     weather: { w: 400, h: 132, r: 30, e: 21 },
+    notif: { w: 400, h: 132, r: 30, e: 21 },
     mirror: { w: 400, h: 132, r: 30, e: 21 },
   };
 
-  // Pages of the open notch, switched with the dots or the mouse wheel.
-  const ALL_PAGES = ["now", "weather", "pomodoro", "water", "todo", "shelf", "clipboard"] as const;
-  type PageName = (typeof ALL_PAGES)[number];
+  // Pages of the open notch, switched with the dots or the mouse wheel. The
+  // notification page exists only while it has entries to show, the same way
+  // the player only appears with music.
+  const BASE_PAGES = ["now", "weather", "pomodoro", "water", "todo", "shelf", "clipboard"] as const;
+  const WITH_NOTIF = ["now", "notif", "weather", "pomodoro", "water", "todo", "shelf", "clipboard"] as const;
+  type PageName = (typeof WITH_NOTIF)[number];
   // The water reminder can be paused; the Air page stays available for logging.
   let waterEnabled = $state(true);
-  const pages = ALL_PAGES;
 
   async function toggleWater() {
     const next = !waterEnabled;
@@ -105,17 +110,29 @@ const eyeState = $derived(
   power.percent <= 20 ? "low20" :
   "normal"
 );
-// The edge glow borrows the eyes' dominant colour, so the notch and its
-// expression feel like one object instead of a green frame around blue eyes.
-const eyeGlow = $derived(
-  eyeState === "charging"
-    ? "rgba(143, 208, 232, 0.8)"
-    : eyeState === "low15"
-    ? "rgba(255, 107, 127, 0.8)"
-    : eyeState === "low20"
-    ? "rgba(240, 192, 112, 0.78)"
-    : "rgba(255, 138, 107, 0.8)"
-);
+  // The frost takes ONE hue from the cover, on every surface Ghyna shows:
+  // closed notch, every page, and the peeks. The hue follows the album, the
+  // artwork itself never does — a blurred copy behind the pane produced a
+  // multi-colour smear that read as a stain, a single faint tint keeps glass.
+  let artTint = $state<string | null>(null);
+  let tintedArt = "";
+  $effect(() => {
+    const art = media?.art;
+    if (!art) {
+      if (tintedArt) {
+        tintedArt = "";
+        artTint = null;
+      }
+      return;
+    }
+    if (art === tintedArt) return;
+    tintedArt = art;
+    artTint = null;
+    void sampleGlow(art).then((rgb) => {
+      if (tintedArt !== art || !rgb) return;
+      artTint = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.34)`;
+    });
+  });
   let inUse = $state<InUse>({ camera: [], mic: [] });
   let micMuted = $state(false);
   let weather = $state<Weather | null>(null);
@@ -141,12 +158,11 @@ const eyeGlow = $derived(
               ? { key: "hot", icon: "sun", tone: "#f0c070", title: "Panas yang berlebihan", detail: "Hari panas banget, minum air yg banyak ya" }
               : w.temp <= 21
                 ? { key: "cold", icon: "wind", tone: "#8fd0e8", title: "Hari cukup dingin", detail: "Pakai jaket biar tidak kedinginan ya" }
-                : { key: "clear", icon: "sun", tone: "#ff8a6b", title: "Cerah seharian", detail: "Jangan lupa sunscreen sebelum keluar ya" };
+                : { key: "clear", icon: "sun", tone: "#8fe6b4", title: "Cerah seharian", detail: "Jangan lupa sunscreen sebelum keluar ya" };
     if (tip.key === lastWeatherTip) return;
     lastWeatherTip = tip.key;
     showPeek({ kind: "weather-tip", ...tip });
   }
-  let page = $state(0);
   // -1 = moving left, 1 = moving right; drives the page slide direction.
   let pageDir = $state(1);
   // Typing a task: the notch holds keyboard focus and stays open.
@@ -176,6 +192,54 @@ const eyeGlow = $derived(
   // click (notification, screenshot) stays put while the cursor is on it.
   let peekTimer: ReturnType<typeof setTimeout>;
   let peekQueue: PeekData[] = [];
+
+  // Notification history. A mirrored toast lives a minute, then drops itself. System
+  // toasts are skipped: those come from Windows itself (battery, network,
+  // Defender, the immersive control panel) and are already handled elsewhere.
+  const NOTIF_TTL = 60_000;
+  const NOTIF_MAX = 8;
+  const SYSTEM_TOAST = /^(windows\.|notifyicongeneratedaumid_)/i;
+  let notifHistory = $state<NotifEntry[]>([]);
+  const notifTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  let notifSeq = 0;
+  // The page exists only while something is stored; otherwise the dots skip it.
+  const pages = $derived<PageName[]>(notifHistory.length ? [...WITH_NOTIF] : [...BASE_PAGES]);
+  // The open page is tracked by name: the list grows and shrinks, so an index
+  // would point at a different page after the notification entry expires.
+  let pageName = $state<PageName>("now");
+  const page = $derived(Math.max(0, pages.indexOf(pageName)));
+  $effect(() => {
+    if (!pages.includes(pageName)) pageName = "now";
+  });
+  function systemToast(p: PeekData) {
+    const aumid = (p.aumid ?? "").toLowerCase();
+    if (!aumid) return false;
+    if (SYSTEM_TOAST.test(aumid)) return true;
+    return aumid.includes("immersivecontrolpanel");
+  }
+  function remember(p: PeekData) {
+    if (systemToast(p)) return;
+    const key = String(notifSeq++);
+    const entry: NotifEntry = {
+      key,
+      id: p.id ?? null,
+      app: p.app || "Aplikasi",
+      title: p.title || "",
+      body: p.body || "",
+      icon: p.icon ?? null,
+      photo: p.photo ?? null,
+      aumid: p.aumid ?? "",
+      at: Date.now(),
+    };
+    notifHistory = [entry, ...notifHistory].slice(0, NOTIF_MAX);
+    notifTimers.set(
+      key,
+      setTimeout(() => {
+        notifHistory = notifHistory.filter((n) => n.key !== key);
+        notifTimers.delete(key);
+      }, NOTIF_TTL),
+    );
+  }
   const clickable = (p: PeekData | null) =>
     ["notification", "screenshot", "update", "download-done", "meeting"].includes(p?.kind ?? "");
   const peekLength = (p: PeekData) =>
@@ -478,7 +542,7 @@ const eyeGlow = $derived(
   // Tell Rust the target size right away, so the growing notch already counts as "inside".
   // Tucked, the notch is a thin line, so whatever is underneath (like browser tabs) stays clickable.
   $effect(() => {
-    invoke("set_notch_size", { w: size.w, h: size.h });
+    invoke("set_notch_size", { w: size.w, h: size.h, r: size.r });
   });
 
   // A clock only while something on screen moves: playback position or the
@@ -502,12 +566,12 @@ const eyeGlow = $derived(
 
   function turnPage(step: number) {
     pageDir = step > 0 ? 1 : -1;
-    page = (page + step + pages.length) % pages.length;
+    pageName = pages[(page + step + pages.length) % pages.length];
   }
   function jumpPage(index: number) {
     if (index === page) return;
     pageDir = index > page ? 1 : -1;
-    page = index;
+    pageName = pages[index];
   }
 
   // Pages cross-fade while the old one slips away and the new one settles in
@@ -584,6 +648,13 @@ const eyeGlow = $derived(
   }
 
   onMount(() => {
+    // Real OS frost is only visible if the acrylic call succeeded at startup;
+    // without it the opaque fallback keeps the notch readable.
+    invoke<boolean>("acrylic_enabled")
+      .then((on) => {
+        if (on) document.documentElement.classList.add("acrylic");
+      })
+      .catch(() => {});
     const onError = (e: ErrorEvent) => logJs(`${e.message} (${String(e.filename).split("/").pop()}:${e.lineno})`);
     const onUnhandledRejection = (e: PromiseRejectionEvent) => logJs(`unhandled: ${e.reason?.stack ?? e.reason}`);
     window.addEventListener("error", onError);
@@ -628,7 +699,7 @@ const eyeGlow = $derived(
         if (p.paths?.length) shelf.add(p.paths);
       } else if (p.type === "enter" || p.type === "over") {
         dropping = true;
-        page = pages.indexOf("shelf");
+        pageName = "shelf";
         dropTarget = zoneAt(p);
       } else if (p.type === "drop") {
         dropping = false;
@@ -762,6 +833,7 @@ const eyeGlow = $derived(
       // A focus session keeps app notifications quiet. Ghyna's own status peeks
       // (battery, network, timers and so on) still come through.
       if (e.payload.kind === "notification" && pomo.running && pomo.phase === "focus") return;
+      if (e.payload.kind === "notification") remember(e.payload);
       showPeek(e.payload);
       // New screenshots also land on the shelf.
       if (e.payload.kind === "screenshot") shelf.add([e.payload.path]);
@@ -899,7 +971,7 @@ const eyeGlow = $derived(
   style:--h="{size.h}px"
   style:--r="{size.r}px"
   style:--e="{size.e}px"
-  style:--eye-glow={eyeGlow}
+  style:--art-tint={artTint}
   onwheel={wheel}
   onpointerdown={pressDown}
   onpointermove={pressMove}
@@ -907,13 +979,15 @@ const eyeGlow = $derived(
   onpointerleave={pressUp}
 >
   <span class="frost" aria-hidden="true">
-    {#if media?.art}<i style:background-image={`url(${media.art})`}></i>{/if}
+    <i></i>
   </span>
-  <span class="eye-wash" aria-hidden="true"></span>
   {#if pinned && paged && !mirror}<i class="pin" title="Terkunci terbuka · tekan lama untuk melepas"></i>{/if}
 
   <div class="layer rest" class:on={view === "rest"}>
     {#if weather && idleStage === "clock"}<span class="weather">{weather.icon}<b>{weather.temp}°</b></span>{/if}
+    {#if idleStage === "clock" && !power.charging}
+      <span class="battery" class:low={power.percent <= 15}>{power.percent}%</span>
+    {/if}
     {#if idleStage !== "clock"}
       <div
         class="eyes"
@@ -932,10 +1006,10 @@ const eyeGlow = $derived(
         style:--eye-grad={eyeState === "charging"
           ? "linear-gradient(to bottom, #ffffff, #8fd0e8)"
           : eyeState === "low15"
-          ? "linear-gradient(to bottom, #ffffff, #ff6b7f)"
+          ? "linear-gradient(to bottom, #ffffff, #ff4d4d)"
           : eyeState === "low20"
-          ? "linear-gradient(to bottom, #ffffff, #f0c070)"
-          : "linear-gradient(to bottom, #ffe1d8, #ff8a6b)"}
+          ? "linear-gradient(to bottom, #ffffff, #ff9f00)"
+          : "linear-gradient(to bottom, #e3ffe6, #42c763)"}
         in:fade={{ duration: 400 }}
       >
         <i></i><i></i>
@@ -992,10 +1066,10 @@ const eyeGlow = $derived(
         style:--eye-grad={eyeState === "charging"
           ? "linear-gradient(to bottom, #ffffff, #8fd0e8)"
           : eyeState === "low15"
-          ? "linear-gradient(to bottom, #ffffff, #ff6b7f)"
+          ? "linear-gradient(to bottom, #ffffff, #ff4d4d)"
           : eyeState === "low20"
-          ? "linear-gradient(to bottom, #ffffff, #f0c070)"
-          : "linear-gradient(to bottom, #ffe1d8, #ff8a6b)"}
+          ? "linear-gradient(to bottom, #ffffff, #ff9f00)"
+          : "linear-gradient(to bottom, #e3ffe6, #42c763)"}
         in:fade={{ duration: 300 }}
       >
         <i></i><i></i>
@@ -1134,6 +1208,8 @@ const eyeGlow = $derived(
       >
         {#if pages[page] === "weather"}
           <WeatherPage weather={weather} />
+        {:else if pages[page] === "notif"}
+          <NotifPage items={notifHistory} ttl={NOTIF_TTL} />
         {:else if pages[page] === "pomodoro"}
           <TimerPage {pomo} now={nowMs} />
         {:else if pages[page] === "water"}
@@ -1193,8 +1269,9 @@ const eyeGlow = $derived(
      --spring: var(--ease-out);
     /* Overshoot 11% supaya pantulan jelas terasa (sebelumnya 1%, tak terlihat). */
     --resize-spring: cubic-bezier(0.2, 1.6, 0.3, 1);
-    /* Smoked glass: a translucent pane with a lit top edge. The frost layer
-       below it carries the colour, so the pane itself stays quiet. */
+    /* Smoked glass lit from below: the sheen and the lit edge sit on the bottom
+       rim, so the pane looks like it is resting on a light source. The frost
+       layer below it carries the colour, the pane itself stays quiet. */
     --edge: var(--line);
     position: absolute;
     top: 0;
@@ -1203,30 +1280,24 @@ const eyeGlow = $derived(
     height: var(--h);
     transform: translateX(-50%);
     background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 42%),
+      linear-gradient(0deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0) 46%),
       var(--surface);
     -webkit-backdrop-filter: blur(18px) saturate(150%);
     backdrop-filter: blur(18px) saturate(150%);
     border-radius: 0 0 var(--r) var(--r);
     box-shadow:
-      inset 0 1px 0 var(--edge-top),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.05),
-      0 0 0 0.5px var(--edge),
       0 2px 5px rgba(0, 0, 0, 0.32),
       0 18px 40px -20px rgba(0, 0, 0, 0.95);
   }
   .notch.open {
     box-shadow:
-      inset 0 1px 0 var(--edge-top),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.06),
-      0 0 0 0.5px var(--edge),
       0 3px 8px rgba(0, 0, 0, 0.34),
       0 26px 56px -22px rgba(0, 0, 0, 1);
   }
 
-  /* Frost, in two layers: a heavily blurred copy of the cover underneath, then
-     a scrim and grain on top. The scrim keeps 11px labels readable whatever
-     the wallpaper or artwork is doing. */
+  /* Frost, in two layers: one cover-derived hue pooling at the bottom edge
+     (every state — closed notch, pages, peeks), then a scrim and grain on top.
+     The scrim keeps 11px labels readable whatever the wallpaper is doing. */
   .frost {
     position: absolute;
     inset: 0;
@@ -1237,20 +1308,23 @@ const eyeGlow = $derived(
   }
   .frost i {
     position: absolute;
-    inset: -38%;
+    inset: 0;
     z-index: 0;
-    background-position: center;
-    background-size: cover;
-    filter: blur(34px) saturate(165%);
-    opacity: 0.42;
-    transform: scale(1.05);
+    /* ONE hue lifted from the cover, pooling towards the lit bottom edge. No
+       artwork underneath: the pane stays smoked glass instead of a smear. */
+    background: radial-gradient(
+      120% 100% at 50% 108%,
+      var(--art-tint, rgba(143, 230, 180, 0.16)),
+      transparent 70%
+    );
   }
   .frost::before {
     content: "";
     position: absolute;
     inset: 0;
     z-index: 1;
-    background: linear-gradient(180deg, rgba(8, 12, 14, 0.34), rgba(8, 12, 14, 0.62));
+    /* Lit from below, so the scrim is deepest at the top edge. */
+    background: linear-gradient(0deg, rgba(8, 12, 14, 0.28), rgba(8, 12, 14, 0.68));
   }
   .frost::after {
     content: "";
@@ -1261,31 +1335,6 @@ const eyeGlow = $derived(
     background-size: 140px 140px;
     opacity: 0.14;
     mix-blend-mode: overlay;
-  }
-
-  /* A hairline glass reflection: one pixel of eye-tinted light along the
-     inside edge, with no bloom or haze. */
-  .eye-wash {
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    overflow: hidden;
-    background:
-      linear-gradient(var(--eye-glow), var(--eye-glow)) left top / 1px 100% no-repeat,
-      linear-gradient(var(--eye-glow), var(--eye-glow)) right top / 1px 100% no-repeat,
-      linear-gradient(var(--eye-glow), var(--eye-glow)) center bottom / 100% 1px no-repeat;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 35%);
-    mask-image: linear-gradient(to bottom, transparent 0%, #000 35%);
-    pointer-events: none;
-    z-index: 0;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  .notch.idle .eye-wash {
-    opacity: 0.7;
-  }
-  .notch.tucked .eye-wash {
-    opacity: 0;
   }
 
   /* "Ears": concave fillets that blend the notch into the screen's top edge. */
@@ -1362,6 +1411,19 @@ const eyeGlow = $derived(
   .weather b {
     font-size: 11px;
     font-weight: 600;
+  }
+  /* Right side of the idle notch: the battery reading mirrors the weather on the
+     left, so the clock sits between two small facts instead of floating. */
+  .battery {
+    position: absolute;
+    right: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+  }
+  .battery.low {
+    color: var(--danger);
   }
   /* The page content settles in from the direction you are travelling. */
   .page-layer {

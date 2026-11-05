@@ -571,8 +571,8 @@ function addFiles() {
     50% { opacity: 1; transform: scale(1.08); }
   }
   @keyframes shelf-zone-pulse {
-    0%, 100% { box-shadow: 0 0 0 rgba(255, 138, 107, 0); }
-    50% { box-shadow: 0 0 22px rgba(255, 138, 107, .14); }
+    0%, 100% { box-shadow: 0 0 0 rgba(143, 230, 180, 0); }
+    50% { box-shadow: 0 0 22px rgba(143, 230, 180, .14); }
   }
   @keyframes shelf-attach {
     from { opacity: 0; transform: translateY(-8px) scale(.94); }

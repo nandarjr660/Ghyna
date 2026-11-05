@@ -375,8 +375,8 @@
     position: relative;
     min-height: 100vh;
     background:
-      radial-gradient(120% 52% at 50% -12%, rgba(255, 138, 107, 0.07), transparent 68%),
-      linear-gradient(180deg, #0d1315 0%, var(--surface-solid) 46%);
+      radial-gradient(120% 52% at 50% 112%, rgba(143, 230, 180, 0.08), transparent 68%),
+      linear-gradient(0deg, #0d1315 0%, var(--surface-solid) 46%);
   }
   .page::before {
     content: "";
@@ -405,7 +405,7 @@
     background: rgba(11, 16, 18, 0.72);
     -webkit-backdrop-filter: blur(20px) saturate(150%);
     backdrop-filter: blur(20px) saturate(150%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 -1px 0 var(--line);
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08), 0 1px 0 var(--line);
   }
   .brand {
     display: flex;
@@ -454,12 +454,12 @@
     padding: 14px 16px 22px;
   }
   .card {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012) 42%),
+    background: linear-gradient(0deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.012) 46%),
       var(--surface-raised);
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
     padding: 0 14px 4px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 12px 26px -22px #000;
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08), 0 12px 26px -22px #000;
   }
   .head {
     display: flex;

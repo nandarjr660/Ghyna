@@ -52,7 +52,7 @@
       case "mic":
         return p.muted
           ? { icon: "micOff", tone: "#ff6b7f", title: "Mikrofon dimatikan" }
-          : { icon: "mic", tone: "#ff8a6b", title: "Mikrofon aktif" };
+          : { icon: "mic", tone: "#8fe6b4", title: "Mikrofon aktif" };
       case "caps":
         return { icon: "caps", tone: p.on ? "#8fd0e8" : undefined, title: "Caps Lock", value: p.on ? "ON" : "OFF" };
       case "language":
@@ -81,17 +81,17 @@
         return p.state === "checking"
           ? { icon: "sync", tone: "#8fd0e8", title: "Mengecek update…", detail: `Ghyna v${p.version}` }
           : p.state === "latest"
-            ? { icon: "done", tone: "#ff8a6b", title: "Sudah versi terbaru", detail: `Ghyna v${p.version}` }
+            ? { icon: "done", tone: "#8fe6b4", title: "Sudah versi terbaru", detail: `Ghyna v${p.version}` }
             : p.state === "dev"
               ? { icon: "code", title: "Versi pengembang", detail: "Update lewat build, bukan updater" }
               : { icon: "alert", tone: "#ff6b7f", title: "Gagal mengecek update", detail: "Cek koneksi internet" };
       case "camera":
-        return { icon: "camera", tone: "#ff8a6b", title: "Kamera dipakai", detail: p.app };
+        return { icon: "camera", tone: "#8fe6b4", title: "Kamera dipakai", detail: p.app };
       case "mic-in-use":
         return { icon: "mic", tone: "#f0c070", title: "Mikrofon dipakai", detail: p.app };
       case "timer":
         return p.phase === "break"
-          ? { icon: "timer", tone: "#ff8a6b", title: "Waktunya istirahat", detail: "Sesi fokus selesai" }
+          ? { icon: "timer", tone: "#8fe6b4", title: "Waktunya istirahat", detail: "Sesi fokus selesai" }
           : { icon: "timer", tone: "#ff6b7f", title: "Istirahat selesai", detail: "Siap fokus lagi?" };
       case "water":
         return {
@@ -155,7 +155,7 @@
 {:else if peek.kind === "download-done"}
   <!-- A download finished: click opens it. -->
   <button class="note" onclick={() => onOpen?.()}>
-    <span class="icon" style:color="#ff8a6b" style:background="#ff8a6b22">
+    <span class="icon" style:color="#8fe6b4" style:background="#8fe6b422">
       <svg viewBox="0 0 24 24"><path d={ICONS.done} /></svg>
     </span>
     <div class="text">
