@@ -117,14 +117,19 @@
     height: 22px;
   }
   .title {
+    font-family: var(--font-display);
     font-size: 15px;
     font-weight: 600;
+    letter-spacing: 0.015em;
     color: var(--accent);
   }
   .count {
     flex: 1;
-    font-size: 12.5px;
-    color: rgba(255, 255, 255, 0.42);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
   button {
@@ -138,18 +143,22 @@
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    height: 24px;
-    padding: 0 10px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 8px;
-    color: rgba(255, 255, 255, 0.52);
-    font-size: 11px;
-    font-weight: 500;
+    height: 22px;
+    padding: 0 9px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 0 0 0.5px var(--line);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     transition:
-      border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      color 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      background 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+      background var(--motion-ui) var(--ease-out),
+      color var(--motion-ui) var(--ease-out),
+      transform var(--motion-fast) var(--ease-out);
   }
   .add svg {
     width: 10px;
@@ -160,23 +169,22 @@
     stroke-linecap: round;
   }
   .add:hover {
-    border-color: rgba(255, 255, 255, 0.38);
-    background: rgba(255, 255, 255, 0.07);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.13);
+    color: var(--text);
   }
   .add:active, .save:active, .check:active, .remove:active { transform: scale(.97); }
 
-  .progress i {
-    background: var(--accent);
-    transition: width 220ms cubic-bezier(0.23, 1, 0.32, 1);
-  }
   .progress {
     flex: none;
-    height: 2.5px;
+    height: 2px;
     margin-top: 12px;
     overflow: hidden;
-    border-radius: 1px;
-    background: var(--accent-soft);
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.13);
+  }
+  .progress i {
+    background: var(--accent);
+    transition: width 220ms var(--ease-out);
   }
 
   .form {
@@ -185,16 +193,17 @@
     gap: 6px;
     height: 28px;
     margin-top: 9px;
-    animation: form-in 180ms cubic-bezier(0.23, 1, 0.32, 1) both;
+    animation: form-in var(--motion-ui) var(--ease-out) both;
   }
   .form input {
     min-width: 0;
     height: 28px;
     padding: 0 9px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.04);
-    color: #fff;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 0 0 0.5px var(--line);
+    color: var(--text);
     font: inherit;
     font-size: 11px;
     color-scheme: dark;
@@ -205,10 +214,12 @@
   .form .time {
     width: 78px;
     padding: 0 4px;
+    font-family: var(--font-mono);
     font-size: 10px;
+    font-variant-numeric: tabular-nums;
   }
   .form input:focus {
-    outline: 1px solid rgba(255, 255, 255, 0.55);
+    outline: 1.5px solid var(--accent-line);
     outline-offset: 0;
   }
   .save {
@@ -217,10 +228,11 @@
     width: 26px;
     height: 26px;
     padding: 0;
-    border-radius: 7px;
+    border-radius: var(--radius-xs);
     background: var(--accent);
     color: var(--accent-ink);
-    transition: background 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.24);
+    transition: background var(--motion-ui) var(--ease-out), transform var(--motion-fast) var(--ease-out);
   }
   .save:hover {
     background: var(--accent-strong);
@@ -250,7 +262,7 @@
     gap: 9px;
     min-height: 26px;
     font-size: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--line);
   }
   li:first-child {
     border-top: 0;
@@ -262,28 +274,28 @@
     width: 16px;
     height: 16px;
     padding: 0;
-    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    border: 1.5px solid rgba(255, 255, 255, 0.28);
     border-radius: 50%;
     transition:
-      background 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+      background var(--motion-ui) var(--ease-out),
+      border-color var(--motion-ui) var(--ease-out),
+      transform var(--motion-fast) var(--ease-out);
   }
   .check:hover {
-    border-color: rgba(255, 255, 255, 0.78);
+    border-color: var(--accent-line);
   }
   .check svg {
     width: 9px;
     height: 9px;
     fill: none;
-    stroke: #000;
+    stroke: var(--accent-ink);
     stroke-width: 2.6;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
   .done .check {
-    border-color: #fff;
-    background: #fff;
+    border-color: var(--accent);
+    background: var(--accent);
   }
   .label {
     flex: 1;
@@ -293,14 +305,14 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: rgba(255, 255, 255, 0.88);
-    transition: color 160ms cubic-bezier(0.23, 1, 0.32, 1);
+    color: rgba(238, 246, 248, 0.88);
+    transition: color var(--motion-ui) var(--ease-out);
   }
   .label:hover {
-    color: #fff;
+    color: var(--text);
   }
   .done .label {
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(238, 246, 248, 0.36);
     text-decoration: line-through;
   }
   .time-chip {
@@ -308,8 +320,10 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.42);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: -0.01em;
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
   .time-chip svg {
@@ -326,14 +340,14 @@
     width: 18px;
     height: 18px;
     padding: 0;
-    border-radius: 5px;
-    color: rgba(255, 255, 255, 0.36);
+    border-radius: var(--radius-xs);
+    color: var(--muted);
     opacity: 0;
     transition:
-      opacity 150ms cubic-bezier(0.23, 1, 0.32, 1),
-      color 150ms cubic-bezier(0.23, 1, 0.32, 1),
-      background 150ms cubic-bezier(0.23, 1, 0.32, 1),
-      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+      opacity 150ms var(--ease-out),
+      color 150ms var(--ease-out),
+      background 150ms var(--ease-out),
+      transform var(--motion-fast) var(--ease-out);
   }
   .remove svg {
     width: 9px;
@@ -348,8 +362,8 @@
     opacity: 1;
   }
   .remove:hover {
-    background: rgba(255, 255, 255, 0.09);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--text);
   }
 
   .empty {
@@ -359,16 +373,18 @@
     min-height: 66px;
     gap: 4px;
     border-top: 0;
-    color: rgba(255, 255, 255, 0.62);
-    font-size: 12px;
+    color: var(--muted-strong);
+    font-size: 11.5px;
   }
   .empty small {
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.34);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.02em;
+    color: var(--muted);
   }
 
   button:focus-visible {
-    outline: 1.5px solid rgba(255, 255, 255, 0.8);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
   @keyframes form-in {

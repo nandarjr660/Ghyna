@@ -1,6 +1,6 @@
 [package]
 name = "ghyna"
-version = "1.1.12"
+version = "1.1.13"
 description = "Dynamic Island-style notch for Windows"
 authors = ["nandarjr660"]
 edition = "2024"
@@ -18,7 +18,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["tray-icon"] }
+tauri = { version = "2", features = ["protocol-asset", "tray-icon"] }
 tauri-plugin-autostart = "2"
 tauri-plugin-single-instance = "2"
 tauri-plugin-updater = "2"

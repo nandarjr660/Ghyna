@@ -33,6 +33,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 };
 
 mod audio;
+mod bridge;
 mod calls;
 mod clipboard;
 mod downloads;
@@ -41,6 +42,7 @@ mod media;
 mod notifications;
 mod settings;
 mod share;
+mod shelf_drop;
 mod shortcuts;
 mod store;
 mod system;
@@ -529,16 +531,16 @@ fn build_tray(app: &AppHandle) -> tauri::Result<()> {
     let autostart = CheckMenuItem::with_id(
         app,
         "autostart",
-        "Start with Windows",
+        "Mulai bersama Windows",
         true,
         app.autolaunch().is_enabled().unwrap_or(false),
         None::<&str>,
     )?;
-    let settings = MenuItem::with_id(app, "settings", "Settings…", true, None::<&str>)?;
+    let settings = MenuItem::with_id(app, "settings", "Pengaturan…", true, None::<&str>)?;
     let reload = MenuItem::with_id(app, "reload", "Muat ulang notch", true, None::<&str>)?;
     let update =
         MenuItem::with_id(app, "update", format!("Cek update (v{})", env!("CARGO_PKG_VERSION")), true, None::<&str>)?;
-    let quit = MenuItem::with_id(app, "quit", "Exit", true, None::<&str>)?;
+    let quit = MenuItem::with_id(app, "quit", "Keluar", true, None::<&str>)?;
     let menu = Menu::with_items(
         app,
         &[&settings, &autostart, &reload, &update, &PredefinedMenuItem::separator(app)?, &quit],
@@ -627,6 +629,9 @@ pub fn run() {
             store::load_data,
             store::save_data,
             store::shelf_add,
+            store::shelf_discard,
+            store::shelf_gc,
+            bridge::download_state,
             store::open_path,
             notifications::notification_apps,
             notifications::open_app,
@@ -666,6 +671,10 @@ pub fn run() {
             start_eyes_emitter();
             start_mouse_hook();
             allow_camera(&window);
+            // Replaces wry's drop target: it only understands real file paths,
+            // while browsers hand images over as temporary files.
+            shelf_drop::install(app.handle());
+            bridge::install(app.handle().clone());
             start_watcher(window);
             media::start(app.handle().clone());
             audio::start(app.handle().clone());
@@ -722,7 +731,7 @@ fn exited_flag() -> std::path::PathBuf {
 }
 
 /// Appends a timestamped line to %APPDATA%\Ghyna\ghyna.log, starting over past 512 KB.
-fn log_line(msg: &str) {
+pub(crate) fn log_line(msg: &str) {
     use std::io::Write;
     let dir = data_dir();
     let path = dir.join("ghyna.log");

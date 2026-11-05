@@ -159,7 +159,7 @@ pub fn open_window(app: &AppHandle) {
         return;
     }
     let _ = WebviewWindowBuilder::new(app, "settings", WebviewUrl::App("settings".into()))
-        .title("Ghyna Settings")
+        .title("Pengaturan Ghyna")
         .inner_size(460.0, 640.0)
         .resizable(false)
         .center()

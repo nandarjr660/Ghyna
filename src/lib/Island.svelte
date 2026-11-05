@@ -53,14 +53,19 @@
     (media?.art ? `background-image:url(${media.art});` : "") + (playing && levels ? `transform:rotate(${angle}deg)` : ""),
   );
 
-  // Real percentage when browser history knows the final size; 0 otherwise
-  // (the meter then waits without pretending to know).
+  // Chrome only writes the final size once a download ends. The companion
+  // extension supplies it live; without it, an unknown total stays unknown
+  // rather than turning into a made-up percentage.
   const downloadProgress = $derived(
     main.kind === "download" && main.download.total > 0
       ? Math.min(1, main.download.bytes / main.download.total)
       : 0,
   );
   const downloadPercent = $derived(Math.round(downloadProgress * 100));
+  // Side chip: the percentage is more useful than the speed once something
+  // else is leading the notch.
+  const sideDownloadPercent = (d: { bytes: number; total: number }) =>
+    d.total > 0 ? `${Math.round(Math.min(1, d.bytes / d.total) * 100)}%` : "…";
 </script>
 
 {#snippet ring(progress: number, rest: boolean)}
@@ -116,23 +121,27 @@
           {:else}
             {bytes(main.download.bytes)}
           {/if}
-          {#if main.download.speed > 0}<span class="dl-speed"> · {bytes(main.download.speed)}/s</span>{/if}
+          {#if main.download.paused}
+            <span class="dl-speed"> · Dijeda</span>
+          {:else if main.download.speed > 0}
+            <span class="dl-speed"> · {bytes(main.download.speed)}/s</span>
+          {/if}
         </span>
       </span>
-      {#if main.download.total > 0}
-        <span
-          class="dl-meter"
-          title="{bytes(main.download.bytes)} dari {bytes(main.download.total)}"
+      <span
+        class="dl-meter"
+        class:waiting={main.download.total === 0}
+        title={main.download.total > 0
+          ? `${bytes(main.download.bytes)} dari ${bytes(main.download.total)}`
+          : "Ukuran akhir belum diketahui"}
+      >
+        <span class="dl-pct">{main.download.total > 0 ? `${downloadPercent}%` : "…"}</span>
+        <span class="dl-bar" aria-hidden="true"
+          ><i
+            style:transform={main.download.total > 0 ? `scaleX(${downloadProgress})` : undefined}
+          ></i></span
         >
-          <span class="dl-pct">{downloadPercent}%</span>
-          <span class="dl-bar" aria-hidden="true"><i style:transform={`scaleX(${downloadProgress})`}></i></span>
-        </span>
-      {:else}
-        <span class="dl-meter waiting" title="Ukuran akhir belum diketahui">
-          <span class="dl-pct">…</span>
-          <span class="dl-bar" aria-hidden="true"><i></i></span>
-        </span>
-      {/if}
+      </span>
     {/if}
   </div>
 
@@ -150,7 +159,16 @@
         <span class="green num">{duration(now - a.call.start)}</span>
       {:else if a.kind === "download"}
         <span class="blue">{@render arrow()}</span>
-        <span class="blue num">{bytes(a.download.speed)}/s</span>
+        <span
+          class="num"
+          class:blue={a.download.total > 0}
+          class:dim={a.download.total === 0}
+          title={a.download.total > 0
+            ? `${sideDownloadPercent(a.download)} dari ${bytes(a.download.total)}`
+            : "Ukuran akhir belum diketahui"}
+        >
+          {sideDownloadPercent(a.download)}
+        </span>
       {/if}
     </div>
   {/each}
@@ -222,17 +240,18 @@
   }
   .cam {
     background: var(--accent);
-    box-shadow: 0 0 6px var(--accent-line);
   }
   .mic {
     background: var(--warning);
-    box-shadow: 0 0 6px rgba(240, 182, 110, 0.4);
+  }
+  .dots i {
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
   }
   .sep {
     flex: none;
     width: 1px;
-    height: 16px;
-    background: rgba(255, 255, 255, 0.18);
+    height: 14px;
+    background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.22), transparent);
   }
   .line {
     flex: none;
@@ -241,14 +260,17 @@
     text-align: center;
     font-size: 12px;
     font-weight: 600;
+    letter-spacing: 0.005em;
     white-space: nowrap;
     overflow: visible;
     text-overflow: clip;
   }
   .clock-line,
   .big {
+    font-family: var(--font-display);
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     font-variant-numeric: tabular-nums;
   }
   .label {
@@ -261,13 +283,14 @@
     text-overflow: ellipsis;
   }
   .num {
-    font-size: 12px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
     white-space: nowrap;
   }
   .side .num {
-    font-size: 11.5px;
+    font-size: 11px;
   }
   .dim {
     color: var(--muted-strong);
@@ -277,7 +300,7 @@
     color: var(--accent);
   }
   .red {
-    color: var(--danger);
+    color: var(--accent);
   }
   .blue {
     color: var(--info);
@@ -296,11 +319,12 @@
     flex: none;
     width: 20px;
     height: 20px;
-    border-radius: 50%;
+    border-radius: 6px;
     display: grid;
     place-items: center;
     background: var(--accent);
     color: var(--accent-ink);
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.28);
   }
   .badge .icon {
     width: 11px;
@@ -312,15 +336,25 @@
     height: 20px;
     padding: 0;
     border: 0;
-    border-radius: 50%;
+    border-radius: 6px;
     display: grid;
     place-items: center;
-    background: rgba(239, 250, 243, 0.12);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 0 0.5px var(--line);
     color: var(--text);
     cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-out), transform var(--motion-fast) var(--ease-out);
+  }
+  .mute:hover {
+    background: rgba(255, 255, 255, 0.17);
+  }
+  .mute:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
   }
   .mute.off {
     background: var(--danger);
+    color: var(--accent-ink);
   }
   .mute .icon {
     width: 11px;
@@ -339,21 +373,21 @@
   }
   .ring circle {
     fill: none;
-    stroke: rgba(240, 128, 128, 0.25);
-    stroke-width: 2.6;
+    stroke: rgba(255, 255, 255, 0.13);
+    stroke-width: 2.4;
   }
   .ring .fill {
-    stroke: var(--danger);
+    stroke: var(--accent);
     stroke-linecap: round;
   }
   .ring.rest circle {
-    stroke: var(--accent-soft);
+    stroke: rgba(255, 255, 255, 0.13);
   }
   .ring.rest .fill {
-    stroke: var(--accent);
+    stroke: var(--info);
   }
   .big.rest {
-    color: var(--text);
+    color: var(--info);
   }
 
   /* The download's right corner: a compact meter, so the row stays balanced
@@ -415,42 +449,59 @@
     gap: 4px;
   }
   .dl-pct {
+    font-family: var(--font-mono);
     font-size: 10.5px;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
     color: var(--accent);
     font-variant-numeric: tabular-nums;
   }
   .dl-meter.waiting .dl-pct {
     color: var(--muted-strong);
-    letter-spacing: 0.06em;
   }
   .dl-bar {
     display: block;
     width: 100%;
-    height: 3px;
-    border-radius: 999px;
-    background: var(--accent-soft);
+    height: 2px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.14);
     overflow: hidden;
   }
   .dl-bar i {
     display: block;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, var(--accent-strong), var(--accent));
+    background: var(--accent);
     border-radius: inherit;
     transform-origin: left center;
     transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
   }
+  /* No total yet: a slow sweep says the download is alive without inventing
+     a percentage the browser has not given us. */
   .dl-meter.waiting .dl-bar i {
+    width: 40%;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
     transform: none;
-    opacity: 0;
+    animation: dl-sweep 1.15s ease-in-out infinite;
+  }
+  @keyframes dl-sweep {
+    from {
+      transform: translateX(-110%);
+    }
+    to {
+      transform: translateX(260%);
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .dl-bar i {
       transition: none;
+    }
+    .dl-meter.waiting .dl-bar i {
+      animation: none;
+      width: 100%;
+      opacity: 0.4;
     }
   }
 
@@ -461,7 +512,7 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: var(--surface-raised) center / cover;
+    background: var(--surface-solid) center / cover;
     box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.25);
   }
   .disc.small {
@@ -473,7 +524,7 @@
     position: absolute;
     inset: 37.5%;
     border-radius: 50%;
-    background: var(--surface);
+    background: var(--surface-solid);
     box-shadow: 0 0 0 1px var(--line);
   }
   /* Stepped in time with the bars (one change every 0.2 s), see Bars.svelte. */

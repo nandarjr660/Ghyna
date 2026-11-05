@@ -2,7 +2,7 @@
 // style 1B): one pill, the main activity first, up to two more at its right end.
 
 export type Call = { app: string; start: number };
-export type Download = { name: string; bytes: number; speed: number; total: number };
+export type Download = { name: string; bytes: number; speed: number; total: number; paused?: boolean };
 
 export type Activity =
   | { kind: "call"; call: Call }

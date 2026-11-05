@@ -30,7 +30,7 @@
     <div class="detail">{title || "Pastikan wajah terlihat jelas"}</div>
     <div class="actions">
       <button class="primary" onclick={onDone}>Selesai</button>
-      {#if link}<button onclick={onJoin}>Join</button>{/if}
+      {#if link}<button onclick={onJoin}>Gabung</button>{/if}
     </div>
   </div>
 </div>
@@ -49,9 +49,10 @@
     flex: none;
     width: 176px;
     height: 99px;
-    border-radius: 14px;
+    border-radius: var(--radius-md);
     overflow: hidden;
-    background: #111;
+    background: var(--surface-solid);
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
   }
   video {
     width: 100%;
@@ -73,21 +74,26 @@
     min-width: 0;
   }
   .title {
+    font-family: var(--font-display);
     font-size: 13px;
     font-weight: 600;
+    letter-spacing: 0.015em;
   }
   .live {
     display: inline-block;
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     margin-right: 6px;
     border-radius: 50%;
-    background: var(--danger);
+    background: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
   }
   .detail {
-    margin-top: 3px;
-    font-size: 11.5px;
-    color: rgba(255, 255, 255, 0.55);
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.02em;
+    color: var(--muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -98,18 +104,41 @@
     margin-top: 12px;
   }
   button {
-    padding: 5px 12px;
+    padding: 5px 11px;
     border: 0;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.14);
-    color: #fff;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 0 0 0.5px var(--line);
+    color: var(--text);
     font: inherit;
-    font-size: 12px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     cursor: pointer;
+    transition: background var(--motion-fast) var(--ease-out);
+  }
+  button:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .err {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    color: var(--muted-strong);
   }
   button.primary {
-    background: #fff;
-    color: #000;
-    font-weight: 600;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 700;
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
+  }
+  button.primary:hover {
+    background: var(--accent-strong);
   }
 </style>

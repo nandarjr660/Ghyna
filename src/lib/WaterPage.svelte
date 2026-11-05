@@ -75,13 +75,18 @@
     height: 22px;
   }
   .title {
-    font-size: 16px;
+    font-family: var(--font-display);
+    font-size: 15px;
     font-weight: 600;
+    letter-spacing: 0.015em;
     color: var(--accent);
   }
   .count {
-    font-size: 12.5px;
-    color: rgba(255, 255, 255, 0.42);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
   .reminder {
@@ -93,16 +98,19 @@
     padding: 0 4px;
     border: 0;
     background: none;
-    color: rgba(255, 255, 255, 0.42);
+    color: var(--muted);
     font: inherit;
-    font-size: 11px;
-    font-weight: 500;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
     cursor: pointer;
     transition: color 0.18s;
   }
   .reminder:hover,
   .reminder.on {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text);
   }
   .reminder i {
     position: relative;
@@ -151,25 +159,29 @@
     gap: 6px;
   }
   .amount {
-    font-family: var(--font-display);
-    font-size: 35px;
+    font-family: var(--font-mono);
+    font-size: 32px;
     font-weight: 600;
     line-height: 1;
     letter-spacing: -0.04em;
     font-variant-numeric: tabular-nums;
   }
   .unit {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.48);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
   }
   .goal {
     margin-left: 6px;
-    font-size: 11.5px;
-    color: rgba(255, 255, 255, 0.38);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
     white-space: nowrap;
   }
   .progress {
-    height: 2.5px;
+    height: 2px;
     margin-top: 10px;
     overflow: hidden;
     border-radius: 1px;
@@ -196,14 +208,16 @@
   .status {
     flex: 1;
     min-width: 0;
-    font-size: 11.5px;
-    color: rgba(255, 255, 255, 0.38);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .status.quiet {
-    color: rgba(255, 255, 255, 0.62);
+    color: var(--muted-strong);
   }
   button {
     font: inherit;
@@ -215,14 +229,18 @@
     justify-content: center;
     gap: 6px;
     height: 28px;
-    padding: 0 14px;
+    padding: 0 12px;
     border: 0;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
     background: var(--accent);
     color: var(--accent-ink);
-    font-size: 11px;
-    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     white-space: nowrap;
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
     transition:
       background var(--motion-ui) var(--ease-out), transform var(--motion-fast) var(--ease-out);
   }
@@ -240,7 +258,7 @@
     transform: scale(0.97);
   }
   button:focus-visible {
-    outline: 1.5px solid var(--accent);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
 
@@ -264,7 +282,7 @@
     background: rgba(255, 255, 255, 0.16);
   }
   .bars i.now {
-    background: rgba(255, 255, 255, 0.72);
+    background: var(--accent);
   }
   .bars i {
     transform-origin: bottom center;
@@ -276,8 +294,10 @@
     display: flex;
     justify-content: space-between;
     margin-top: 5px;
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.32);
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
 

@@ -68,28 +68,30 @@
     gap: 8px;
   }
   .time {
-    font-family: var(--font-display);
-    font-size: 42px;
+    font-family: var(--font-mono);
+    font-size: 38px;
     font-weight: 600;
     line-height: 1;
     letter-spacing: -0.045em;
     font-variant-numeric: tabular-nums;
   }
   .mode {
-    font-size: 12px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.55);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
-  /* Timer focus mode - green accent */
   .mode.green {
     color: var(--accent);
   }
   .progress {
-    height: 2.5px;
+    height: 2px;
     margin-top: 10px;
     overflow: hidden;
     border-radius: 1px;
-    background: var(--accent-soft);
+    background: rgba(255, 255, 255, 0.13);
   }
   .progress i {
     display: block;
@@ -98,19 +100,21 @@
     border-radius: inherit;
     transform-origin: left center;
     transition: transform 0.35s linear;
-    background: linear-gradient(90deg, var(--accent-strong), var(--accent));
+    background: var(--accent);
   }
   .status {
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-top: 10px;
-    font-size: 11.5px;
-    color: rgba(255, 255, 255, 0.4);
+    margin-top: 9px;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
   }
   .status b {
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.78);
+    font-weight: 600;
+    color: var(--muted-strong);
   }
   .side {
     flex: none;
@@ -122,18 +126,21 @@
   .phases {
     display: flex;
     gap: 12px;
-    font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.38);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
   }
   .phases span {
     font-variant-numeric: tabular-nums;
   }
   .phases b {
-    font-weight: 500;
+    font-weight: 600;
     color: inherit;
   }
   .phases .on {
-    color: #fff;
+    color: var(--text);
   }
   .actions {
     display: flex;
@@ -162,11 +169,15 @@
   .main-button {
     height: 29px;
     padding: 0 12px;
-    border-radius: var(--radius-md);
-    background: #fff;
-    color: #000;
-    font-size: 10px;
-    font-weight: 600;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.3);
     transition: background var(--motion-ui) var(--ease-out), transform var(--motion-fast) var(--ease-out);
   }
   .main-button .play {
@@ -174,7 +185,7 @@
     stroke: none;
   }
   .main-button:hover {
-    background: rgba(255, 255, 255, 0.86);
+    background: var(--accent-strong);
   }
   .main-button:active {
     transform: scale(0.97);
@@ -183,24 +194,25 @@
     width: 29px;
     height: 29px;
     padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: rgba(255, 255, 255, 0.58);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 0 0 0.5px var(--line);
+    color: var(--muted-strong);
     transition:
       background 0.18s,
       color 0.18s,
       transform 0.15s;
   }
   .tool:hover {
-    background: rgba(255, 255, 255, 0.06);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.13);
+    color: var(--text);
   }
   .tool:active {
     transform: scale(0.95);
   }
   button:focus-visible {
-    outline: 1.5px solid rgba(255, 255, 255, 0.8);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {

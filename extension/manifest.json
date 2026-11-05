@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Ghyna Download Bridge",
+  "version": "1.0.0",
+  "description": "Kirim progres unduhan Chrome ke notch Ghyna.",
+  "permissions": ["downloads", "alarms"],
+  "host_permissions": ["http://127.0.0.1:47823/*"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

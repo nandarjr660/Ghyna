@@ -48,63 +48,63 @@
       case "volume":
         return { icon: p.muted ? "muted" : "volume", title: p.muted ? "Suara dimatikan" : "Volume", level: p.muted ? 0 : p.level };
       case "brightness":
-        return { icon: "sun", tone: "#f0b66e", title: "Kecerahan", level: p.level };
+        return { icon: "sun", tone: "#f0c070", title: "Kecerahan", level: p.level };
       case "mic":
         return p.muted
-          ? { icon: "micOff", tone: "#f08080", title: "Mikrofon dimatikan" }
-          : { icon: "mic", tone: "#8fe6b4", title: "Mikrofon aktif" };
+          ? { icon: "micOff", tone: "#ff6b7f", title: "Mikrofon dimatikan" }
+          : { icon: "mic", tone: "#ff8a6b", title: "Mikrofon aktif" };
       case "caps":
-        return { icon: "caps", tone: p.on ? "#8fd8c4" : undefined, title: "Caps Lock", value: p.on ? "ON" : "OFF" };
+        return { icon: "caps", tone: p.on ? "#8fd0e8" : undefined, title: "Caps Lock", value: p.on ? "ON" : "OFF" };
       case "language":
         return { icon: "keyboard", title: "Bahasa keyboard", detail: p.locale, value: String(p.locale).split("-")[0].toUpperCase() };
       case "power":
         return p.charging
-          ? { icon: "bolt", tone: "#38bdf8", title: "Mengisi daya", detail: "Charger tersambung", battery: p.percent, charging: true }
+          ? { icon: "bolt", tone: "#8fd0e8", title: "Mengisi daya", detail: "Charger tersambung", battery: p.percent, charging: true }
           : { icon: "battery", title: "Memakai baterai", detail: "Charger dicabut", battery: p.percent, charging: false };
       case "network":
         return p.online
-          ? { icon: "wifi", tone: "#8fd8c4", title: p.wifi ? "Wi-Fi tersambung" : "Internet tersambung", detail: p.name }
-          : { icon: "wifiOff", tone: "#f08080", title: "Koneksi terputus", detail: "Tidak ada internet" };
+          ? { icon: "wifi", tone: "#8fd0e8", title: p.wifi ? "Wi-Fi tersambung" : "Internet tersambung", detail: p.name }
+          : { icon: "wifiOff", tone: "#ff6b7f", title: "Koneksi terputus", detail: "Tidak ada internet" };
       case "output":
         return p.headphones
           ? {
               icon: "headphones",
-              tone: "#8fd8c4",
+              tone: "#8fd0e8",
               title: p.battery != null ? p.name : "Headphone tersambung",
               detail: p.battery != null ? "Tersambung" : p.name,
               battery: p.battery ?? undefined,
             }
           : { icon: "speaker", title: "Audio keluar lewat", detail: p.name };
       case "earbuds-low":
-        return { icon: "headphones", tone: "#f0b66e", title: `Baterai tinggal ${p.battery}%`, detail: p.name, battery: p.battery };
+        return { icon: "headphones", tone: "#f0c070", title: `Baterai tinggal ${p.battery}%`, detail: p.name, battery: p.battery };
       case "update-info":
         return p.state === "checking"
-          ? { icon: "sync", tone: "#8fd8c4", title: "Mengecek update…", detail: `Ghyna v${p.version}` }
+          ? { icon: "sync", tone: "#8fd0e8", title: "Mengecek update…", detail: `Ghyna v${p.version}` }
           : p.state === "latest"
-            ? { icon: "done", tone: "#8fe6b4", title: "Sudah versi terbaru", detail: `Ghyna v${p.version}` }
+            ? { icon: "done", tone: "#ff8a6b", title: "Sudah versi terbaru", detail: `Ghyna v${p.version}` }
             : p.state === "dev"
               ? { icon: "code", title: "Versi pengembang", detail: "Update lewat build, bukan updater" }
-              : { icon: "alert", tone: "#f08080", title: "Gagal mengecek update", detail: "Cek koneksi internet" };
+              : { icon: "alert", tone: "#ff6b7f", title: "Gagal mengecek update", detail: "Cek koneksi internet" };
       case "camera":
-        return { icon: "camera", tone: "#8fe6b4", title: "Kamera dipakai", detail: p.app };
+        return { icon: "camera", tone: "#ff8a6b", title: "Kamera dipakai", detail: p.app };
       case "mic-in-use":
-        return { icon: "mic", tone: "#f0b66e", title: "Mikrofon dipakai", detail: p.app };
+        return { icon: "mic", tone: "#f0c070", title: "Mikrofon dipakai", detail: p.app };
       case "timer":
         return p.phase === "break"
-          ? { icon: "timer", tone: "#8fe6b4", title: "Waktunya istirahat", detail: "Sesi fokus selesai" }
-          : { icon: "timer", tone: "#f08080", title: "Istirahat selesai", detail: "Siap fokus lagi?" };
+          ? { icon: "timer", tone: "#ff8a6b", title: "Waktunya istirahat", detail: "Sesi fokus selesai" }
+          : { icon: "timer", tone: "#ff6b7f", title: "Istirahat selesai", detail: "Siap fokus lagi?" };
       case "water":
         return {
           icon: "drop",
-          tone: "#8fd8c4",
+          tone: "#8fd0e8",
           title: "Waktunya minum",
           detail: `${(p.today / 1000).toLocaleString("id-ID")} dari ${(p.goal / 1000).toLocaleString("id-ID")} L hari ini`,
         };
       case "todo":
-        return { icon: "check", tone: "#f0b66e", title: p.text, detail: `Pengingat ${p.time}` };
+        return { icon: "check", tone: "#f0c070", title: p.text, detail: `Pengingat ${p.time}` };
       case "calendar": {
         const at = new Date(p.start).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }).replace(".", ":");
-        return { icon: "calendar", tone: "#f0b66e", title: p.title, detail: p.before ? `Mulai ${p.before} menit lagi · ${at}` : `Dimulai sekarang · ${at}` };
+        return { icon: "calendar", tone: "#f0c070", title: p.title, detail: p.before ? `Mulai ${p.before} menit lagi · ${at}` : `Dimulai sekarang · ${at}` };
       }
       case "weather-tip":
         return { icon: p.icon ?? "sun", tone: p.tone, title: p.title, detail: p.detail };
@@ -155,18 +155,18 @@
 {:else if peek.kind === "download-done"}
   <!-- A download finished: click opens it. -->
   <button class="note" onclick={() => onOpen?.()}>
-    <span class="icon" style:color="#8fe6b4" style:background="#8fe6b422">
+    <span class="icon" style:color="#ff8a6b" style:background="#ff8a6b22">
       <svg viewBox="0 0 24 24"><path d={ICONS.done} /></svg>
     </span>
     <div class="text">
       <div class="title one">{peek.name}</div>
-      <div class="detail">Selesai diunduh · klik untuk buka</div>
+      <div class="detail">File sudah diunduh · klik untuk membuka</div>
     </div>
   </button>
 {:else if peek.kind === "meeting"}
   <!-- A meeting with a link starts soon: check the camera, or join. -->
   <div class="row">
-    <span class="icon" style:color="#f0b66e" style:background="#f0b66e22">
+    <span class="icon" style:color="#f0c070" style:background="#f0c07022">
       <svg viewBox="0 0 24 24"><path d={ICONS.calendar} /></svg>
     </span>
     <div class="text">
@@ -175,13 +175,13 @@
     </div>
     <div class="actions inline">
       <button onclick={() => onAction?.("camera")}>Cek kamera</button>
-      {#if peek.link}<button class="primary" onclick={() => onAction?.("join")}>Join</button>{/if}
+      {#if peek.link}<button class="primary" onclick={() => onAction?.("join")}>Gabung</button>{/if}
     </div>
   </div>
 {:else if peek.kind === "update"}
   <!-- A new version is downloaded; clicking installs it (Ghyna restarts in a few seconds). -->
   <button class="note" onclick={() => onOpen?.()}>
-    <span class="icon" style:color="#8fd8c4" style:background="#8fd8c422">
+    <span class="icon" style:color="#8fd0e8" style:background="#8fd0e822">
       <svg viewBox="0 0 24 24"><path d={ICONS.download} /></svg>
     </span>
     <div class="text">
@@ -207,7 +207,7 @@
           class:charging={view.charging}
           style:transform="scaleX({view.battery / 100})"
           style:background={view.charging
-            ? "linear-gradient(90deg, #38bdf8, #a0e9fd)"
+            ? "linear-gradient(90deg, #8fd0e8, #c7ecf5)"
             : view.battery < 15
             ? "linear-gradient(90deg, var(--danger), #f3b0b0)"
             : view.battery < 25
@@ -239,10 +239,11 @@
     flex: none;
     width: 38px;
     height: 38px;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     display: grid;
     place-items: center;
-    transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1), background 180ms cubic-bezier(0.23, 1, 0.32, 1);
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+    transition: transform var(--motion-ui) var(--ease-out), background var(--motion-ui) var(--ease-out);
   }
   svg {
     width: 18px;
@@ -252,15 +253,17 @@
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-    transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1), opacity 180ms cubic-bezier(0.23, 1, 0.32, 1);
+    transition: transform var(--motion-ui) var(--ease-out), opacity var(--motion-ui) var(--ease-out);
   }
   .text {
     flex: 1;
     min-width: 0;
   }
   .title {
+    font-family: var(--font-display);
     font-size: 13px;
     font-weight: 600;
+    letter-spacing: 0.015em;
   }
   .detail {
     margin-top: 2px;
@@ -273,19 +276,19 @@
   .level {
     flex: none;
     width: 92px;
-    height: 5px;
-    border-radius: 3px;
-    background: rgba(239, 250, 243, 0.14);
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.14);
     overflow: hidden;
   }
   .level span {
     display: block;
     width: 100%;
     height: 100%;
-    border-radius: 3px;
+    border-radius: 2px;
     background: var(--accent);
     transform-origin: left center;
-    transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
+    transition: transform 220ms var(--ease-out);
   }
   .level.short {
     width: 56px;
@@ -298,13 +301,16 @@
     background: var(--accent);
     color: var(--accent-ink);
     font-weight: 600;
+    border-radius: var(--radius-sm);
   }
   .value {
     flex: none;
     min-width: 24px;
     text-align: right;
-    font-size: 13px;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
     font-weight: 600;
+    letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
   }
 
@@ -322,18 +328,18 @@
     text-align: left;
     cursor: pointer;
     border-radius: inherit;
-    font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-    transition: background 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+    font-family: var(--font-ui);
+    transition: background var(--motion-ui) var(--ease-out), transform var(--motion-fast) var(--ease-out);
   }
   .note:hover {
-    background: rgba(239, 250, 243, 0.04);
+    background: rgba(255, 255, 255, 0.05);
   }
   .note:active, .actions button:active { transform: scale(.98); }
   .app-icon {
     flex: none;
     width: 38px;
     height: 38px;
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     object-fit: contain;
   }
   .app-icon.fallback {
@@ -349,7 +355,7 @@
     flex: none;
     width: 42px;
     height: 42px;
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     background: var(--surface-raised);
   }
   .avatar .photo {
@@ -366,13 +372,16 @@
     width: 17px;
     height: 17px;
     padding: 1px;
-    border-radius: 6px;
-    border: 2px solid var(--surface);
-    background: var(--surface);
+    border-radius: var(--radius-xs);
+    border: 2px solid var(--surface-solid);
+    background: var(--surface-solid);
     object-fit: contain;
   }
   .app {
-    font-size: 10.5px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     color: var(--muted);
   }
   .one {
@@ -395,10 +404,11 @@
     height: 68px;
     padding: 0;
     border: 0;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     overflow: hidden;
     cursor: pointer;
     background: var(--surface-raised);
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
   }
   .thumb img {
     width: 100%;
@@ -414,15 +424,25 @@
   .actions button {
     padding: 4px 10px;
     border: 0;
-    border-radius: 999px;
-    background: rgba(239, 250, 243, 0.1);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 0 0.5px var(--line);
     color: var(--text);
-    font: inherit;
-    font-size: 11.5px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     cursor: pointer;
+    transition: background var(--motion-ui) var(--ease-out);
   }
   .actions button:hover {
-    background: rgba(239, 250, 243, 0.16);
+    background: rgba(255, 255, 255, 0.17);
+  }
+  button:focus-visible,
+  .note:focus-visible,
+  .thumb:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
   @media (hover: hover) and (pointer: fine) {
     .row:hover .icon { transform: translateY(-1px); }

@@ -67,8 +67,10 @@ function addFiles() {
     // The drag resolves for both "Dropped" and "Cancelled". Only remove the
     // file when it was actually dropped somewhere else; a cancelled drag
     // (released outside any target) keeps it on the Shelf.
+    // Keep the file: a chat app may still be uploading it right after the
+    // drop. Orphans are swept on the next launch.
     startDrag({ item: [item.path], icon: dragIcon(item) }, ({ result }) => {
-      if (result === "Dropped") shelf.remove(item.path);
+      if (result === "Dropped") shelf.remove(item.path, false);
     }).catch((err) => console.error("Failed to start drag:", err));
   }
   function up() {
@@ -137,7 +139,7 @@ function addFiles() {
   {:else if shelf.items.length === 0}
     <div class="empty-zone" data-drop="shelf">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v11H4zM4 8l2-3h5l2 3" /><path d="M9 13h6" /></svg>
-      <span class="empty-copy">Tarik file ke sini<small>Simpan sementara, lalu tarik keluar kapan saja.</small></span>
+      <span class="empty-copy">Tarik file atau gambar ke sini<small>Dari Explorer atau browser. Simpan sementara, lalu tarik keluar kapan saja.</small></span>
     </div>
   {:else}
       <div class="items scroll">
@@ -193,9 +195,9 @@ function addFiles() {
     border-radius: 50%;
     pointer-events: none;
     opacity: 0;
-    background: radial-gradient(circle, rgba(130, 255, 183, .22), rgba(130, 255, 183, 0) 68%);
+    background: radial-gradient(circle, var(--accent-soft), transparent 68%);
     transform: scale(.7);
-    transition: opacity 180ms cubic-bezier(.23, 1, .32, 1), transform 220ms cubic-bezier(.23, 1, .32, 1);
+    transition: opacity var(--motion-ui) var(--ease-out), transform 220ms var(--ease-out);
   }
   .page.dropping::after {
     opacity: 1;
@@ -212,22 +214,27 @@ function addFiles() {
     height: 24px;
   }
   .title {
+    font-family: var(--font-display);
     font-size: 15px;
     font-weight: 600;
+    letter-spacing: 0.015em;
     color: var(--accent);
   }
   .count {
     padding: 2px 6px;
-    border-radius: 999px;
+    border-radius: var(--radius-xs);
     background: rgba(255, 255, 255, 0.07);
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.38);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
   .hint {
     flex: 1;
-    font-size: 9px;
-    color: rgba(255, 255, 255, 0.28);
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    letter-spacing: 0.02em;
+    color: var(--muted);
     text-align: right;
     white-space: nowrap;
     overflow: hidden;
@@ -236,7 +243,7 @@ function addFiles() {
   button {
     border: 0;
     background: none;
-    color: #fff;
+    color: var(--text);
     font: inherit;
     cursor: pointer;
   }
@@ -246,12 +253,12 @@ function addFiles() {
     width: 24px;
     height: 24px;
     padding: 0;
-    border-radius: 6px;
+    border-radius: var(--radius-xs);
     margin-left: 2px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--muted);
     transition:
-      background 0.15s,
-      color 0.15s;
+      background var(--motion-ui) var(--ease-out),
+      color var(--motion-ui) var(--ease-out);
   }
   .clear svg {
     width: 15px;
@@ -263,8 +270,8 @@ function addFiles() {
     stroke-linejoin: round;
   }
   .clear:hover {
-    background: rgba(255, 255, 255, 0.07);
-    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
   }
 
   .empty-zone {
@@ -275,9 +282,9 @@ function addFiles() {
     justify-content: center;
     gap: 12px;
     margin-top: 7px;
-    border: 1px dashed rgba(255, 255, 255, 0.16);
-    border-radius: 10px;
-    color: rgba(255, 255, 255, 0.5);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-md);
+    color: var(--muted);
   }
   .empty-zone > svg {
     width: 22px;
@@ -289,15 +296,16 @@ function addFiles() {
     stroke-linejoin: round;
   }
   .empty-copy {
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.66);
+    color: var(--muted-strong);
   }
   .empty-copy small {
     display: block;
     margin-top: 2px;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.3);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    color: var(--muted);
   }
 
   .zones {
@@ -315,18 +323,18 @@ function addFiles() {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    border: 1px dashed rgba(255, 255, 255, 0.14);
-    border-radius: 10px;
-    color: rgba(255, 255, 255, 0.45);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-md);
+    color: var(--muted);
     transition:
-      border-color 0.18s,
-      background 0.18s,
-      color 0.18s;
+      border-color var(--motion-ui) var(--ease-out),
+      background var(--motion-ui) var(--ease-out),
+      color var(--motion-ui) var(--ease-out);
   }
   .zone.hot {
-    border-color: rgba(255, 255, 255, 0.55);
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
+    border-color: var(--accent-line);
+    background: var(--accent-soft);
+    color: var(--text);
     animation: shelf-zone-pulse 1.4s ease-in-out infinite;
   }
   .zone > svg {
@@ -340,13 +348,17 @@ function addFiles() {
   }
   .zone strong {
     display: block;
+    font-family: var(--font-display);
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: 0.01em;
   }
   .zone small {
     display: block;
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.32);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.02em;
+    color: var(--muted);
   }
 
   .items {
@@ -370,19 +382,19 @@ function addFiles() {
     align-items: center;
     gap: 3px;
     padding: 4px 5px 3px;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.03);
     cursor: grab;
     transition:
-      background 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      border-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
-      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
-    animation: shelf-attach 260ms cubic-bezier(.23, 1, .32, 1) both;
+      background var(--motion-ui) var(--ease-out),
+      border-color var(--motion-ui) var(--ease-out),
+      transform var(--motion-fast) var(--ease-out);
+    animation: shelf-attach var(--motion-page) var(--ease-out) both;
   }
   .item:hover {
-    border-color: rgba(255, 255, 255, 0.18);
-    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--accent-line);
+    background: rgba(255, 255, 255, 0.08);
   }
   .item:active {
     cursor: grabbing;
@@ -394,9 +406,9 @@ function addFiles() {
     width: 46px;
     height: 38px;
     overflow: hidden;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: var(--surface-raised);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
   }
   .thumb img {
     width: 100%;
@@ -407,15 +419,16 @@ function addFiles() {
     width: 20px;
     height: 20px;
     fill: none;
-    stroke: rgba(255, 255, 255, 0.6);
+    stroke: var(--muted-strong);
     stroke-width: 1.6;
     stroke-linejoin: round;
   }
   .ext {
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    color: rgba(255, 255, 255, 0.68);
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--muted-strong);
   }
   .file-icon {
     position: relative;
@@ -423,7 +436,7 @@ function addFiles() {
     place-items: center;
     width: 28px;
     height: 30px;
-    color: rgba(255, 255, 255, 0.62);
+    color: rgba(238, 246, 248, 0.58);
   }
   .file-icon svg {
     width: 28px;
@@ -438,6 +451,7 @@ function addFiles() {
     top: 15px;
     max-width: 23px;
     overflow: hidden;
+    font-family: var(--font-mono);
     font-size: 6px;
     font-weight: 700;
     letter-spacing: -0.02em;
@@ -445,28 +459,31 @@ function addFiles() {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .file-icon.document { color: #78b7ff; }
-  .file-icon.pdf { color: #ff8278; }
-  .file-icon.spreadsheet { color: #79d39a; }
-  .file-icon.presentation { color: #ffb36b; }
-  .file-icon.archive { color: #c4a7ff; }
-  .file-icon.text { color: #aeb8c8; }
+  .file-icon.document,
+  .file-icon.pdf,
+  .file-icon.spreadsheet,
+  .file-icon.presentation,
+  .file-icon.archive,
+  .file-icon.text {
+    color: rgba(238, 246, 248, 0.58);
+  }
   .name {
     flex: none;
     width: 100%;
     text-align: center;
     font-size: 10.5px;
     line-height: 1.15;
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(238, 246, 248, 0.9);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .size {
     flex: none;
-    font-size: 9.5px;
+    font-family: var(--font-mono);
+    font-size: 9px;
     line-height: 1.15;
-    color: rgba(255, 255, 255, 0.38);
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
   .copy {
@@ -478,14 +495,15 @@ function addFiles() {
     width: 16px;
     height: 16px;
     padding: 0;
-    border-radius: 5px;
-    background: rgba(0, 0, 0, 0.6);
-    color: rgba(255, 255, 255, 0.6);
+    border-radius: var(--radius-xs);
+    background: rgba(6, 9, 11, 0.62);
+    box-shadow: inset 0 0 0 0.5px var(--line);
+    color: var(--muted-strong);
     opacity: 0;
     transition:
-      opacity 150ms cubic-bezier(0.23, 1, 0.32, 1),
-      color 150ms cubic-bezier(0.23, 1, 0.32, 1),
-      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+      opacity 150ms var(--ease-out),
+      color 150ms var(--ease-out),
+      transform var(--motion-fast) var(--ease-out);
   }
   .copy svg {
     width: 10px;
@@ -501,7 +519,7 @@ function addFiles() {
     opacity: 1;
   }
   .copy:hover {
-    color: #fff;
+    color: var(--text);
   }
   .remove {
     position: absolute;
@@ -512,14 +530,15 @@ function addFiles() {
     width: 16px;
     height: 16px;
     padding: 0;
-    border-radius: 5px;
-    background: rgba(0, 0, 0, 0.6);
-    color: rgba(255, 255, 255, 0.6);
+    border-radius: var(--radius-xs);
+    background: rgba(6, 9, 11, 0.62);
+    box-shadow: inset 0 0 0 0.5px var(--line);
+    color: var(--muted-strong);
     opacity: 0;
     transition:
-      opacity 150ms cubic-bezier(0.23, 1, 0.32, 1),
-      color 150ms cubic-bezier(0.23, 1, 0.32, 1),
-      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+      opacity 150ms var(--ease-out),
+      color 150ms var(--ease-out),
+      transform var(--motion-fast) var(--ease-out);
   }
   .remove svg {
     width: 9px;
@@ -534,7 +553,7 @@ function addFiles() {
     opacity: 1;
   }
   .remove:hover {
-    color: #fff;
+    color: var(--text);
   }
   .clear:active,
   .remove:active,
@@ -544,7 +563,7 @@ function addFiles() {
   }
   .clearing .item {
     pointer-events: none;
-    animation: shelf-fly 420ms cubic-bezier(.23, 1, .32, 1) var(--fly-delay) both;
+    animation: shelf-fly 420ms var(--ease-out) var(--fly-delay) both;
   }
 
   @keyframes shelf-magnet {
@@ -552,8 +571,8 @@ function addFiles() {
     50% { opacity: 1; transform: scale(1.08); }
   }
   @keyframes shelf-zone-pulse {
-    0%, 100% { box-shadow: 0 0 0 rgba(130, 255, 183, 0); }
-    50% { box-shadow: 0 0 22px rgba(130, 255, 183, .12); }
+    0%, 100% { box-shadow: 0 0 0 rgba(255, 138, 107, 0); }
+    50% { box-shadow: 0 0 22px rgba(255, 138, 107, .14); }
   }
   @keyframes shelf-attach {
     from { opacity: 0; transform: translateY(-8px) scale(.94); }
@@ -567,7 +586,7 @@ function addFiles() {
 
   button:focus-visible,
   .item:focus-visible {
-    outline: 1.5px solid rgba(255, 255, 255, 0.8);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {

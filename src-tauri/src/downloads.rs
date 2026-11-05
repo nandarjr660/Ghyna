@@ -28,12 +28,14 @@ use crate::peek;
 #[derive(Serialize, Clone, PartialEq, Debug)]
 pub struct Download {
     /// File name as it will be, e.g. "Laporan.pdf".
-    name: String,
-    bytes: u64,
+    pub(crate) name: String,
+    pub(crate) bytes: u64,
     /// Bytes per second over the last pass.
-    speed: u64,
+    pub(crate) speed: u64,
     /// Final size when the browser history knows it, else 0.
-    total: u64,
+    pub(crate) total: u64,
+    /// Still held open by the browser but not growing: paused, or stalled.
+    pub(crate) paused: bool,
 }
 
 pub fn downloads_dir() -> Option<PathBuf> {
@@ -324,8 +326,16 @@ pub fn final_name(partial: &str) -> Option<Option<String>> {
     if stem.is_empty() {
         return None;
     }
-    let unconfirmed = stem.starts_with("Unconfirmed ") && stem[12..].chars().all(|c| c.is_ascii_digit());
-    Some((!unconfirmed).then(|| stem.to_string()))
+    Some((!placeholder(stem)).then(|| stem.to_string()))
+}
+
+/// Chromium's placeholder is translated ("Unconfirmed", "Tidak dipastikan"),
+/// so look at its shape: a word, a space, then the download's counter.
+pub(crate) fn placeholder(stem: &str) -> bool {
+    stem.starts_with("Unconfirmed ")
+        || stem
+            .rsplit_once(' ')
+            .is_some_and(|(_, tail)| tail.len() >= 6 && tail.bytes().all(|b| b.is_ascii_digit()))
 }
 
 fn partials(dirs: &[PathBuf]) -> HashMap<PathBuf, u64> {
@@ -346,10 +356,10 @@ fn describe(path: &Path, history: &History, bytes: u64, speed: u64) -> Download 
             .map(|n| n.to_string_lossy().to_string())
             .filter(|n| !n.is_empty())
             .unwrap_or_else(|| final_name(&file).flatten().unwrap_or_else(|| "Mengunduh…".into()));
-        return Download { name, bytes, speed, total };
+        return Download { name, bytes, speed, total, paused: false };
     }
     let name = final_name(&file).flatten().unwrap_or_else(|| "Mengunduh…".into());
-    Download { name, bytes, speed, total: 0 }
+    Download { name, bytes, speed, total: 0, paused: false }
 }
 
 pub fn start(app: AppHandle) {
@@ -383,6 +393,10 @@ pub fn start(app: AppHandle) {
         let mut history_stamp_now = Vec::new();
         let mut last_history = Instant::now();
         let mut last_deep = Instant::now();
+        // A paused download never changes, and the first event can land before
+        // the webview has subscribed. Repeat it now and then so the notch still
+        // finds it (and recovers after a reload).
+        let mut last_emit = Instant::now();
 
         loop {
             // Sleep until something happens in a watched folder; while a download
@@ -445,13 +459,33 @@ pub fn start(app: AppHandle) {
                 }
             }
 
-            // The biggest download in progress is the one shown.
-            let current = step.growing.iter().max_by_key(|(_, bytes, _)| *bytes).map(|(path, bytes, grew)| {
+            // The biggest download in progress is the one shown. A file the
+            // browser still holds but is not writing to is paused: keep its
+            // percentage on screen instead of letting the notch go back to the
+            // clock, so a resumed download picks up where it left off.
+            let mut current = step.growing.iter().max_by_key(|(_, bytes, _)| *bytes).map(|(path, bytes, grew)| {
                 describe(path, &history, *bytes, (*grew as f64 / secs) as u64)
             });
-            if current != shown {
+            if current.is_none() {
+                current = step.paused.iter().max_by_key(|(_, bytes)| *bytes).map(|(path, bytes)| {
+                    let mut download = describe(path, &history, *bytes, 0);
+                    download.paused = true;
+                    download
+                });
+            }
+            // While the extension reports the live size, let it own the notch:
+            // two sources for the same download would fight over the number.
+            if crate::bridge::fresh() {
+                // Forget what the disk last showed, so the first pass after the
+                // extension goes quiet always emits instead of being deduped.
+                shown = None;
+                continue;
+            }
+            let repeat = current.is_some() && last_emit.elapsed() >= Duration::from_secs(5);
+            if current != shown || repeat {
                 let _ = app.emit("download", &current);
                 shown = current;
+                last_emit = Instant::now();
             }
         }
     });
@@ -473,6 +507,8 @@ pub struct Seen {
 pub struct Step {
     /// In progress: path, size, bytes added since the last pass.
     pub growing: Vec<(PathBuf, u64, u64)>,
+    /// Stopped growing but still held open by the browser: paused (or stalled).
+    pub paused: Vec<(PathBuf, u64)>,
     /// Gone since the last pass after being written to recently.
     pub finished: Vec<PathBuf>,
 }
@@ -487,6 +523,7 @@ pub fn step(seen: &mut HashMap<PathBuf, Seen>, now: HashMap<PathBuf, u64>, at: I
         .collect();
     seen.retain(|p, _| now.contains_key(p));
     let mut growing = vec![];
+    let mut paused = vec![];
     for (path, bytes) in now {
         // Back-dated so a leftover is neither shown nor reported finished when it goes.
         let entry = seen.entry(path.clone()).or_insert(Seen { bytes, changed: at.checked_sub(KEEP_LOOKING).unwrap_or(at) });
@@ -497,9 +534,19 @@ pub fn step(seen: &mut HashMap<PathBuf, Seen>, now: HashMap<PathBuf, u64>, at: I
         }
         if at.duration_since(entry.changed) < STALE {
             growing.push((path, bytes, grew));
+        } else if locked(&path) {
+            paused.push((path, bytes));
         }
     }
-    Step { growing, finished }
+    Step { growing, paused, finished }
+}
+
+/// A partial the browser still holds open for writing. A paused download keeps
+/// its handle, so an exclusive open fails; a leftover from a crash does not.
+fn locked(path: &Path) -> bool {
+    use std::os::windows::fs::OpenOptionsExt;
+    path.is_file()
+        && fs::OpenOptions::new().write(true).share_mode(0).open(path).is_err()
 }
 
 /// Opens a finished download. Only files in the Downloads folder or in a folder

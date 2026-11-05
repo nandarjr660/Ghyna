@@ -96,22 +96,29 @@
     height: 22px;
   }
   .title {
+    font-family: var(--font-display);
     font-size: 13px;
     font-weight: 600;
+    letter-spacing: 0.015em;
     color: var(--accent);
   }
   .count {
     padding: 2px 6px;
-    border-radius: 999px;
+    border-radius: var(--radius-xs);
     background: rgba(255, 255, 255, 0.07);
-    font-size: 9px;
-    color: rgba(255, 255, 255, 0.38);
+    box-shadow: inset 0 0 0 0.5px var(--line);
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    letter-spacing: 0.04em;
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
   .hint {
     flex: 1;
+    font-family: var(--font-mono);
     font-size: 8px;
-    color: rgba(255, 255, 255, 0.28);
+    letter-spacing: 0.05em;
+    color: var(--muted);
     text-align: right;
     white-space: nowrap;
     overflow: hidden;
@@ -130,13 +137,13 @@
     width: 24px;
     height: 24px;
     padding: 0;
-    border-radius: 6px;
+    border-radius: var(--radius-xs);
     margin-left: 2px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--muted);
     transition:
-      background 150ms cubic-bezier(0.23, 1, 0.32, 1),
-      color 150ms cubic-bezier(0.23, 1, 0.32, 1),
-      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+      background 150ms var(--ease-out),
+      color 150ms var(--ease-out),
+      transform 120ms var(--ease-out);
   }
   .clear svg {
     width: 15px;
@@ -164,24 +171,27 @@
     justify-content: center;
     gap: 9px;
     margin-top: 7px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.66);
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.03em;
+    color: var(--muted-strong);
   }
   .empty > svg {
     width: 18px;
     height: 18px;
     fill: none;
-    stroke: rgba(255, 255, 255, 0.38);
+    stroke: var(--muted);
     stroke-width: 1.5;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
   .empty small {
     display: block;
-    margin-top: 1px;
-    font-size: 8.5px;
-    color: rgba(255, 255, 255, 0.3);
+    margin-top: 2px;
+    font-family: var(--font-ui);
+    font-size: 9px;
+    color: var(--muted);
   }
 
   .list {
@@ -203,16 +213,16 @@
     width: 100%;
     min-height: 29px;
     padding: 2px 6px 2px 4px;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: rgba(255, 255, 255, 0.03);
     text-align: left;
-    transition: background 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 160ms cubic-bezier(0.23, 1, 0.32, 1), transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
-    animation: clipboard-attach 240ms cubic-bezier(.23, 1, .32, 1) both;
+    transition: background 160ms var(--ease-out), border-color 160ms var(--ease-out), transform 120ms var(--ease-out);
+    animation: clipboard-attach 240ms var(--ease-out) both;
   }
   .item:hover {
-    border-color: rgba(255, 255, 255, 0.14);
-    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.07);
   }
   .kind {
     flex: none;
@@ -220,9 +230,9 @@
     place-items: center;
     width: 22px;
     height: 22px;
-    border-radius: 5px;
+    border-radius: var(--radius-xs);
     background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.4);
+    color: var(--muted);
   }
   .kind svg {
     width: 14px;
@@ -251,8 +261,10 @@
   .text {
     flex: 1;
     min-width: 0;
-    font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.82);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.01em;
+    color: rgba(238, 246, 248, 0.84);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -262,15 +274,18 @@
     display: flex;
     align-items: center;
     gap: 3px;
-    font-size: 8.5px;
-    color: rgba(255, 255, 255, 0.28);
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
     min-width: 18px;
     justify-content: center;
     opacity: 0.7;
     transition:
-      color 150ms cubic-bezier(0.23, 1, 0.32, 1),
-      opacity 150ms cubic-bezier(0.23, 1, 0.32, 1),
-      transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+      color 150ms var(--ease-out),
+      opacity 150ms var(--ease-out),
+      transform 120ms var(--ease-out);
   }
   .action svg {
     width: 10px;
@@ -283,7 +298,7 @@
   }
   .item:hover .action {
     opacity: 1;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--muted-strong);
   }
   .action.ok {
     color: var(--accent);
@@ -292,7 +307,7 @@
 
   .clearing .item {
     pointer-events: none;
-    animation: clipboard-fly 420ms cubic-bezier(.23, 1, .32, 1) var(--fly-delay) both;
+    animation: clipboard-fly 420ms var(--ease-out) var(--fly-delay) both;
   }
   @keyframes clipboard-attach {
     from { opacity: 0; transform: translateY(-5px) scale(.97); }
@@ -304,7 +319,7 @@
   }
 
   button:focus-visible {
-    outline: 1.5px solid var(--accent);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {

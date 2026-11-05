@@ -2,7 +2,6 @@
   import { invoke } from "@tauri-apps/api/core";
 
 
-  import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { listen } from "@tauri-apps/api/event";
 
 
@@ -110,12 +109,12 @@ const eyeState = $derived(
 // expression feel like one object instead of a green frame around blue eyes.
 const eyeGlow = $derived(
   eyeState === "charging"
-    ? "rgba(56, 189, 248, 0.8)"
+    ? "rgba(143, 208, 232, 0.8)"
     : eyeState === "low15"
-    ? "rgba(255, 77, 77, 0.8)"
+    ? "rgba(255, 107, 127, 0.8)"
     : eyeState === "low20"
-    ? "rgba(255, 159, 0, 0.78)"
-    : "rgba(66, 199, 99, 0.8)"
+    ? "rgba(240, 192, 112, 0.78)"
+    : "rgba(255, 138, 107, 0.8)"
 );
   let inUse = $state<InUse>({ camera: [], mic: [] });
   let micMuted = $state(false);
@@ -131,18 +130,18 @@ const eyeGlow = $derived(
     const fog = text.includes("kabut");
     const cloudy = text.includes("berawan") || text.includes("mendung");
     const tip = storm
-      ? { key: "storm", icon: "alert", tone: "#f08080", title: "Badai dan petir", detail: "Sebisa mungkin tetap di dalam rumah ya" }
+      ? { key: "storm", icon: "alert", tone: "#ff6b7f", title: "Badai dan petir", detail: "Sebisa mungkin tetap di dalam rumah ya" }
       : rain
-        ? { key: "rain", icon: "drop", tone: "#8fd8c4", title: "Hari ini akan hujan", detail: "Hari bakal hujan, sedia payung sebelum keluar ya" }
+        ? { key: "rain", icon: "drop", tone: "#8fd0e8", title: "Hari ini akan hujan", detail: "Hari bakal hujan, sedia payung sebelum keluar ya" }
         : fog
           ? { key: "fog", icon: "cloud", tone: "#aaa6ae", title: "Kabut cukup tebal", detail: "Hati-hati di jalan, nyalakan lampu kendaraan" }
           : cloudy
             ? { key: "cloudy", icon: "cloud", tone: "#aaa6ae", title: "Hari ini mendung", detail: "Bawa jaket tipis sebelum keluar ya" }
             : w.temp >= 33
-              ? { key: "hot", icon: "sun", tone: "#f0b66e", title: "Panas yang berlebihan", detail: "Hari panas banget, minum air yg banyak ya" }
+              ? { key: "hot", icon: "sun", tone: "#f0c070", title: "Panas yang berlebihan", detail: "Hari panas banget, minum air yg banyak ya" }
               : w.temp <= 21
-                ? { key: "cold", icon: "wind", tone: "#8fd8c4", title: "Hari cukup dingin", detail: "Pakai jaket biar tidak kedinginan ya" }
-                : { key: "clear", icon: "sun", tone: "#8fe6b4", title: "Cerah seharian", detail: "Jangan lupa sunscreen sebelum keluar ya" };
+                ? { key: "cold", icon: "wind", tone: "#8fd0e8", title: "Hari cukup dingin", detail: "Pakai jaket biar tidak kedinginan ya" }
+                : { key: "clear", icon: "sun", tone: "#ff8a6b", title: "Cerah seharian", detail: "Jangan lupa sunscreen sebelum keluar ya" };
     if (tip.key === lastWeatherTip) return;
     lastWeatherTip = tip.key;
     showPeek({ kind: "weather-tip", ...tip });
@@ -609,21 +608,32 @@ const eyeGlow = $derived(
       if (pinned && !mirror) setPinned(false);
     });
 
-    // Files dragged onto the notch go to the shelf, or to Windows' Share window
-    // when dropped on "Bagikan".
+    // Files and browser images dragged onto the notch go to the shelf, or to
+    // Windows' Share window when dropped on "Bagikan". The events come from
+    // Ghyna's own drop target (shelf_drop.rs), because the native one ignores
+    // the temporary files browsers use for images.
     const zoneAt = (p: { x: number; y: number }) => {
       const el = document.elementFromPoint(p.x / devicePixelRatio, p.y / devicePixelRatio);
       return (el?.closest("[data-drop]") as HTMLElement | null)?.dataset.drop ?? null;
     };
-    const unlistenDrop = getCurrentWebviewWindow().onDragDropEvent((e) => {
-      if (e.payload.type === "enter" || e.payload.type === "over") {
+    const unlistenDrop = listen<{
+      type: "enter" | "over" | "leave" | "drop" | "paths";
+      x: number;
+      y: number;
+      paths?: string[];
+    }>("ghyna-drag", (e) => {
+      const p = e.payload;
+      if (p.type === "paths") {
+        // An image URL finished downloading in the background.
+        if (p.paths?.length) shelf.add(p.paths);
+      } else if (p.type === "enter" || p.type === "over") {
         dropping = true;
         page = pages.indexOf("shelf");
-        dropTarget = zoneAt(e.payload.position);
-      } else if (e.payload.type === "drop") {
+        dropTarget = zoneAt(p);
+      } else if (p.type === "drop") {
         dropping = false;
         dropTarget = null;
-        shelf.add(e.payload.paths);
+        if (p.paths?.length) shelf.add(p.paths);
       } else {
         dropping = false;
         dropTarget = null;
@@ -634,6 +644,11 @@ const eyeGlow = $derived(
     const unlistenCall = listen<Call | null>("call", (e) => (call = e.payload));
     invoke<Call | null>("call_state").then((c) => (call = c));
     const unlistenDownload = listen<Download | null>("download", (e) => (download = e.payload));
+    // A paused download never changes, so its first event can land before this
+    // webview is listening. The bridge keeps the last state for a reload.
+    invoke<Download | null>("download_state").then((d) => {
+      if (d) download = d;
+    });
     const unlistenLevel = listen<number[]>("audio-level", (e) => (levels = metering ? e.payload : null));
     const unlistenClip = listen<ClipEntry[]>("clipboard", (e) => (clipItems = e.payload));
     invoke<ClipEntry[]>("clipboard_list").then((c) => (clipItems = c));
@@ -891,6 +906,9 @@ const eyeGlow = $derived(
   onpointerup={pressUp}
   onpointerleave={pressUp}
 >
+  <span class="frost" aria-hidden="true">
+    {#if media?.art}<i style:background-image={`url(${media.art})`}></i>{/if}
+  </span>
   <span class="eye-wash" aria-hidden="true"></span>
   {#if pinned && paged && !mirror}<i class="pin" title="Terkunci terbuka · tekan lama untuk melepas"></i>{/if}
 
@@ -912,12 +930,12 @@ const eyeGlow = $derived(
         style:--ly={eyeY}
         style:--near={look[2]}
         style:--eye-grad={eyeState === "charging"
-          ? "linear-gradient(to bottom, #ffffff, #38bdf8)"
+          ? "linear-gradient(to bottom, #ffffff, #8fd0e8)"
           : eyeState === "low15"
-          ? "linear-gradient(to bottom, #ffffff, #ff4d4d)"
+          ? "linear-gradient(to bottom, #ffffff, #ff6b7f)"
           : eyeState === "low20"
-          ? "linear-gradient(to bottom, #ffffff, #ff9f00)"
-          : "linear-gradient(to bottom, #e3ffe6, #42c763)"}
+          ? "linear-gradient(to bottom, #ffffff, #f0c070)"
+          : "linear-gradient(to bottom, #ffe1d8, #ff8a6b)"}
         in:fade={{ duration: 400 }}
       >
         <i></i><i></i>
@@ -972,12 +990,12 @@ const eyeGlow = $derived(
         style:--ly={eyeY}
         style:--near={look[2]}
         style:--eye-grad={eyeState === "charging"
-          ? "linear-gradient(to bottom, #ffffff, #38bdf8)"
+          ? "linear-gradient(to bottom, #ffffff, #8fd0e8)"
           : eyeState === "low15"
-          ? "linear-gradient(to bottom, #ffffff, #ff4d4d)"
+          ? "linear-gradient(to bottom, #ffffff, #ff6b7f)"
           : eyeState === "low20"
-          ? "linear-gradient(to bottom, #ffffff, #ff9f00)"
-          : "linear-gradient(to bottom, #e3ffe6, #42c763)"}
+          ? "linear-gradient(to bottom, #ffffff, #f0c070)"
+          : "linear-gradient(to bottom, #ffe1d8, #ff8a6b)"}
         in:fade={{ duration: 300 }}
       >
         <i></i><i></i>
@@ -1175,8 +1193,8 @@ const eyeGlow = $derived(
      --spring: var(--ease-out);
     /* Overshoot 11% supaya pantulan jelas terasa (sebelumnya 1%, tak terlihat). */
     --resize-spring: cubic-bezier(0.2, 1.6, 0.3, 1);
-    /* A green-black surface: green is the material, not a decoration. A
-       hairline edge keeps it visible on a dark wallpaper. */
+    /* Smoked glass: a translucent pane with a lit top edge. The frost layer
+       below it carries the colour, so the pane itself stays quiet. */
     --edge: var(--line);
     position: absolute;
     top: 0;
@@ -1184,18 +1202,65 @@ const eyeGlow = $derived(
     width: var(--w);
     height: var(--h);
     transform: translateX(-50%);
-    background: var(--surface);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 42%),
+      var(--surface);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    backdrop-filter: blur(18px) saturate(150%);
     border-radius: 0 0 var(--r) var(--r);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.07),
+      inset 0 1px 0 var(--edge-top),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.05),
       0 0 0 0.5px var(--edge),
-      0 12px 30px -18px rgba(0, 0, 0, 0.95);
+      0 2px 5px rgba(0, 0, 0, 0.32),
+      0 18px 40px -20px rgba(0, 0, 0, 0.95);
   }
   .notch.open {
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      inset 0 1px 0 var(--edge-top),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.06),
       0 0 0 0.5px var(--edge),
-      0 16px 36px -18px rgba(0, 0, 0, 0.98);
+      0 3px 8px rgba(0, 0, 0, 0.34),
+      0 26px 56px -22px rgba(0, 0, 0, 1);
+  }
+
+  /* Frost, in two layers: a heavily blurred copy of the cover underneath, then
+     a scrim and grain on top. The scrim keeps 11px labels readable whatever
+     the wallpaper or artwork is doing. */
+  .frost {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .frost i {
+    position: absolute;
+    inset: -38%;
+    z-index: 0;
+    background-position: center;
+    background-size: cover;
+    filter: blur(34px) saturate(165%);
+    opacity: 0.42;
+    transform: scale(1.05);
+  }
+  .frost::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(180deg, rgba(8, 12, 14, 0.34), rgba(8, 12, 14, 0.62));
+  }
+  .frost::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background-image: var(--grain);
+    background-size: 140px 140px;
+    opacity: 0.14;
+    mix-blend-mode: overlay;
   }
 
   /* A hairline glass reflection: one pixel of eye-tinted light along the
@@ -1580,7 +1645,7 @@ const eyeGlow = $derived(
   }
   .charge-percent {
     min-width: 31px;
-    color: #38bdf8;
+    color: #8fd0e8;
     font-size: 12px;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
@@ -1589,7 +1654,7 @@ const eyeGlow = $derived(
   }
   .charge-status {
     margin-left: 0;
-    color: #38bdf8;
+    color: #8fd0e8;
     line-height: 1;
     animation: charging-spark 1.4s ease-in-out infinite;
     justify-self: end;

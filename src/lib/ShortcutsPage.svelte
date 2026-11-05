@@ -70,19 +70,26 @@
     height: 24px;
   }
   .title {
-    font-size: 15px;
+    font-family: var(--font-display);
+    font-size: 14px;
     font-weight: 600;
+    letter-spacing: 0.015em;
     color: var(--accent);
   }
   .count {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.42);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
   .hint {
     flex: 1;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.32);
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    letter-spacing: 0.05em;
+    color: var(--muted);
     text-align: right;
     white-space: nowrap;
     overflow: hidden;
@@ -95,8 +102,8 @@
     display: grid;
     grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
     grid-auto-rows: minmax(0, 1fr);
-    gap: 14px;
-    margin-top: 15px;
+    gap: 12px;
+    margin-top: 14px;
     padding-bottom: 6px;
   }
   .sc {
@@ -108,10 +115,10 @@
     justify-content: center;
     gap: 14px;
     padding: 20px 12px;
-    border: 1.5px solid rgba(255, 255, 255, 0.14);
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.015);
-    color: rgba(255, 255, 255, 0.85);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text);
     font: inherit;
     cursor: pointer;
     transition:
@@ -120,7 +127,7 @@
       color 0.18s;
   }
   .sc:hover {
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: var(--accent-line);
     background: rgba(255, 255, 255, 0.08);
     color: #fff;
   }
@@ -142,7 +149,7 @@
     opacity: 1;
   }
   .sc.failed {
-    border-color: rgba(240, 128, 128, 0.45);
+    border-color: var(--danger);
     color: var(--danger);
   }
   .sc.failed svg {
@@ -156,15 +163,17 @@
     justify-content: center;
     gap: 12px;
     margin-top: 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    font-size: 12.5px;
-    color: rgba(255, 255, 255, 0.68);
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.03em;
+    color: var(--muted-strong);
   }
   .empty > svg {
     width: 22px;
     height: 22px;
     fill: none;
-    stroke: rgba(255, 255, 255, 0.38);
+    stroke: var(--muted);
     stroke-width: 1.6;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -172,12 +181,13 @@
   .empty small {
     display: block;
     margin-top: 2px;
-    font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.34);
+    font-family: var(--font-ui);
+    font-size: 9.5px;
+    color: var(--muted);
   }
 
   .sc:focus-visible {
-    outline: 1.5px solid rgba(255, 255, 255, 0.8);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {

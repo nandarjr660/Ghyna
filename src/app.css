@@ -1,49 +1,85 @@
 :root {
   color-scheme: dark;
 
-  /* Shared Apple-like material, type and motion tokens. */
+  /* ── Frost ────────────────────────────────────────────────────────────────
+     A pane of smoked glass that picks up the colour of what is playing.
+     Cold, heavy, slightly grainy — hardware, not a translucent card. One warm
+     accent (coral) does all the signalling; everything else is cool neutral.
+     Bahnschrift carries labels and figures (technical, DIN-like), Segoe UI
+     Variable carries prose, Cascadia Mono carries tabular data. */
   --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
-  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --font-display: "Bahnschrift", "DIN Alternate", "Segoe UI Variable Display", system-ui, sans-serif;
+  --font-mono: "Cascadia Mono", "Cascadia Code", ui-monospace, monospace;
+
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 26px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-move: cubic-bezier(0.77, 0, 0.175, 1);
-  --motion-fast: 120ms;
+  --ease-snap: cubic-bezier(0.2, 0.9, 0.1, 1);
+  --motion-fast: 110ms;
   --motion-ui: 180ms;
+  --motion-page: 260ms;
 
-  /* Ghyna's green. A soft jade for text and indicators, a deeper leaf for
-     fills. Charging stays blue on purpose: it is a state, not the brand. */
-  --accent: #8fe6b4;
-  --accent-strong: #55d98d;
-  --accent-ink: #04130a;
-  --accent-soft: rgba(143, 230, 180, 0.13);
-  --accent-line: rgba(143, 230, 180, 0.32);
+  /* Coral. The single warm note against the cold glass. */
+  --accent: #ff8a6b;
+  --accent-strong: #ff6a4a;
+  --accent-ink: #1c0a05;
+  --accent-soft: rgba(255, 138, 107, 0.14);
+  --accent-line: rgba(255, 138, 107, 0.36);
 
-  --info: #8fd8c4;
-  --warning: #f0b66e;
-  --danger: #f08080;
+  --info: #8fd0e8;
+  --warning: #f0c070;
+  --danger: #ff6b7f;
 
-  --text: #effaf3;
-  --muted: rgba(226, 244, 234, 0.46);
-  --muted-strong: rgba(226, 244, 234, 0.68);
+  --text: #eef6f8;
+  --muted: rgba(213, 232, 238, 0.5);
+  --muted-strong: rgba(213, 232, 238, 0.72);
 
-  --surface: #050b07;
-  --surface-raised: #0c1710;
-  --line: rgba(190, 240, 210, 0.14);
+  /* Glass layers. The surface stays translucent so the frost underneath reads
+     through; text always sits on the inner, clearer pane. */
+  --surface: rgba(10, 14, 16, 0.68);
+  --surface-solid: #0b1012;
+  --surface-raised: rgba(26, 34, 38, 0.56);
+  --line: rgba(196, 220, 230, 0.14);
+  --edge-top: rgba(255, 255, 255, 0.24);
+  --glass-hi: rgba(255, 255, 255, 0.06);
+  --scrim: rgba(6, 9, 11, 0.5);
+
+  /* A 3% grain: the difference between "frosted" and "semi-transparent box". */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* Shared pointer-down feedback for every interactive notch control. */
 .notch button:active,
 .notch [role="button"]:active {
-  transform: scale(0.975);
-  opacity: 0.88;
+  transform: scale(0.97);
+  opacity: 0.9;
   transition: transform var(--motion-fast) var(--ease-out), opacity var(--motion-fast) var(--ease-out);
+}
+
+/* Labels and figures are tracked slightly loose so the condensed face reads at
+   10–12px. Prose is not tracked. */
+.notch .num,
+.notch .mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .notch button:active,
   .notch [role="button"]:active {
     transform: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --surface: #0b1012;
+    --surface-raised: #151d21;
   }
 }

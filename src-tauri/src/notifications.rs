@@ -566,6 +566,7 @@ fn describe(
         .collect();
     let title = texts.first().cloned().unwrap_or_else(|| app.clone());
     let body = texts.get(1..).map(|rest| rest.join(" · ")).unwrap_or_default();
+    let (title, body) = localize_low_battery(title, body);
 
     let key = if aumid.is_empty() { app.clone() } else { aumid.clone() };
     let logo = logos
@@ -580,6 +581,36 @@ fn describe(
     // notifications also put the sender's avatar in the toast XML.
     let photo = id.and_then(toast_picture);
     Some(json!({ "app": app, "title": title, "body": body, "icon": logo, "photo": photo, "aumid": aumid, "id": id }))
+}
+
+/// Windows' battery toast follows the system display language, while Ghyna's
+/// own UI is Indonesian. Translate only the well-known low-battery toast so
+/// other mirrored app notifications keep their original wording.
+fn localize_low_battery(title: String, body: String) -> (String, String) {
+    let all = format!("{title} {body}").to_ascii_lowercase();
+    if !all.contains("battery") && !all.contains("batterij") && !all.contains("batterie") {
+        return (title, body);
+    }
+    if !all.contains("low") && !all.contains("running out") && !all.contains("remaining") {
+        return (title, body);
+    }
+
+    let title = if title.to_ascii_lowercase().contains("battery") {
+        "Baterai lemah".to_string()
+    } else {
+        title
+    };
+    let body = if body.is_empty() {
+        "Segera sambungkan pengisi daya.".to_string()
+    } else {
+        body.replace("Your battery is running low.", "Baterai perangkat hampir habis.")
+            .replace("Your battery is running low", "Baterai perangkat hampir habis")
+            .replace("Battery is low.", "Baterai perangkat lemah.")
+            .replace("Battery is low", "Baterai perangkat lemah")
+            .replace("Plug in your PC.", "Sambungkan pengisi daya ke PC.")
+            .replace("Plug in your PC", "Sambungkan pengisi daya ke PC")
+    };
+    (title, body)
 }
 
 #[cfg(test)]

@@ -260,6 +260,9 @@ export class Shelf {
     // Re-allow previews and drop files that no longer exist.
     const sizes = await invoke<(number | null)[]>("shelf_add", { paths: saved.map((i) => i.path) });
     this.items = saved.filter((_, i) => sizes[i] !== null);
+    // Copies dragged out of the shelf stay in our folder so the app on the
+    // other end can finish reading them. Sweep the leftovers at startup.
+    invoke("shelf_gc", { keep: this.items.map((i) => i.path) });
   }
 
   async add(paths: string[]) {
@@ -276,13 +279,19 @@ export class Shelf {
     save("shelf", this.items);
   }
 
-  remove(path: string) {
+  // `discard` is false when the item was dragged out: chat apps read the file
+  // after the drop, so deleting it now would hand them an empty ghost.
+  remove(path: string, discard = true) {
     this.items = this.items.filter((i) => i.path !== path);
     save("shelf", this.items);
+    // Ghyna's own copies (browser images) would otherwise pile up in AppData.
+    if (discard) invoke("shelf_discard", { paths: [path] });
   }
 
   clear() {
+    const paths = this.items.map((i) => i.path);
     this.items = [];
     save("shelf", this.items);
+    invoke("shelf_discard", { paths });
   }
 }

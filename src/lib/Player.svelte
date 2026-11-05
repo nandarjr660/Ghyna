@@ -28,6 +28,91 @@
 
   const lineIndex = $derived(lyrics?.synced ? currentLine(lyrics.synced, pos) : -1);
 
+  // Ambient light follows the cover: sample one colourful average per artwork and
+  // use it for the lyrics glow. Monochrome art, or remote art the canvas cannot
+  // read, falls back to the blue default.
+  let glow = $state<string | null>(null);
+  let glowSoft = $state<string | null>(null);
+  let sampled = "";
+  $effect(() => {
+    const art = media.art;
+    if (!art) {
+      if (sampled) {
+        sampled = "";
+        glow = null;
+        glowSoft = null;
+      }
+      return;
+    }
+    if (art === sampled) return;
+    sampled = art;
+    glow = null;
+    glowSoft = null;
+    void sampleGlow(art).then((rgb) => {
+      if (sampled !== art || !rgb) return;
+      glow = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.6)`;
+      glowSoft = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.34)`;
+    });
+  });
+
+  function sampleGlow(src: string): Promise<[number, number, number] | null> {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        try {
+          const size = 32;
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return resolve(null);
+          ctx.drawImage(img, 0, 0, size, size);
+          const data = ctx.getImageData(0, 0, size, size).data;
+          let r = 0;
+          let g = 0;
+          let b = 0;
+          let weight = 0;
+          for (let i = 0; i < data.length; i += 4) {
+            const pr = data[i];
+            const pg = data[i + 1];
+            const pb = data[i + 2];
+            const max = Math.max(pr, pg, pb);
+            const min = Math.min(pr, pg, pb);
+            const saturation = max ? (max - min) / max : 0;
+            const luminance = (max + min) / 510;
+            // Greys and near-black/near-white pixels only dull the glow.
+            const w =
+              Math.max(0, saturation - 0.12) *
+              Math.max(0, 1 - Math.abs(luminance - 0.45) * 1.6);
+            if (w <= 0) continue;
+            r += pr * w;
+            g += pg * w;
+            b += pb * w;
+            weight += w;
+          }
+          if (!weight) return resolve(null);
+          r /= weight;
+          g /= weight;
+          b /= weight;
+          // Dark covers give a glow too faint to see; lift the colour until it reads.
+          const peak = Math.max(r, g, b);
+          const lift = peak > 0 ? Math.min(2.4, 150 / peak) : 1;
+          resolve([
+            Math.min(255, Math.round(r * lift)),
+            Math.min(255, Math.round(g * lift)),
+            Math.min(255, Math.round(b * lift)),
+          ]);
+        } catch {
+          // Tainted canvas (remote art without CORS headers).
+          resolve(null);
+        }
+      };
+      img.onerror = () => resolve(null);
+      img.src = src;
+    });
+  }
+
   // Keep the current line in the middle of the panel.
   let panel = $state<HTMLElement>();
   let list = $state<HTMLElement>();
@@ -45,7 +130,12 @@
 
 <!-- Layout: cover beside the header and title, progress underneath,
      then the lyrics button under the cover and the transport centered. -->
-<div class="player" class:split={withLyrics}>
+<div
+  class="player"
+  class:split={withLyrics}
+  style:--lyric-glow={glow}
+  style:--lyric-glow-soft={glowSoft}
+>
   <div class="main">
     <div class="top">
       <div class="art" style:background-image={media.art ? `url(${media.art})` : null}>
@@ -133,14 +223,14 @@
     justify-content: center;
     gap: 6px;
   }
-  /* Ambient blue gradient light on the lyrics page, like the reference. */
+  /* Ambient light on the lyrics page, tinted by the cover art. */
   .player.split::before {
     content: "";
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(62% 95% at 10% 0%, rgba(96, 150, 255, 0.55), transparent 72%),
-      radial-gradient(58% 85% at 94% 100%, rgba(142, 108, 255, 0.32), transparent 74%);
+      radial-gradient(62% 95% at 10% 0%, var(--lyric-glow, rgba(96, 150, 255, 0.55)), transparent 72%),
+      radial-gradient(58% 85% at 94% 100%, var(--lyric-glow-soft, rgba(142, 108, 255, 0.32)), transparent 74%);
     filter: blur(14px);
     pointer-events: none;
   }
@@ -157,18 +247,20 @@
     flex: none;
     width: 44px;
     height: 44px;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     overflow: hidden;
     background: var(--surface-raised) center / cover;
     display: grid;
     place-items: center;
     color: rgba(255, 255, 255, 0.4);
-    box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.9);
+    box-shadow:
+      0 0 0 0.5px rgba(255, 255, 255, 0.16),
+      0 10px 20px -10px rgba(0, 0, 0, 0.95);
   }
   .split .art {
     width: 40px;
     height: 40px;
-    border-radius: 9px;
+    border-radius: var(--radius-sm);
   }
   .meta {
     flex: 1;
@@ -180,8 +272,12 @@
     justify-content: center;
     align-items: center;
     margin-bottom: 3px;
-    font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.68);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
     font-variant-numeric: tabular-nums;
   }
   .header :global(.bars) {
@@ -195,22 +291,26 @@
     text-overflow: ellipsis;
   }
   .title {
-    font-size: 13px;
+    font-family: var(--font-display);
+    font-size: 13.5px;
     font-weight: 600;
+    letter-spacing: 0.01em;
     line-height: 1.2;
   }
   .artist {
     margin-top: 2px;
     font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--muted);
   }
 
   .progress {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 10.5px;
-    color: rgba(255, 255, 255, 0.8);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: -0.02em;
+    color: var(--muted-strong);
     font-variant-numeric: tabular-nums;
   }
   .progress > span {
@@ -235,16 +335,16 @@
     position: absolute;
     left: 0;
     right: 0;
-    height: 4px;
+    height: 2px;
     border-radius: 2px;
-    background: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.2);
   }
   .fill {
     position: relative;
     z-index: 1;
-    height: 4px;
+    height: 2px;
     border-radius: 2px;
-    background: #fff;
+    background: var(--accent);
   }
 
   /* Transport centered; the lyrics chip sits on the left, under the cover. */
@@ -263,20 +363,24 @@
     padding: 0;
     border: 0;
     background: none;
-    color: #fff;
+    color: var(--text);
     cursor: pointer;
     display: grid;
     place-items: center;
-    border-radius: 50%;
+    border-radius: var(--radius-xs);
     transition:
-      transform 0.15s,
-      opacity 0.15s;
+      transform 0.15s var(--ease-out),
+      opacity 0.15s var(--ease-out);
   }
   .icon:hover {
-    transform: scale(1.1);
+    transform: scale(1.08);
   }
   .icon:active {
-    transform: scale(0.92);
+    transform: scale(0.94);
+  }
+  .icon:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
   .icon svg {
     width: 18px;
@@ -301,30 +405,42 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    height: 24px;
-    padding: 0;
+    height: 20px;
+    padding: 0 7px;
     border: 0;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.42);
-    font: inherit;
-    font-size: 9.5px;
-    font-weight: 500;
-    letter-spacing: 0.02em;
+    border-radius: var(--radius-xs);
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.1);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: color 0.18s;
+    transition: color 0.18s var(--ease-out), background 0.18s var(--ease-out);
   }
   .lyrics-chip svg {
-    width: 13px;
-    height: 13px;
+    width: 11px;
+    height: 11px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.9;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-  .lyrics-chip:hover,
+  .lyrics-chip:hover {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.12);
+  }
   .lyrics-chip.on {
-    color: #fff;
+    color: var(--accent);
+    background: var(--accent-soft);
+    box-shadow: inset 0 0 0 0.5px var(--accent-line);
+  }
+  .lyrics-chip:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
   .lyrics {
@@ -333,7 +449,7 @@
     overflow: hidden;
     margin-left: 12px;
     padding-left: 12px;
-    border-left: 0.5px solid rgba(255, 255, 255, 0.12);
+    border-left: 0.5px solid rgba(255, 255, 255, 0.1);
     mask: linear-gradient(transparent, #000 22%, #000 78%, transparent);
   }
   ol {
@@ -350,10 +466,12 @@
     background: none;
     text-align: left;
     font: inherit;
+    font-family: var(--font-display);
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 500;
+    letter-spacing: 0.005em;
     line-height: 1.22;
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(238, 246, 248, 0.3);
     cursor: pointer;
     transform: scale(0.94);
     transform-origin: left center;
@@ -362,14 +480,15 @@
       transform 0.5s;
   }
   li.past button {
-    color: rgba(255, 255, 255, 0.2);
+    color: rgba(238, 246, 248, 0.18);
   }
   li.now button {
-    color: #fff;
+    color: var(--text);
+    font-weight: 600;
     transform: none;
   }
   li button:hover {
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(238, 246, 248, 0.72);
   }
   .plain {
     height: 100%;
@@ -377,7 +496,7 @@
     white-space: pre-line;
     font-size: 13px;
     line-height: 1.5;
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--muted-strong);
   }
   .note {
     margin: 0;
@@ -386,6 +505,6 @@
     place-items: center;
     text-align: center;
     font-size: 12.5px;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--muted);
   }
 </style>

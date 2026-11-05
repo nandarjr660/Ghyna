@@ -38,7 +38,7 @@
 </script>
 
 {#if error}
-  <p class="error">Error: {error}</p>
+  <p class="error">Kesalahan: {error}</p>
 {:else if !weather}
     <main class="weather-page"><p class="muted">Memuat data cuaca…</p></main>
 {:else}
@@ -56,8 +56,188 @@
 {/if}
 
 <style>
-  :global(body) { margin: 0; background: #17131a; color: #f7f1e8; font-family: system-ui, sans-serif; }
-  .weather-page { width: min(680px, calc(100% - 40px)); margin: 40px auto; padding: 28px; border: 1px solid #ffffff1c; border-radius: 28px; background: #242029; box-shadow: 0 24px 70px #0006; }
-  .back { color: #b7e8c0; text-decoration: none; font-size: 14px; } header { display:flex; justify-content:space-between; align-items:center; margin-top: 42px; } h1 { margin: 4px 0; font-size: 34px; } .eyebrow { color:#8fd69e; font-size:11px; letter-spacing:.16em; } .description,.muted,.updated { color:#bcb4bd; } .icon { font-size: 76px; } .current { display:flex; align-items:baseline; gap:12px; margin: 28px 0; } .temp { margin:0; font-size:76px; font-weight:700; } .current span { color:#aaa0aa; } .details { display:grid; grid-template-columns:1fr 1fr; gap:12px; } .details div,.forecast { padding:18px; border:1px solid #ffffff12; border-radius:18px; background:#ffffff08; } .details span,.forecast span { display:block; color:#aaa0aa; font-size:13px; } .details strong { display:block; margin-top:7px; font-size:20px; } .forecast { margin-top:12px; } h2 { margin:0 0 16px; font-size:16px; } .forecast-row { display:flex; gap:8px; overflow-x:auto; } .forecast-row div { min-width:82px; text-align:center; } .forecast-row b,.forecast-row strong { display:block; margin-top:9px; font-size:24px; } .forecast-row strong { font-size:17px; } .updated { margin:22px 0 0; font-size:12px; } .error { color:#ff9d9d; }
-  @media (max-width: 520px) { .weather-page { margin:20px auto; padding:22px; } h1 { font-size:28px; } .icon { font-size:58px; } .temp { font-size:64px; } }
+  :global(body) {
+    margin: 0;
+    background: var(--surface-solid);
+    color: var(--text);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+  }
+  :global(body::before) {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: var(--grain);
+    background-size: 140px 140px;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+  }
+  .weather-page {
+    width: min(680px, calc(100% - 40px));
+    margin: 40px auto;
+    padding: 28px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xl);
+    background:
+      radial-gradient(90% 70% at 12% -10%, rgba(255, 138, 107, 0.09), transparent 62%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012)),
+      var(--surface-raised);
+    box-shadow:
+      inset 0 1px 0 var(--edge-top),
+      0 24px 70px -34px #000,
+      0 2px 6px rgba(0, 0, 0, 0.35);
+  }
+  .back {
+    color: var(--accent);
+    text-decoration: none;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .back:hover {
+    color: var(--accent-strong);
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-top: 36px;
+  }
+  h1 {
+    margin: 4px 0;
+    font-family: var(--font-display);
+    font-size: 34px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .eyebrow {
+    margin: 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .description,
+  .muted,
+  .updated {
+    color: var(--muted);
+  }
+  .icon {
+    font-size: 64px;
+    line-height: 1;
+  }
+  .current {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin: 26px 0;
+  }
+  .temp {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 72px;
+    font-weight: 600;
+    letter-spacing: -0.05em;
+    font-variant-numeric: tabular-nums;
+  }
+  .current span {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .details div,
+  .forecast {
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.035);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .details span,
+  .forecast span {
+    display: block;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .details strong {
+    display: block;
+    margin-top: 7px;
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .forecast {
+    margin-top: 12px;
+  }
+  h2 {
+    margin: 0 0 16px;
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.015em;
+  }
+  .forecast-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+  }
+  .forecast-row div {
+    min-width: 82px;
+    text-align: center;
+  }
+  .forecast-row b,
+  .forecast-row strong {
+    display: block;
+    margin-top: 9px;
+    font-size: 24px;
+  }
+  .forecast-row strong {
+    font-family: var(--font-mono);
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .updated {
+    margin: 22px 0 0;
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .error {
+    color: var(--danger);
+  }
+  @media (max-width: 520px) {
+    .weather-page {
+      margin: 20px auto;
+      padding: 22px;
+    }
+    h1 {
+      font-size: 28px;
+    }
+    .icon {
+      font-size: 52px;
+    }
+    .temp {
+      font-size: 60px;
+    }
+  }
 </style>
